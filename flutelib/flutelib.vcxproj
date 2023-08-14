@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\openssl-native.3.0.8\build\native\openssl-native.props" Condition="Exists('..\packages\openssl-native.3.0.8\build\native\openssl-native.props')" />
+  <Import Project="..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.props" Condition="Exists('..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.props')" />
+  <Import Project="..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.props" Condition="Exists('..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.props')" />
+  <Import Project="..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.props" Condition="Exists('..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.props')" />
+  <Import Project="..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.props" Condition="Exists('..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.props')" />
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C356702C-CA0A-4946-91C4-42C30494F154}</ProjectGuid>
+    <RootNamespace>flutelib</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>Static</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>14.0.25420.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
+    <ExcludePath>$(CommonExcludePath);$(VC_ExecutablePath_x86);$(VC_LibraryPath_x86);$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MSBuild_ExecutablePath);</ExcludePath>
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath);$(WindowsSDK_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard_C>Default</LanguageStandard_C>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader />
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <UseFullPaths>false</UseFullPaths>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <AdditionalIncludeDirectories>../packages/rmt_openssl.1.0.2.6/build/native/include/v140/Win32/Debug/static/</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="apd.c" />
+    <ClCompile Include="display.c" />
+    <ClCompile Include="efdt.c" />
+    <ClCompile Include="env.c" />
+    <ClCompile Include="fdt.c" />
+    <ClCompile Include="fdt_gen.c" />
+    <ClCompile Include="flute.c" />
+    <ClCompile Include="flute_file_repair.c" />
+    <ClCompile Include="getdnsname.c" />
+    <ClCompile Include="http_file_repair.c" />
+    <ClCompile Include="mad_md5.c" />
+    <ClCompile Include="mad_utf8.c" />
+    <ClCompile Include="mad_zlib.c" />
+    <ClCompile Include="mime-parser.c" />
+    <ClCompile Include="padding_encoding.c" />
+    <ClCompile Include="parse_args.c" />
+    <ClCompile Include="receiver.c" />
+    <ClCompile Include="rfc822parse.c" />
+    <ClCompile Include="sender.c" />
+    <ClCompile Include="stsid.c" />
+    <ClCompile Include="uri.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="apd.h" />
+    <ClInclude Include="display.h" />
+    <ClInclude Include="efdt.h" />
+    <ClInclude Include="env.h" />
+    <ClInclude Include="fdt.h" />
+    <ClInclude Include="fdt_gen.h" />
+    <ClInclude Include="flute.h" />
+    <ClInclude Include="flute_defines.h" />
+    <ClInclude Include="flute_file_repair.h" />
+    <ClInclude Include="getdnsname.h" />
+    <ClInclude Include="http_file_repair.h" />
+    <ClInclude Include="mad_md5.h" />
+    <ClInclude Include="mad_utf8.h" />
+    <ClInclude Include="mad_zlib.h" />
+    <ClInclude Include="mime-parser.h" />
+    <ClInclude Include="padding_encoding.h" />
+    <ClInclude Include="parse_args.h" />
+    <ClInclude Include="receiver.h" />
+    <ClInclude Include="resource1.h" />
+    <ClInclude Include="rfc822parse.h" />
+    <ClInclude Include="sender.h" />
+    <ClInclude Include="stsid.h" />
+    <ClInclude Include="uri.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\alclib\alclib.vcxproj">
+      <Project>{5cd00f77-f703-486f-a14e-4e98622dc2c6}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\expat.redist.2.1.0.11\build\native\expat.redist.targets" Condition="Exists('..\packages\expat.redist.2.1.0.11\build\native\expat.redist.targets')" />
+    <Import Project="..\packages\expat.2.1.0.11\build\native\expat.targets" Condition="Exists('..\packages\expat.2.1.0.11\build\native\expat.targets')" />
+    <Import Project="..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.targets" Condition="Exists('..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.targets')" />
+    <Import Project="..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.targets" Condition="Exists('..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.targets')" />
+    <Import Project="..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.targets" Condition="Exists('..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.targets')" />
+    <Import Project="..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.targets" Condition="Exists('..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.targets')" />
+    <Import Project="..\packages\openssl-native.3.0.8\build\native\openssl-native.targets" Condition="Exists('..\packages\openssl-native.3.0.8\build\native\openssl-native.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\expat.redist.2.1.0.11\build\native\expat.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\expat.redist.2.1.0.11\build\native\expat.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\expat.2.1.0.11\build\native\expat.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\expat.2.1.0.11\build\native\expat.targets'))" />
+    <Error Condition="!Exists('..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.props'))" />
+    <Error Condition="!Exists('..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_zlib.1.2.8.6\build\native\rmt_zlib.targets'))" />
+    <Error Condition="!Exists('..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.props'))" />
+    <Error Condition="!Exists('..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_openssl.1.0.2.4\build\native\rmt_openssl.targets'))" />
+    <Error Condition="!Exists('..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.props'))" />
+    <Error Condition="!Exists('..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_libssh2.1.6.0.1\build\native\rmt_libssh2.targets'))" />
+    <Error Condition="!Exists('..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.props'))" />
+    <Error Condition="!Exists('..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\rmt_curl.7.45.0.2\build\native\rmt_curl.targets'))" />
+    <Error Condition="!Exists('..\packages\openssl-native.3.0.8\build\native\openssl-native.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl-native.3.0.8\build\native\openssl-native.props'))" />
+    <Error Condition="!Exists('..\packages\openssl-native.3.0.8\build\native\openssl-native.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\openssl-native.3.0.8\build\native\openssl-native.targets'))" />
+  </Target>
+</Project>
