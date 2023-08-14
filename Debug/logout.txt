@@ -1,0 +1,545 @@
+Opening Log File
+New alc_session_list count: 0	s_id: 0	thread ID: 4584
+Added ALC channels: 0	nb_channel: 1	max#: 2
+Creating FDT thread to receive incoming packets
+Receiving socket:
+Start Receiving Files in FDT based mode
+FLUTE Receiver in automatic mode
+get first EFDT at TSI:0, TOI:0
+Locked to source: 172.18.2.149
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 23994	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 29439	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 200	working in TSI: 0
+Packet to different session, see TSI: 201	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Packet to current session, see TSI: 0	working in TSI: 0
+Reading LCT Header extensions in toi: 0 in tsi: 0
+EXT_TOL transfer length: 353	, FEC Instance ID: 0	Encoded symbol length: 353	Max Source block length 353
+TSI 0, TOI 0 has Start_Offset: 0
+Start offset = 0 double check TOI 0	Transfer LEN 353	ES_LEN 353
+Keep File listed in S-TSID
+Retreive transport unit from session 0
+Retrieved Unit
+tranport unit length: 353
+353 memory copied transport unit in TOI: 0
+transport object is new
+The new object length is: 353	Symbols 0
+Check if ready to decode: #units: 0/1
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 1/1
+Object completed # Ready blocks 0 N: 1
+HAVE NOT SEEN TOI 0 YET
+100.00% of object received (TOI=0 LAYERS=1)
+Packet to current session, see TSI: 0	working in TSI: 0
+See object 4653106 in session 0
+MalekElKhatib: Packet rebuffering for toi 4653106 in TSI: 0  waitingFDT 1, sendingFDT 0
+parsed EFDT XML parameters with 1 file(s)
+Packet to current session, see TSI: 0	working in TSI: 0
+Expired EFDT Instance received, using it anyway
+See object 4653106 in session 0
+EFDT Instance received (ID=0)
+MalekElKhatib: Packet rebuffering for toi 4653106 in TSI: 0  waitingFDT 1, sendingFDT 0
+EFDT updated, new 1 file description(s) added
+Packet to current session, see TSI: 0	working in TSI: 0
+URI: SLS (TOI=4653106)
+See object 4653106 in session 0
+RX #FILES: 1
+MalekElKhatib: Packet rebuffering for toi 4653106 in TSI: 0  waitingFDT 1, sendingFDT 0
+Wait for another SLS if Segment Timeline
+
+Packet to current session, see TSI: 0	working in TSI: 0
+FDTbasedRx for TOI: 4653106
+See object 4653106 in session 0
+Memory Mode is Medium(1) or Low(2), alc_recv3 for channel 0, TOI: 4653106	file: SLS
+ALC_RECV3 Session ID: 0
+Recall wanted object parameters
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1428	Max Source block length 64
+TSI 0, TOI 4653106 has Start_Offset: 0
+Start offset = 0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1428
+Keep File listed in S-TSID
+Retreive transport unit from session 0
+Retrieved Unit
+tranport unit length: 1428
+1428 memory copied transport unit in TOI: 4653106
+transport object is new
+TOI: 4653106	 FEC algorithm: 0	 for filename:(null)
+The new object length is: 8490	Symbols 0
+Check if ready to decode: #units: 0/6
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+16.82% of object received (TOI=4653106 LAYERS=1)
+Check if ready to decode: #units: 1/6
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Packet to current session, see TSI: 0	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+See object 4653106 in session 0
+Object completed: 0
+Recall wanted object parameters
+Object completed # Ready blocks 0 N: 1
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+Object completed: 0
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1428	Max Source block length 64
+Object completed # Ready blocks 0 N: 1
+TSI 0, TOI 4653106 has Start_Offset: 1428
+Object completed: 0
+Start offset !0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1428
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Retreive transport unit from session 0
+Object completed: 0
+Retrieved Unit
+Object completed # Ready blocks 0 N: 1
+tranport unit length: 1428
+Object completed: 0
+1428 memory copied transport unit in TOI: 4653106
+Check if ready to decode: #units: 1/6
+Object completed # Ready blocks 0 N: 1
+33.64% of object received (TOI=4653106 LAYERS=1)
+Check if ready to decode: #units: 2/6
+Object completed: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+Packet to current session, see TSI: 0	working in TSI: 0
+Object completed: 0
+See object 4653106 in session 0
+Recall wanted object parameters
+Object completed # Ready blocks 0 N: 1
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+Object completed: 0
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1428	Max Source block length 64
+TSI 0, TOI 4653106 has Start_Offset: 2856
+Object completed # Ready blocks 0 N: 1
+Start offset !0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1428
+Object completed: 0
+Retreive transport unit from session 0
+Object completed # Ready blocks 0 N: 1
+Retrieved Unit
+Object completed: 0
+tranport unit length: 1428
+1428 memory copied transport unit in TOI: 4653106
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 2/6
+Object completed: 0
+50.46% of object received (TOI=4653106 LAYERS=1)
+Check if ready to decode: #units: 3/6
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Packet to current session, see TSI: 0	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+See object 4653106 in session 0
+Recall wanted object parameters
+Object completed: 0
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+Object completed # Ready blocks 0 N: 1
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1428	Max Source block length 64
+TSI 0, TOI 4653106 has Start_Offset: 4284
+Object completed: 0
+Start offset !0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1428
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Retreive transport unit from session 0
+Object completed # Ready blocks 0 N: 1
+Retrieved Unit
+Object completed: 0
+tranport unit length: 1428
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+1428 memory copied transport unit in TOI: 4653106
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 3/6
+Object completed: 0
+67.28% of object received (TOI=4653106 LAYERS=1)
+Check if ready to decode: #units: 4/6
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Packet to current session, see TSI: 0	working in TSI: 0
+Object completed: 0
+See object 4653106 in session 0
+Object completed # Ready blocks 0 N: 1
+Recall wanted object parameters
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+Object completed: 0
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1428	Max Source block length 64
+Object completed # Ready blocks 0 N: 1
+TSI 0, TOI 4653106 has Start_Offset: 5712
+Object completed: 0
+Start offset !0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1428
+Object completed # Ready blocks 0 N: 1
+Retreive transport unit from session 0
+Object completed: 0
+Retrieved Unit
+Object completed # Ready blocks 0 N: 1
+tranport unit length: 1428
+Object completed: 0
+1428 memory copied transport unit in TOI: 4653106
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 4/6
+Object completed: 0
+84.10% of object received (TOI=4653106 LAYERS=1)
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 5/6
+Object completed: 0
+Packet to different session, see TSI: 100	working in TSI: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Packet to current session, see TSI: 0	working in TSI: 0
+Object completed: 0
+See object 4653106 in session 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Recall wanted object parameters
+Object completed: 0
+Reading LCT Header extensions in toi: 4653106 in tsi: 0
+Object completed # Ready blocks 0 N: 1
+EXT_FTI transfer length: 8490	, FEC Instance ID: 0	Encoded symbol length: 1350	Max Source block length 64
+Object completed: 0
+TSI 0, TOI 4653106 has Start_Offset: 7140
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Start offset !0 double check TOI 4653106	Transfer LEN 8490	ES_LEN 1350
+Object completed: 0
+Retreive transport unit from session 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Retrieved Unit
+Object completed # Ready blocks 0 N: 1
+tranport unit length: 1350
+Object completed: 0
+1350 memory copied transport unit in TOI: 4653106
+Object completed # Ready blocks 0 N: 1
+Check if ready to decode: #units: 5/6
+Object completed: 0
+100.00% of object received (TOI=4653106 LAYERS=1)
+Check if ready to decode: #units: 6/6
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
+Object completed # Ready blocks 0 N: 1
+Object completed: 0
