@@ -1,0 +1,5 @@
+﻿cl : command line warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  main.c
+  Generating code
+  Finished generating code
+  flute.vcxproj -> C:\Users\luke\Documents\MobaXterm\Apache24\htdocs\Route_Receiver\Release\flute.exe
