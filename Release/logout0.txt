@@ -1,0 +1,16 @@
+Opening Log File
+New alc_session_list count: 0	s_id: 0	thread ID: 8928
+Added ALC channels: 0	nb_channel: 1	max#: 2
+Creating FDT thread to receive incoming packets
+Receiving socket:
+Start Receiving Files in FDT based mode
+FLUTE Receiver in automatic mode
+get first EFDT at TSI:0, TOI:0
+Signal Handler Exiting...
+Error: C:\Users\luke\Documents\MobaXterm\Apache24\htdocs\Route_Receiver\DASH_Content3/envelope.xml is not valid file name
+CLOSING ALC SESSION
+
+Session 0 is no longer active.  Recv_packet stopped, exit thread
+CLOSING ALC CHANNEL
+recv failed
+Socket connection is no longer active, exiting thread
