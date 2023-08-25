@@ -2484,16 +2484,134 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 				strcpy(tmp, filename);
 				ptr = strchr(tmp, slsh);
-				}
+			}
 			memcpy((fullpath + strlen(fullpath)), "/", 1);
 			memcpy((fullpath + strlen(fullpath)), filename, strlen(filename));
-			}
+		}
 		else {
 			memcpy((fullpath + strlen(fullpath)), "/", 1);
 			memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 		}
 
-		if (rename(tmp_filename, fullpath) != 0) {
+		if (s->codepoint == NRT_ENTITY_MODE || s->codepoint == MEDIA_SEG_ENTITY) {	// This looks at LCT Header Codepoint
+		// if (s->ls->codePoint == NRT_ENTITY_MODE || s->ls->codePoint == MEDIA_SEG_ENTITY) {	// This looks at OPTIONAL Payload element
+			//printf("ENTITY MODE processing\n"); fflush(stdout);
+			FILE* fp = fopen(tmp_filename, "r");
+			char newpath[MAX_PATH_LENGTH];
+			char line[255];
+			char cdel[4] = ": ";  // Delimiter for parsing string into tokens
+			char* params = { NULL };
+			memset(newpath, 0, MAX_PATH_LENGTH);
+			int clen = 0;
+
+			while (fgets(line, sizeof(line), fp)) {
+
+				if (line[0] == '\n') {
+					//printf("\n Entity Header end\n"); fflush(stdout);
+					break;
+				}
+				else {
+					// get first token
+					params = strtok(line, cdel);
+					if (strcmp(params, "Content-Location") == 0) {
+						params = strtok(NULL, cdel);
+						//printf("ENTITY name %s", params); fflush(stdout);
+						memcpy(newpath, session_basedir, strlen(session_basedir));
+						memcpy((newpath + strlen(newpath)), "/", 1);
+						memcpy((newpath + strlen(newpath)), params, strlen(params)-1);
+					}
+					else if (strcmp(params, "Content-Length") == 0) {
+						params = strtok(NULL, cdel);
+						//printf("ENTITY length %s", params); fflush(stdout);
+						/* find nth position back from end of file */
+						clen = atoi(params);
+					}
+					//// walk through other tokens
+					//while (params != NULL) {
+					//	printf("%s\n", params); fflush(stdout);
+					//	params = strtok(NULL, cdel);
+					//}
+				}
+
+			}
+
+			fclose(fp);
+
+			// rename old file with new name in ENTITY MODE
+			if (rename(tmp_filename, newpath) != 0) {
+
+				if (errno == EEXIST) {
+
+					retval = remove(newpath);
+
+					if (retval == -1) {
+						printf("errno: %i\n", errno);
+						fflush(stdout);
+					}
+
+					if (rename(tmp_filename, newpath) < 0) {
+						printf("rename() error1: %s\n", tmp_filename);
+						fflush(stdout);
+					}
+				}
+				else {
+					printf("rename() error2: %s\n", tmp_filename);
+					printf("fullpath: %s\n", newpath);
+					printf("errno: %i\n", errno);
+					fflush(stdout);
+				}
+
+			}
+
+			// Also remove ENTITY HEADER from file
+			FILE* src = fopen(newpath, "rb");
+			FILE* dst = fopen(tmp_filename, "wb");
+			long pos;
+			char buf[256];
+			size_t n;			
+
+			// find nth position back from end of file
+			//printf("ENTITY file resize: %d\n", clen); fflush(stdout);
+			if ((pos = fseek(src, -clen, SEEK_END)) != 0) 
+				retval = -1;
+
+			while ((n = fread(buf, 1, sizeof buf, src)))
+				fwrite(buf, 1, n, dst);
+
+			/* close the files */
+			fclose(src);
+			fclose(dst);
+
+			/* delete old file & rename new one to same name as old one */
+			remove(newpath);
+			if (rename(tmp_filename, newpath) != 0) {
+				if (errno == EEXIST) {
+
+					retval = remove(newpath);
+
+					if (retval == -1) {
+						printf("errno: %i\n", errno);
+						fflush(stdout);
+					}
+
+					if (rename(tmp_filename, newpath) < 0) {
+						printf("rename() error1: %s\n", tmp_filename);
+						fflush(stdout);
+					}
+				}
+				else {
+					printf("rename() error2: %s\n", tmp_filename);
+					printf("fullpath: %s\n", newpath);
+					printf("errno: %i\n", errno);
+					fflush(stdout);
+				}
+			}
+			// Cleanup
+			remove(tmp_filename);
+
+		}
+
+		else if (rename(tmp_filename, fullpath) != 0) {	// Else FILE MODE is used.
 
 			if (errno == EEXIST) {
 
@@ -2525,6 +2643,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #endif
 			fflush(stdout);
 		}
+		
 
 		//set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
 
@@ -2538,7 +2657,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		if (openfile) {
 			ShellExecute(NULL, "Open", fullpath, NULL, NULL, SW_SHOWNORMAL);
 		}
-#endif      
+#endif    
 
 		//Malek El Khatib 06.05.2014
 		//START
