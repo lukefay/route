@@ -161,6 +161,7 @@ typedef struct alc_session {
   int use_fec_oti_ext_hdr;			/**< use FEC OTI extension header */
   
   int rx_memory_mode;				/**< used memory mode in the receiver */
+  unsigned int codepoint;			/**< LCT Header Codepoint to indicate ENTITY MODE */
   int verbosity;					/**< verbosity level */
   
   unsigned long long sent_bytes;		/**< bytes sent in the session */

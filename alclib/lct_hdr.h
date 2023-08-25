@@ -78,6 +78,8 @@ extern "C" {
 
 typedef struct def_lct_hdr {  // Redefined per RFC 5651
 #ifdef _BIT_FIELDS_LTOH
+  unsigned char	codepoint;		/**< 1 byte char (8 bits) identifier used by payload decoder */
+  unsigned char	hdr_len;		/**< 1 byte char (8 bits) total length of LCT header */
   unsigned short flag_b:1;		/**< 2 bytes short (16 bits):1 bit used for close object flag */
   unsigned short flag_a:1;		/**< close session flag */
 //  unsigned short flag_r:1;		/**< expected residual time present flag */ 
@@ -89,9 +91,9 @@ typedef struct def_lct_hdr {  // Redefined per RFC 5651
   unsigned short psi:2;			/**< ROUTE uses Protocol-Specific Indication (PSI); set to '10' for source protocol */
   unsigned short flag_c:2;		/**< congestion control flag */
   unsigned short version:4;		/**< LCT version number */
-  unsigned char	hdr_len;		/**< 1 byte char (8 bits) total length of LCT header */
-  unsigned char	codepoint;		/**< 1 byte char (8 bits) identifier used by payload decoder */
 #else
+  unsigned char	codepoint;		/**< 1 byte char (8 bites) identifier used by payload decoder */
+  unsigned char	hdr_len;		/**< 1 byte char (8 bits) total length of LCT header */
   unsigned short version:4;		/**< LCT version number */
   unsigned short flag_c:2;		/**< congestion control flag */
   unsigned short psi:2;			/**< ROUTE uses Protocol-Specific Indication (PSI); set to '10' for source protocol */
@@ -103,8 +105,6 @@ typedef struct def_lct_hdr {  // Redefined per RFC 5651
   //unsigned short flag_r:1;		/**< expected residual time present flag */
   unsigned short flag_a:1;		/**< close object flag */
   unsigned short flag_b:1;		/**< close session flag */
-  unsigned char	hdr_len;		/**< 1 byte char (8 bits) total length of LCT header */
-  unsigned char	codepoint;		/**< 1 byte char (8 bites) identifier used by payload decoder */
 #endif
   unsigned int cci;				/**< 4 byte int (32 bits) congestion control header */
 } def_lct_hdr_t;

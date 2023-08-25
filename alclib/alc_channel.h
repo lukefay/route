@@ -60,7 +60,6 @@ typedef struct alc_channel {
 	
 	int ch_id;							/**< session level identifier for the channel */
 	struct alc_session *s;				/**< pointer to the parent session */
-	//struct lct_ch* ls;					/**< S-TSID */
 	int fdt_instance_id;				/**< current FDT instance */
 
 	const char *port;					/**< channel's port */ 

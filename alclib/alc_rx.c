@@ -1237,7 +1237,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 	/* remaining LCT header fields*/
 
-
 	/* EXT_FDT */
 
 	unsigned short flute_version = 0; /* V */
@@ -1289,7 +1288,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 	//printf("Begin analyze packet in channel %d\n", ch->ch_id); fflush(stdout);
 	
-	if(len < (int)(sizeof(def_lct_hdr_t))) {
+	if(len < (int)(sizeof(def_lct_hdr_t))) {	// integer is of length 32 bits
 		printf("analyze_packet: packet too short %d\n", len);
 		fflush(stdout);
 		unlock_lct_header();
@@ -1299,14 +1298,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 	def_lct_hdr = (def_lct_hdr_t*)data;
 
-	// Critical to quickly read LCT Header to discern further processing.  Read LCT Header entirely.
-	// Read 16 bit LCT flag header
-	*(unsigned short*)def_lct_hdr = ntohs(*(unsigned short*)def_lct_hdr);
+	// Critical to quickly read LCT Header to discern further processing.
 	// Read 32 bit LCT flag header
-	//*(unsigned long*)def_lct_hdr = ntohl(*(unsigned long*)def_lct_hdr);
+	*(unsigned long*)def_lct_hdr = ntohl(*(unsigned long*)def_lct_hdr);
 	
 	hdrlen += (int)(sizeof(def_lct_hdr_t));
-	
+	atsc_codepoint = def_lct_hdr->codepoint;
+
 	if(def_lct_hdr->version != ALC_VERSION) {
 		printf("ALC version: %i not supported!\n", def_lct_hdr->version);
 		fflush(stdout);	
@@ -1576,27 +1574,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				return NEW_TOI;
 
-				/*
-				if (ch->s->ls->fdt->file_list->status == 2 && ch->s->ls->rt == FALSE) {  // Received all NRT files in this LCT channel
-					if (ch->s->verbosity == 4) {
-						printf("All NRT files received.\n");
-						fflush(stdout);
-					}
-
-					unlock_lct_header();
-					//ch->s->state = SExiting;
-					//close_alc_channel(ch, ch->s);
-					//close_alc_session(ch->s->s_id);
-					return NEW_TOI;
-				}
-				else {
-					//printf("New TOI %lli found with status %d.\n", toi, ch->s->ls->fdt->file_list->status);
-					//fflush(stdout);
-					unlock_lct_header();
-
-					return NEW_TOI;
-				}
-				*/
 			}
 			else {
 				//printf("SLS found again\n"); fflush(stdout);
@@ -1635,7 +1612,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	// Luke Fay: setting FEC encoding for A/331 if EXT_FTI is used
 	//fec_enc_id = def_lct_hdr->codepoint;
 	fec_enc_id = COM_NO_C_FEC_ENC_ID;
-	atsc_codepoint = def_lct_hdr->codepoint;
 
 	if(!(fec_enc_id == COM_NO_C_FEC_ENC_ID || fec_enc_id == RAPTOR_FEC_ENC_ID || fec_enc_id == RS_FEC_ENC_ID ||
 		fec_enc_id == SB_SYS_FEC_ENC_ID || fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) && (def_lct_hdr->psi < 2)) {  
@@ -2037,24 +2013,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	}
 
 
-	/*
-	if (atsc_codepoint == NRT_FILE_MODE) {
-		word = ntohl(*(unsigned int*)((char*)def_lct_hdr + hdrlen));
 
-		sbn = ((word & 0xFFFF0000) >> 16);		// Source Block Number
-		esi = (word & 0x0000FFFF);				// Encoding Symbol ID
-
-		hdrlen += 4;
-	}
-	else if (atsc_codepoint == NRT_UNSGN_PKG_MODE) {
-		word = ntohl(*(unsigned int*)((char*)def_lct_hdr + hdrlen));
-
-		sbn = ((word & 0xFFFF0000) >> 16);		// Source Block Number
-		esi = (word & 0x0000FFFF);				// Encoding Symbol ID
-
-		hdrlen += 4;
-	}
-	*/
 
 	/* TODO: check if instance_id is set --> EXT_FDT header exists in packet */
 	lct_ch_t* lsl = ch->s->ls;
@@ -2078,9 +2037,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 		ch->s->fdt_instance_id = (long)toi;
 		//ch->fdt_instance_id = (long)toi;
-		//ch->s->fdt = ch->s->receiver->fdt;
 		ch->s->last_given = NULL;
-		// 
+		
 		// Also add FDT for the next file
 		lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
 		lct_file = (file_t*)calloc(1, sizeof(file_t));
@@ -2147,7 +2105,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			if (lsl->toi != toi && lsl->rt == TRUE) { // Source Flow realtime streaming file mode increments TOI
 				sprintf(str, "%lld", lct_file->toi);
 				sprintf(lct_file->location, "%s", lsl->fileTemplate);  // This is from AFDT and copyied to lct_file.location
-				rplcval = str_replace(lct_file->location, 32, "$TOI$", str);  // This goes to lct_file.location
+				rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
 				if (!rplcval)
 					printf("Not enough room to replace $TOI$ with `%lld'\n", lct_file->toi);
 				if (ch->s->verbosity == 4) {
@@ -2253,7 +2211,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				fflush(stdout);
 			}
 		}
-	} 
+
+		// ENTITY MODE switch to process entity header as defined in RFC 7231 (set at beginning of file)
+		ch->s->codepoint = atsc_codepoint;
+
+	}
 	else if (tsi == ch->ch_id) {  // Start offset != 0 but still in desired channel
 
 		wanted_obj = get_wanted_object(ch->s, toi);
@@ -2401,7 +2363,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				return MEM_ERROR;
 			}
 #endif
-			memcpy(trans_unit->data, (data + hdrlen + j*es_len), trans_unit->len);
+			memcpy(trans_unit->data, (data + hdrlen + j * es_len), trans_unit->len);
 
 			//printf("%d memory copied transport unit in TOI: %llu\n", trans_unit->len, toi);
 			//fflush(stdout);
@@ -3243,7 +3205,7 @@ unsigned long long recv_packet(alc_session_t* s) {
 						if (ls->toi != toi && ls->rt == TRUE ) {
 							sprintf(str, "%lld", lct_file->toi);
 							sprintf(lct_file->location, "%s", ls->fileTemplate);  // This is from AFDT and copyied to lct_file.location
-							rplcval = str_replace(lct_file->location, 32, "$TOI$", str);  // This goes to lct_file.location
+							rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
 							if (!rplcval)
 								printf("Not enough room to replace $TOI$ with `%lld'\n", lct_file->toi);
 							if (s->verbosity == 4) {
@@ -3822,11 +3784,6 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 			continue;
 		}
 
-#ifdef _MSC_VER
-		Sleep(1);
-#else
-		usleep(1000);
-#endif
 	}
 	if (s->verbosity == 4) {
 		printf("alc_recv2 object recovered\n\n");
@@ -3994,11 +3951,6 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		}
 		//continue;
 
-#ifdef _MSC_VER
-		Sleep(1);
-#else
-		usleep(1000);
-#endif
 	}
 	if (s->verbosity == 4) {
 		printf("alc_recv3 object recovered\n\n");
@@ -4105,11 +4057,6 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			} 
 			while(to != NULL);
 
-#ifdef _MSC_VER
-			Sleep(1);
-#else
-			usleep(1000);
-#endif
 		}
 
 		return buf;
