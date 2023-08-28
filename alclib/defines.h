@@ -76,6 +76,7 @@ extern "C" {
 
 #define ALC_VERSION		1		/**< ALC version number */
 #define FLUTE_VERSION	1		/**< FLUTE version number */
+#define ROUTE_VERSION	2		/**< ROUTE version number */
 
 // A/331 Codepoint Definitions
 #define ATSC_RESERVED			0	// Not used

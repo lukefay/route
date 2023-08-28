@@ -1659,8 +1659,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				flute_version = (word & 0x00F00000) >> 20;
 				fdt_instance_id = (word & 0x000FFFFF);
 
-				if(flute_version != FLUTE_VERSION) {
-					printf("FLUTE version: %i is not supported\n", flute_version);
+				if(!flute_version == (FLUTE_VERSION || ROUTE_VERSION)) {	// Version 1 or Version 2
+					printf("ROUTE version: %i is not supported\n", flute_version);
 					fflush(stdout);
 					unlock_lct_header();
 
@@ -1777,7 +1777,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				if ((es_len || max_sb_len) == 0) {
 					// Dummy #'s to get through check below
 					es_len = (unsigned short)(len - hdrlen - 4);
-					max_sb_len = (unsigned short)(len - hdrlen - 4);
+					//max_sb_len = (unsigned short)(len - hdrlen - 4);
+					max_sb_len = 10 * es_len;
 				}
 				if (ch->s->verbosity == 4) {
 					printf("EXT_FTI transfer length: %lli\t, FEC Instance ID: %i\tEncoded symbol length: %i\tMax Source block length %i\n", transfer_len, fec_inst_id, es_len, max_sb_len);
@@ -1832,7 +1833,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				// Dummy #'s to get through check below
 				es_len = (len - hdrlen - 4);
-				max_sb_len = (unsigned short)(len - hdrlen - 4); // Received bytes - header length - FEC Payload ID
+				//max_sb_len = (unsigned short)(len - hdrlen - 4); // Received bytes - header length - FEC Payload ID
+				max_sb_len = 10 * es_len; // Received bytes - header length - FEC Payload ID
 				if (ch->s->verbosity == 4) {
 					printf("EXT_TOL transfer length: %lli\t, FEC Instance ID: %i\tEncoded symbol length: %i\tMax Source block length %i\n", transfer_len, fec_inst_id, es_len, max_sb_len);
 					fflush(stdout);
@@ -1841,7 +1843,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 			case EXT_TOLL:
 				/* 48 bit version of Transport Object Length */
-				if (hel != 4) {
+				if (hel != 2) {
 					printf("Bad EXT_TOLL header extension, length: %i\n", hel);
 					fflush(stdout);
 					unlock_lct_header();
@@ -1857,7 +1859,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				// Dummy #'s to get through check below
 				es_len = (unsigned short)(len - hdrlen - 4);
-				max_sb_len = (unsigned short)(len - hdrlen - 4);
+				//max_sb_len = (unsigned short)(len - hdrlen - 4);
+				max_sb_len = 100 * es_len;
 				if (ch->s->verbosity == 4) {
 					printf("EXT_TOLL transfer length: %lli\t, FEC Instance ID: %i\tEncoded symbol length: %i\tMax Source block length %i\n", transfer_len, fec_inst_id, es_len, max_sb_len);
 					fflush(stdout);
@@ -2024,11 +2027,12 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	int updated;
 
 	char str[16];
+	char stra[16];
 	char* rplcval;
 
 	if (start_offset == 0 && tsi == ch->ch_id) {
 		if (ch->s->verbosity == 4) {
-			printf("Start offset = 0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\n", toi, transfer_len, es_len);
+			printf("Start offset = 0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\tSource blocks %d\n", toi, transfer_len, es_len, max_sb_len);
 			fflush(stdout);
 		}
 
@@ -2103,9 +2107,17 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 			// Update new File URI with found TOI
 			if (lsl->toi != toi && lsl->rt == TRUE) { // Source Flow realtime streaming file mode increments TOI
+				sprintf(stra, "%lld", ch->s->tsi);
 				sprintf(str, "%lld", lct_file->toi);
-				sprintf(lct_file->location, "%s", lsl->fileTemplate);  // This is from AFDT and copyied to lct_file.location
-				rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+				if (lsl->fileTemplate != NULL) {
+					sprintf(lct_file->location, "%s", lsl->fileTemplate);  // This is from AFDT and copyied to lct_file.location
+					rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+				}
+				else {
+					sprintf(lct_file->location, "%s", "$TSI$_$TOI$");  // If fileTemplate is not in AFDT, just use TOI
+					rplcval = str_replace(lct_file->location, 64, "$TSI$", stra);  // This goes to lct_file.location
+					rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+				}
 				if (!rplcval)
 					printf("Not enough room to replace $TOI$ with `%lld'\n", lct_file->toi);
 				if (ch->s->verbosity == 4) {
@@ -2223,14 +2235,15 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		//es_len = wanted_obj->es_len;
 		es_len = len - hdrlen;  // Just make one iteration (no repair in SRC FLOW)
 		//max_sb_len = wanted_obj->max_sb_len;
-		max_sb_len = len - hdrlen;
+		//max_sb_len = len - hdrlen;
+		max_sb_len = 10 * es_len;
 		max_nb_of_es = wanted_obj->max_nb_of_es;
 		fec_enc_id = wanted_obj->fec_enc_id;
 		transfer_len = wanted_obj->transfer_len;
 		content_enc_algo = wanted_obj->content_enc_algo;
 		
 		if (ch->s->verbosity == 4) {
-			printf("Start offset !0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\n", toi, transfer_len, es_len);
+			printf("Start offset !0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\tSB_LEN %d\n", toi, transfer_len, es_len, max_sb_len);
 			fflush(stdout);
 		}
 		// Update the es_len
@@ -2284,13 +2297,14 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		//Malek El Khatib 08.08.2014
 		//If payload contains consecutive es, it is better to decode them at once (i.e. without extracting them into seperate tr_units
 		int nb_of_iterations = nb_of_symbols;
+		//printf("The number of symbols per source block is: %u\n", nb_of_symbols); fflush(stdout);
 
 
 		if((fec_enc_id == COM_NO_C_FEC_ENC_ID) && (numEncSymbPerPacket == 0)) //numEncSymbPerPacket = 0 means that it is varying with each packet
 		{
 			nb_of_iterations = 1;			// <In this case, decode whole payload at once>
 			//nb_of_symb_to_decode_simult = nb_of_symbols;
-			//printf("The number of symbols per packets is: %u\n",nb_of_symb_to_decode_simult);
+			//printf("The number of symbols per source block is: %u\n", nb_of_symbols); fflush(stdout);
 		}
 
 
@@ -2491,12 +2505,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					}  
 				}
 
-				//Malek El Khatib 11.08.2014
-				if (ch->s->verbosity == 4) {
-					printf("The new object length is: %llu\tSymbols %d\n", transfer_len, trans_obj->es_len);
-					fflush(stdout);
-				}
-				//End
 
 				trans_obj->len = transfer_len;
 				trans_obj->fec_enc_id = (unsigned char)fec_enc_id;
@@ -2506,14 +2514,21 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				//trans_obj->es_len = len - hdrlen;
 				//trans_obj->max_sb_len = len - hdrlen;
 
+				//Malek El Khatib 11.08.2014
+				if (ch->s->verbosity == 4) {
+					printf("The new object length is: %llu\tSymbols %d\tSource Blocks %d\n", transfer_len, trans_obj->es_len, trans_obj->max_sb_len);
+					fflush(stdout);
+				}
+				//End
+
 				/* Let's calculate the blocking structure for this object */
 
 				trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
-				//printf("Calculated blocking structure\n");
+				//printf("Calculated blocking structure with transfer len: %llu\tmax_sb: %d\tes: %d\n", transfer_len, max_sb_len, es_len);
 				//fflush(stdout);
 
-				// For ROUTE SRC_FLOW, the number of Source blocks is 1 -- Luke Fay
-				trans_obj->bs->N = 1;
+				// For ROUTE SRC_FLOW keep the number of Source blocks ready, as N is only available at Start Offset == 0 -- Luke Fay
+				trans_obj->bs->N = nb_of_iterations;
 
 				if(!(trans_obj->block_list = (trans_block_t*)calloc(trans_obj->bs->N, sizeof(trans_block_t)))) {
 					printf("Could not alloc memory for transport block list!\n");
@@ -2856,6 +2871,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			//fflush(stdout);
 
 			continue;
+
 		} /* End of "for(j = 0; j < nb_of_symbols; j++) {" */
 	}
 	else { /* We have an empty packet with FEC Payload ID */
@@ -2975,6 +2991,7 @@ unsigned long long recv_packet(alc_session_t* s) {
 	unsigned long long curr_time;
 	unsigned long long toi;
 	char str[16];
+	char stra[16];
 	char* rplcval;
 
 
@@ -3203,9 +3220,17 @@ unsigned long long recv_packet(alc_session_t* s) {
 
 						// Update new File URI with found TOI
 						if (ls->toi != toi && ls->rt == TRUE ) {
+							sprintf(stra, "%lld", s->tsi);
 							sprintf(str, "%lld", lct_file->toi);
-							sprintf(lct_file->location, "%s", ls->fileTemplate);  // This is from AFDT and copyied to lct_file.location
-							rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+							if (ls->fileTemplate != NULL) {
+								sprintf(lct_file->location, "%s", ls->fileTemplate);  // This is from AFDT and copyied to lct_file.location
+								rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+							}
+							else {
+								sprintf(lct_file->location, "%s", "$TSI$_$TOI$");  // If fileTemplate is not in AFDT, just use TSI_TOI
+								rplcval = str_replace(lct_file->location, 64, "$TSI$", stra);  // This goes to lct_file.location
+								rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+							}
 							if (!rplcval)
 								printf("Not enough room to replace $TOI$ with `%lld'\n", lct_file->toi);
 							if (s->verbosity == 4) {
@@ -3424,6 +3449,8 @@ void* rx_socket_thread(void *ch) {
 			if(!(container = (alc_rcv_container_t*)calloc(1, sizeof(alc_rcv_container_t)))) {
 				printf("Could not alloc memory for container! %d\n", sizeof(container));
 				fflush(stdout);
+
+				//return 0;
 				continue;
 			}
 
@@ -3442,10 +3469,13 @@ void* rx_socket_thread(void *ch) {
 
 			if (container->recvlen == 0) {
 				printf("connection closed\n"); fflush(stdout);
-				continue; // Tolerate packet loss
+
+				return 0;
+				//continue;
 			}
 			else if (container->recvlen < 0) {
 				printf("recv failed\n"); fflush(stdout);
+
 				continue; // Tolerate packet loss
 			}
 			//Malek El Khatib 12.05.2014
@@ -3471,8 +3501,6 @@ void* rx_socket_thread(void *ch) {
 
 			getnameinfo((struct sockaddr*)&(container->from), container->fromlen,
 				hostname, sizeof(hostname), NULL, 0, NI_NUMERICHOST);
-			//Sleep(1);
-			//printf("."); fflush(stdout);	// Just a monitor to test connection
 				
 			if (strcmp(channel->s->src_addr, "") != 0) {
 
@@ -3486,6 +3514,8 @@ void* rx_socket_thread(void *ch) {
 					printf("Freeing recv container due to wrong source address\n");
 					free(container);
 					//End
+
+					//return 0;
 					continue;
 				}
 			}
@@ -3534,6 +3564,7 @@ void* rx_socket_thread(void *ch) {
 			//close_alc_channel(channel, channel->s);
 			//close_alc_session(channel->s->s_id);
 
+			//return 0;
 			continue; // Tolerate some packet loss past timer of Select command
 		}
 
@@ -3639,6 +3670,11 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 			}
 
 			if(to == NULL) {
+#ifdef _MSC_VER
+				Sleep(1);
+#else
+				usleep(1000);
+#endif
 				continue;
 			}
 		}
@@ -3654,11 +3690,6 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 
 		continue;
 
-#ifdef _MSC_VER
-		//Sleep(1);
-#else
-		//usleep(1000);
-#endif
 	}
 
 	remove_wanted_object(s_id, toi);
@@ -3949,7 +3980,6 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		else {
 			continue;
 		}
-		//continue;
 
 	}
 	if (s->verbosity == 4) {
