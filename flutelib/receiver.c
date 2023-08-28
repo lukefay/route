@@ -729,9 +729,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		  }
 	  
 #ifdef _MSC_VER
-		  //Sleep(1);
+		  Sleep(1);
 #else
-		  //usleep(1000);
+		  usleep(1000);
 #endif
 		  //continue;
 		}
@@ -1077,7 +1077,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	}
 	
 	// MIME Parse the SLS
-	if (strcmp(file->location, "SLS") == 0) {
+	if ((strcmp(file->location, "SLS") == 0) || (strcmp(file->location, "sls") == 0)) {
 		printf("Parse the SLS at %s\n", session_basedir);
 		fflush(stdout);
 
@@ -1113,9 +1113,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//END Malek El Khatib
 
 #ifdef _MSC_VER
-    //Sleep(1);
+    Sleep(1);
 #else
-    //usleep(1000);
+    usleep(1000);
 #endif
 
 	printf("FDTbasedRx End\n\n");
@@ -1171,9 +1171,9 @@ int receiver_in_fdt_based_mode(arguments_t *a, flute_receiver_t *receiver) {
     }
 
 #ifdef _MSC_VER
-    //Sleep(1);
+    Sleep(1);
 #else
-    //usleep(1000);
+    usleep(1000);
 #endif
 
     continue;
@@ -1635,7 +1635,7 @@ void* fdt_thread(void *s) {
 	  fdt_instance->max_sb_len=           efdt_instance->max_sb_len;
 	  fdt_instance->es_len=               efdt_instance->es_len;
 	  fdt_instance->max_nb_of_es=         efdt_instance->max_nb_of_es;
-	  fdt_instance->complete =			  efdt_instance->complete = TRUE;  // There is only one EFDT for SLS in ROUTE
+	  fdt_instance->complete =			  efdt_instance->complete = TRUE;
 
 	  receiver->fdt = fdt_instance;
 	  receiver->efdt = efdt_instance;
@@ -1749,7 +1749,7 @@ void* fdt_thread(void *s) {
 	  }
 
 	  set_fdt_instance_parsed(receiver->s_id);
-	  
+
 	  //printf("FDT Instance parsed\n\n");
 	  //fflush(stdout);
 	}
@@ -2166,11 +2166,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					is_printed = TRUE;
 				}
 
-#ifdef _MSC_VER
-				Sleep(1);
-#else
-				usleep(1000);
-#endif
 				continue;
 			}
 		}

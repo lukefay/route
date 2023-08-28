@@ -126,6 +126,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//printf("found RS\n");
 			//fflush(stdout);
 
+			if (!is_first_addr && strcmp(*atts, "dPort")) rs = NULL;
+
 			if (rs == NULL) {
 				if (!(rs = (route_t*)calloc(1, sizeof(route_t)))) {
 					printf("Could not alloc memory for S-TSID LCT channel!\n");
@@ -137,13 +139,25 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				rs->next = NULL;
 				rs->sIpAddr = NULL;
 				rs->dIpAddr = NULL;
-				rs->dPort = 0;
+				rs->dPort = NULL;
 
 				stsid->nb_of_rs++;
 
+				if (is_first_addr) {
+					stsid->rs_list = rs;
+					is_first_addr = FALSE;
+				}
+				else {
+					prev_rs->next = rs;
+					rs->prev = prev_rs;
+				}
+
+				prev_rs = rs;
 			}
 
 			if (!strcmp(*atts, "sIpAddr")) {
+				//printf("found sIPAddr\n");
+				//fflush(stdout);
 
 				atts++;
 
@@ -177,6 +191,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "dIpAddr")) {
+				//printf("found dIpAddr\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -193,34 +210,32 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 
-				memcpy(rs->sIpAddr, mbstr, strlen(mbstr));
+				memcpy(rs->dIpAddr, mbstr, strlen(mbstr));
 				free(mbstr);
 			}
 			else if (!strcmp(*atts, "dPort")) {
+				//printf("found dPort\n");
+				//fflush(stdout);
 
-#ifdef _MSC_VER     
-				rs->dPort = atoi(*(++atts));
+				atts++;
 
-				if (rs->dPort > (unsigned int)0xFFFFFFFF) {
-					printf("Destination Port too big for unsigned int (32 bits)\n");
-					fflush(stdout);
-					return;
-				}
-#else               
-				rs->dPort = strtoul(*(++atts), &ep, 10);
-
-				if (*(atts) == '\0' || *ep != '\0') {
-					printf("Destination Port not a number\n");
+				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for mbstr!\n");
 					fflush(stdout);
 					return;
 				}
 
-				if (errno == ERANGE && stsid->rs->dPort == 0xFFFFFFFF) {
-					printf("Destination Port too big for unsigned int (32 bits)\n");
+				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+
+				if (!(rs->dPort = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for Destination IP Port!\n");
 					fflush(stdout);
 					return;
 				}
-#endif
+
+				memcpy(rs->dPort, mbstr, strlen(mbstr));
+				free(mbstr);
+
 			}
 			else {
 				atts++;
@@ -247,12 +262,13 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 						return;
 					}
 
+					//printf("No attributes found in S-TSID RS element\n"); fflush(stdout);
 					/* initialize ROUTE Session parameters if there were no RS attributes */
 					rs->prev = NULL;
 					rs->next = NULL;
 					rs->sIpAddr = NULL;
 					rs->dIpAddr = NULL;
-					rs->dPort = 0;
+					rs->dPort = NULL;
 
 					stsid->nb_of_rs++;
 
@@ -396,6 +412,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "startTime")) {
+				//printf("found startTime\n");
+				//fflush(stdout);
 
 				atts++;
 

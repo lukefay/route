@@ -195,7 +195,7 @@ typedef struct route {
 
 	char *sIpAddr;				/**< Source IP address */
 	char *dIpAddr;				/**< Destination IP address */
-	unsigned int dPort;			/**< Destination IP port */
+	char *dPort;				/**< Destination IP port */
 	lct_ch_t *lct_list;			/**< List of LCT Channels per ROUTE Session */
 	unsigned int nb_of_ls;		/**< number of LCT Channels per ROUTE Session */
 } route_t;

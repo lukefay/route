@@ -1287,7 +1287,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		free(stsid_buf);
 
 		if (a->alc_a.verbosity == 4) {
-			printf("S-TSID received with %d ROUTE Session(s) and %d LCT Channel(s)\n", stsid->nb_of_rs, stsid->rs_list->nb_of_ls);
+			printf("S-TSID received with %d ROUTE Session(s)\n", stsid->nb_of_rs);
 			fflush(stdout);
 			Printstsid(stsid);
 		}
@@ -1295,6 +1295,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 	}
 	
 	// NOW LAUNCH LCT CHANNELS (ALC SESSIONS)
+	route_t* next_stsid_rs;
+	route_t* stsid_rs; 
 	lct_ch_t* next_stsid_lct;
 	lct_ch_t* stsid_lct;
 	fdt_t* lct_fdt;
@@ -1308,206 +1310,217 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 	int updated;
 	char* buf = NULL;
+	unsigned int rs_cnt = 0;
 	
+	// Point to first items of structures
+	next_stsid_rs = stsid->rs_list;
 	next_stsid_lct = stsid->rs_list->lct_list;
-
+	
 	// SAVE this code for backup: Multi-ALC-SESSION (with THREADs)
-	while (next_stsid_lct != NULL) { // Start all other LCT Channels listed in S-TSID
-		stsid_lct = next_stsid_lct;
+	while (next_stsid_rs != NULL) {
+		stsid_rs = next_stsid_rs;
 
-		// OPEN LCT channel with TSI from TSID
-		*s_id = read_alc_session(&a->alc_a, stsid_lct->tsi);
-		s = get_alc_session(*s_id);
-		//printf("session id: %d\n", *s_id);
-		//fflush(stdout);
-		s->max_channel = MAX_CHANNELS_IN_SESSION - 1;
+		printf("RS dIpAddr: %s\tdPort: %s\tLCT channels: %d\n", stsid_rs->dIpAddr, stsid_rs->dPort, stsid_rs->nb_of_ls); fflush(stdout);
+		for(rs_cnt = 0; rs_cnt < stsid_rs->nb_of_ls; rs_cnt++) {	// Start LCT Channels listed per ROUTE SESSION
+			stsid_lct = next_stsid_lct;
 
-		// Add LCT Channel to ROUTE Session
-		retval = add_alc_channel(s->s_id, stsid_lct->tsi, ports[0], addrs[0], a->alc_a.intface, a->alc_a.intface_name);
-		//printf("added ALC channel: %d\n", retval);
-		//fflush(stdout);
+			// OPEN LCT channel with TSI from TSID
+			*s_id = read_alc_session(&a->alc_a, stsid_lct->tsi);
+			s = get_alc_session(*s_id);
+			//printf("session id: %d\n", *s_id);
+			//fflush(stdout);
+			s->max_channel = MAX_CHANNELS_IN_SESSION - 1;
 
-		if (retval == -1) {
-			printf("Could not add LCT channel, CLOSING SESSION\n");
-			fflush(stdout);
-			close_alc_session(*s_id);
-			return -1;
-		}
-
-		ch = s->ch_list[0];	// This code has 1:1 relation betweeen CHANNEL and ALC SESSION
-		//printf("New Channel ch_id: %d\n", ch->ch_id);
-		//fflush(stdout);
-
-		s->ls = stsid_lct;  // Tie each session's channel to S-TSID channel listing
-		s->ls->fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create memory for this channel FDT
-		s->ls->fdt->file_list = (file_t*)calloc(1, sizeof(file_t));
-
-		lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create local copy of the S-TSID FDT
-		lct_file = (file_t*)calloc(1, sizeof(file_t));
-
-		// Add next FDT with default value from S-TSID		
-		if (lct_fdt != NULL) {
-			//printf("fill in fdt\n");
+			// Add LCT Channel to ROUTE Session
+			if (stsid_rs->dIpAddr != NULL) retval = add_alc_channel(s->s_id, stsid_lct->tsi, stsid_rs->dPort, stsid_rs->dIpAddr, a->alc_a.intface, a->alc_a.intface_name);
+			else retval = add_alc_channel(s->s_id, stsid_lct->tsi, ports[0], addrs[0], a->alc_a.intface, a->alc_a.intface_name);
+			//printf("added ALC channel: %d\n", retval);
 			//fflush(stdout);
 
-			lct_fdt->expires = stsid_lct->expires;
-			//fdt->version = stsid_lct->efdtVersion;
-			//fdt->maxExpiresDelta = stsid_lct->maxExpiresDelta;
-			//fdt->maxTransportSize = stsid_lct->maxTransportSize;
-			lct_fdt->type = stsid_lct->type;
-			lct_fdt->file_list = lct_file;  // Start with Initialization Segment file
-			lct_fdt->complete = stsid_lct->complete;
-			lct_fdt->fec_enc_id = stsid_lct->fec_enc_id;
-			lct_fdt->fec_inst_id = stsid_lct->fec_inst_id;
-			lct_fdt->finite_field = stsid_lct->finite_field;
-			lct_fdt->nb_of_es_per_group = stsid_lct ->nb_of_es_per_group;
-			lct_fdt->max_sb_len = stsid_lct->max_sb_len;
-			lct_fdt->es_len = stsid_lct->es_len;
-			lct_fdt->max_nb_of_es = stsid_lct->max_nb_of_es;
-			lct_fdt->nb_of_files = stsid_lct->nb_of_files;
-			lct_fdt->encoding = stsid_lct->encoding;
+			if (retval == -1) {
+				printf("Could not add LCT channel, CLOSING SESSION\n");
+				fflush(stdout);
+				close_alc_session(*s_id);
+				return -1;
+			}
+
+			ch = s->ch_list[0];	// This code has 1:1 relation betweeen CHANNEL and ALC SESSION
+			//printf("New Channel ch_id: %d\n", ch->ch_id);
+			//fflush(stdout);
+
+			s->ls = stsid_lct;  // Tie each session's channel to S-TSID channel listing
+			s->ls->fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create memory for this channel FDT
+			s->ls->fdt->file_list = (file_t*)calloc(1, sizeof(file_t));
+
+			lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create local copy of the S-TSID FDT
+			lct_file = (file_t*)calloc(1, sizeof(file_t));
+
+			// Add next FDT with default value from S-TSID		
+			if (lct_fdt != NULL) {
+				//printf("fill in fdt\n");
+				//fflush(stdout);
+
+				lct_fdt->expires = stsid_lct->expires;
+				//fdt->version = stsid_lct->efdtVersion;
+				//fdt->maxExpiresDelta = stsid_lct->maxExpiresDelta;
+				//fdt->maxTransportSize = stsid_lct->maxTransportSize;
+				lct_fdt->type = stsid_lct->type;
+				lct_fdt->file_list = lct_file;  // Start with Initialization Segment file
+				lct_fdt->complete = stsid_lct->complete;
+				lct_fdt->fec_enc_id = stsid_lct->fec_enc_id;
+				lct_fdt->fec_inst_id = stsid_lct->fec_inst_id;
+				lct_fdt->finite_field = stsid_lct->finite_field;
+				lct_fdt->nb_of_es_per_group = stsid_lct ->nb_of_es_per_group;
+				lct_fdt->max_sb_len = stsid_lct->max_sb_len;
+				lct_fdt->es_len = stsid_lct->es_len;
+				lct_fdt->max_nb_of_es = stsid_lct->max_nb_of_es;
+				lct_fdt->nb_of_files = stsid_lct->nb_of_files;
+				lct_fdt->encoding = stsid_lct->encoding;
 				
-			//printf("fill in lct_file\n");
-			//fflush(stdout);
-			lct_file->toi = stsid_lct->toi;
-			lct_file->status = stsid_lct->status;
-			lct_file->transfer_len = stsid_lct->maxTransportSize;
-			lct_file->content_len = stsid_lct->content_len;
-			lct_file->location = stsid_lct->location;
-			lct_file->md5 = stsid_lct->md5;
-			lct_file->type = stsid_lct->type;
-			lct_file->encoding = stsid_lct->encoding;
-			lct_file->expires = stsid_lct->expires;
+				//printf("fill in lct_file\n");
+				//fflush(stdout);
+				lct_file->toi = stsid_lct->toi;
+				lct_file->status = stsid_lct->status;
+				lct_file->transfer_len = stsid_lct->maxTransportSize;
+				lct_file->content_len = stsid_lct->content_len;
+				lct_file->location = stsid_lct->location;
+				lct_file->md5 = stsid_lct->md5;
+				lct_file->type = stsid_lct->type;
+				lct_file->encoding = stsid_lct->encoding;
+				lct_file->expires = stsid_lct->expires;
 
-			lct_file->fec_enc_id = stsid_lct->fec_enc_id;
-			lct_file->fec_inst_id = stsid_lct->fec_inst_id;
-			lct_file->finite_field = stsid_lct->finite_field;
-			lct_file->nb_of_es_per_group = stsid_lct->nb_of_es_per_group;
-			lct_file->max_sb_len = stsid_lct->max_sb_len;
-			lct_file->es_len = stsid_lct->es_len;
-			lct_file->max_nb_of_es = stsid_lct->max_nb_of_es;
-		}
+				lct_file->fec_enc_id = stsid_lct->fec_enc_id;
+				lct_file->fec_inst_id = stsid_lct->fec_inst_id;
+				lct_file->finite_field = stsid_lct->finite_field;
+				lct_file->nb_of_es_per_group = stsid_lct->nb_of_es_per_group;
+				lct_file->max_sb_len = stsid_lct->max_sb_len;
+				lct_file->es_len = stsid_lct->es_len;
+				lct_file->max_nb_of_es = stsid_lct->max_nb_of_es;
+			}
 
-		s->fdt_instance_id = (long)stsid_lct->toi;
+			s->fdt_instance_id = (long)stsid_lct->toi;
 		
-		// Add another FDT for new found file
-		set_fdt_instance_id(s->s_id, s->fdt_instance_id);
-		set_received_instance(s, s->fdt_instance_id);  // FDT is already in S-TSID
+			// Add another FDT for new found file
+			set_fdt_instance_id(s->s_id, s->fdt_instance_id);
+			set_received_instance(s, s->fdt_instance_id);  // FDT is already in S-TSID
 
-		// Load FDT			
-		updated = load_fdt(s->ls->fdt, lct_fdt);
-		//printf("updated: %d\n", updated);
-		//fflush(stdout);
+			// Load FDT			
+			updated = load_fdt(s->ls->fdt, lct_fdt);
+			//printf("updated: %d\n", updated);
+			//fflush(stdout);
 
-		if (updated < 0) {
-			printf("First FDT not updated, error...\n");
-			fflush(stdout);
-		}
-		else if (updated == 1) {
-			if (s->verbosity == 4) {
-				printf("First FDT updated, file description(s) complemented\n");
+			if (updated < 0) {
+				printf("First FDT not updated, error...\n");
 				fflush(stdout);
 			}
-		}
-		else if (updated == 2) {
-			if (s->verbosity == 4) {
-				//printf("First FDT updated, new file description(s) added\n");
-				//fflush(stdout);
-				//PrintFDT(s->ls->fdt, s->s_id);
-				//PrintFDT(fdt, s->s_id);
-				//PrintFDT(ls->fdt, s->s_id);
-				PrintFDT(stsid_lct->fdt, s->s_id);
+			else if (updated == 1) {
+				if (s->verbosity == 4) {
+					printf("First FDT updated, file description(s) complemented\n");
+					fflush(stdout);
+				}
 			}
-
-			//next_file = s->ls->fdt->file_list;
-			//next_file = ls->fdt->file_list;
-			next_file = stsid_lct->fdt->file_list;  // Reference the S-TSID File list to load local copy
-
-			while (next_file != NULL) {
-				lct_file = next_file;
-
-				if (lct_file->status == 0) {
-
-					if (lct_file->encoding == NULL) {
-						content_enc_algo = 0;
-					}
-					else {
-						if (strcmp(lct_file->encoding, "pad") == 0) {
-							content_enc_algo = PAD;
-						}
-#ifdef USE_ZLIB
-						else if (strcmp(lct_file->encoding, "gzip") == 0) {
-							content_enc_algo = GZIP;
-						}
-#endif
-						else {
-							printf("Content-Encoding: %s not supported\n", lct_file->encoding);
-							fflush(stdout);
-							lct_file->status = 2;
-							next_file = lct_file->next;
-							continue;
-						}
-					}
-
-					retval = set_wanted_object(s->s_id, lct_file->toi, lct_file->transfer_len,
-						lct_file->es_len,
-						lct_file->max_sb_len,
-						lct_file->fec_inst_id,
-						lct_file->fec_enc_id,
-						lct_file->max_nb_of_es, content_enc_algo,
-						lct_file->finite_field, lct_file->nb_of_es_per_group
-					);
-
-					if (retval < 0) {
-						// Memory error
-					}
-					else {
-						lct_file->status = 1;
-					}
+			else if (updated == 2) {
+				if (s->verbosity == 4) {
+					//printf("First FDT updated, new file description(s) added\n");
+					//fflush(stdout);
+					//PrintFDT(s->ls->fdt, s->s_id);
+					//PrintFDT(fdt, s->s_id);
+					//PrintFDT(ls->fdt, s->s_id);
+					PrintFDT(stsid_lct->fdt, s->s_id);
 				}
 
-				next_file = lct_file->next;
+				//next_file = s->ls->fdt->file_list;
+				//next_file = ls->fdt->file_list;
+				next_file = stsid_lct->fdt->file_list;  // Reference the S-TSID File list to load local copy
 
+				while (next_file != NULL) {
+					lct_file = next_file;
+
+					if (lct_file->status == 0) {
+
+						if (lct_file->encoding == NULL) {
+							content_enc_algo = 0;
+						}
+						else {
+							if (strcmp(lct_file->encoding, "pad") == 0) {
+								content_enc_algo = PAD;
+							}
+	#ifdef USE_ZLIB
+							else if (strcmp(lct_file->encoding, "gzip") == 0) {
+								content_enc_algo = GZIP;
+							}
+	#endif
+							else {
+								printf("Content-Encoding: %s not supported\n", lct_file->encoding);
+								fflush(stdout);
+								lct_file->status = 2;
+								next_file = lct_file->next;
+								continue;
+							}
+						}
+
+						retval = set_wanted_object(s->s_id, lct_file->toi, lct_file->transfer_len,
+							lct_file->es_len,
+							lct_file->max_sb_len,
+							lct_file->fec_inst_id,
+							lct_file->fec_enc_id,
+							lct_file->max_nb_of_es, content_enc_algo,
+							lct_file->finite_field, lct_file->nb_of_es_per_group
+						);
+
+						if (retval < 0) {
+							// Memory error
+						}
+						else {
+							lct_file->status = 1;
+						}
+					}
+
+					next_file = lct_file->next;
+
+				}
 			}
-		}
 
-		set_fdt_instance_parsed(s->s_id);
+			set_fdt_instance_parsed(s->s_id);
 
-		// Create LCT Channel receiving threads
-#ifdef _MSC_VER
-		s->handle_lct_thread =
-			(HANDLE)_beginthreadex(NULL, 0, (void*)channel_file_mode_thread, ch, 0, &s->lct_thread_id);
-		if (s->handle_lct_thread == NULL) {
-			printf("Error: flute_session: LCT Thread, _beginthread\n");
-			fflush(stdout);
-			close_alc_session(s->s_id);
-			return -1;
-		}
-#else
-		//MALEK EL KHATIB 07.05.2014...JUST A COMMENT: IT COMES HERE TO START RECEIVING FDT INSTANCES
-		if (pthread_create(&lct_thread_id, NULL, channel_file_mode_thread, ch) != 0) {
-			printf("Error: flute_receiver, pthread_create\n");
+			// Create LCT Channel receiving threads
+	#ifdef _MSC_VER
+			s->handle_lct_thread =
+				(HANDLE)_beginthreadex(NULL, 0, (void*)channel_file_mode_thread, ch, 0, &s->lct_thread_id);
+			if (s->handle_lct_thread == NULL) {
+				printf("Error: flute_session: LCT Thread, _beginthread\n");
 				fflush(stdout);
 				close_alc_session(s->s_id);
 				return -1;
+			}
+	#else
+			//MALEK EL KHATIB 07.05.2014...JUST A COMMENT: IT COMES HERE TO START RECEIVING FDT INSTANCES
+			if (pthread_create(&lct_thread_id, NULL, channel_file_mode_thread, ch) != 0) {
+				printf("Error: flute_receiver, pthread_create\n");
+					fflush(stdout);
+					close_alc_session(s->s_id);
+					return -1;
+			}
+			//pthread_join
+	#endif
+			if (a->alc_a.verbosity == 4) {
+				printf("Creating File based ALC receiving thread %d to receive incoming packets\n", s->lct_thread_id);
+					fflush(stdout);
+			}
+
+	#ifdef _MSC_VER
+			Sleep(1);
+	#else
+			usleep(1000);
+	#endif
+
+			next_stsid_lct = stsid_lct->next;
+
 		}
-		//pthread_join
-#endif
-		if (a->alc_a.verbosity == 4) {
-			printf("Creating File based ALC receiving thread %d to receive incoming packets\n", s->lct_thread_id);
-				fflush(stdout);
-		}
 
-#ifdef _MSC_VER
-		Sleep(1);
-#else
-		usleep(1000);
-#endif
-
-		next_stsid_lct = stsid_lct->next;
-
+		next_stsid_rs = stsid_rs->next;
 	}
-	
+
 	s = get_alc_session(receiver.s_id);
 	if (s->verbosity == 4) {
 		printf("ADDED ALL CHANNELS\n");
