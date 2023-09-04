@@ -117,27 +117,30 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 	}
 
 	tmp = start_search;
-	//printf("start search retrieve unit");
+	//printf("start search retrieve unit\n");
 	//fflush(stdout);
 	while(tmp != NULL ) { 
 		if(tmp->u.used == 0) {
-
+			//printf("start search is zero\n"); fflush(stdout);
 			//Malek El Khatib 12.08.2014
-			if (numEncSymbPerPacket != 0)
+			if (numEncSymbPerPacket != 0)	//numEncSymbPerPacket = 0 means that it is varying with each packet
 			{//END
+				//printf("# symbols varies per packet length %i\n", tmp->u.len); fflush(stdout);
 				if(tmp->u.len < es_len) {
-					continue;
+					break;
+					//continue;
 				}
 			}
-
+			//printf("# symbols consistent across packets %i\n", tmp->u.len); fflush(stdout);
 			tmp->u.used = 1;
 			s->last_given = tmp;
             assert(tmp->u.data != NULL);
 			return &(tmp->u);
 		}
+		//printf("start search is NULL\n"); fflush(stdout);
 		tmp = tmp->next;
 	}
-	//printf("continue search"); fflush(stdout);
+	//printf("continue search\n"); fflush(stdout);
 
 	tmp = s->unit_pool;
 	while(tmp != start_search) {    
@@ -165,7 +168,7 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
 		continue;
 	}
-	//printf("save container"); fflush(stdout);
+	//printf("save container\n"); fflush(stdout);
 
 	if(!(container = (trans_unit_container_t*)calloc(1, sizeof(trans_unit_container_t)))) {
 		printf("Could not alloc memory for a transport unit container!\n");

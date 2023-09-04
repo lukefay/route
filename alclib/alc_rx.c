@@ -1314,12 +1314,19 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	}
 
 	if (def_lct_hdr->psi != 2) {
-		// Original field was reserved at 0 which indicates FLUTE, not A/331 ROUTE
-		printf("PSI field not indicating Source Flow!, found %i\n", def_lct_hdr->psi);
-		fflush(stdout);
-		unlock_lct_header();
+		// First test for Source Flow
+		//printf("PSI field not indicating Source Flow!, found %i\n", def_lct_hdr->psi);
+		//fflush(stdout);
+		// Then test for Repair Flow
+		if (def_lct_hdr->psi != 0) {
+			printf("PSI field not indicating Source Flow or Repair Flow!, found %i\n", def_lct_hdr->psi);
+			fflush(stdout);
 
-		return HDR_ERROR;
+			unlock_lct_header();
+
+			return HDR_ERROR;
+		}
+
 	}
 
 	if(def_lct_hdr->reserved != 0) {
@@ -2106,7 +2113,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			}
 
 			// Update new File URI with found TOI
-			if (lsl->toi != toi && lsl->rt == TRUE) { // Source Flow realtime streaming file mode increments TOI
+			if (lsl->toi != toi) { // Source Flow realtime streaming file mode increments TOI
 				sprintf(stra, "%lld", ch->s->tsi);
 				sprintf(str, "%lld", lct_file->toi);
 				if (lsl->fileTemplate != NULL) {
@@ -2264,7 +2271,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 		/* check if we have enough information to perform FEC */
 		// REPAIR FLOW requires Encoded Symbol count and Source Block numbers, but SOURCE FLOW does not.
-		if(def_lct_hdr->psi != 2 && ((transfer_len == 0) || (fec_enc_id == -1) || ((fec_enc_id > 127) && (fec_inst_id == -1)) ||
+		if(def_lct_hdr->psi == 0 && ((transfer_len == 0) || (fec_enc_id == -1) || ((fec_enc_id > 127) && (fec_inst_id == -1)) ||
 			(es_len == 0) || (max_sb_len == 0))) {
 			if (ch->s->verbosity == 4) {
 				printf("Not enough information to create Repair Flow Transport Object, TOI: %llu in TSI: %llu\tFEC encoding ID: %i\n", toi, tsi, fec_enc_id);
@@ -2309,8 +2316,10 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 
 		/* Now we have to go through each symbol */
-		//printf("Payload: %i\t#Symbols: %i\t#Iterations: %i\tFEC EncId: %i\n", len - hdrlen, nb_of_symbols, nb_of_iterations, fec_enc_id);
-		//fflush(stdout);
+		if (ch->s->verbosity == 4) {
+			printf("Payload: %i\tSymbol Length: %i\t#Symbols: %i\t#Iterations: %i\tFEC EncId: %i\n", len - hdrlen, es_len, nb_of_symbols, nb_of_iterations, fec_enc_id);
+			fflush(stdout);
+		}
 
 
 		//for(j = 0; j < nb_of_symbols; j++) {
@@ -2332,7 +2341,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				}
 				else if (ch->s->addr_family == PF_INET6) //NOT TESTED
 					trans_unit = retrieve_unit(ch->s, (unsigned short)MAX_SYMB_LENGTH_IPv6_FEC_ID_0_3_130);
-			}			
+			}
 			else trans_unit = retrieve_unit(ch->s, es_len);
 
 #else
@@ -2361,7 +2370,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				trans_unit->len = (unsigned short)(len - hdrlen);
 			else
 				trans_unit->len = es_len;
-				//trans_unit->len = (unsigned short)(len - hdrlen);
 
 			//END
 			//printf("tranport unit length: %d\n", trans_unit->len);
@@ -2406,6 +2414,10 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				}
 
 				if(toi == FDT_TOI) {
+					if (ch->s->verbosity == 4) {
+						printf("FDT TOI: %i\t FEC algorithm: %i\t for filename:%s\n", fdt_instance_id, content_enc_algo, trans_obj->tmp_filename);
+						fflush(stdout);
+					}
 					trans_obj->toi = fdt_instance_id;
 					trans_obj->content_enc_algo = content_enc_algo;
 				}
@@ -2529,6 +2541,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				// For ROUTE SRC_FLOW keep the number of Source blocks ready, as N is only available at Start Offset == 0 -- Luke Fay
 				trans_obj->bs->N = nb_of_iterations;
+				//trans_obj->bs->N = 1;
 
 				if(!(trans_obj->block_list = (trans_block_t*)calloc(trans_obj->bs->N, sizeof(trans_block_t)))) {
 					printf("Could not alloc memory for transport block list!\n");
@@ -2785,7 +2798,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 						/* decode the block and save data to the tmp file */
 						//printf("FEC ENC ID: %d with eslen %d\n", fec_enc_id, es_len); fflush(stdout);
-						//printf("FEC ENC ID: %d with eslen %lld\n", fec_enc_id, transfer_len); fflush(stdout);
+						//printf("FEC ENC ID: %d with xfer len %lld\n", fec_enc_id, transfer_len); fflush(stdout);
 
 						if(fec_enc_id == COM_NO_C_FEC_ENC_ID) {
 							//buf = null_fec_decode_src_block(trans_block, &block_len, es_len);	// This is for FLUTE
@@ -2872,9 +2885,9 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 			continue;
 
-		} /* End of "for(j = 0; j < nb_of_symbols; j++) {" */
+		} 
 	}
-	else { /* We have an empty packet with FEC Payload ID */
+	else { // We have an empty packet with FEC Payload ID
 		unlock_lct_header();
 
 		return EMPTY_PACKET;	
@@ -3121,7 +3134,6 @@ unsigned long long recv_packet(alc_session_t* s) {
 				}
 				else if (retval == WAITING_FDT) {
 
-					//Sleep(1); // Sleep 1 msec
 					//Malek El Khatib 16.07.2014
 					// 
 					//Start
@@ -3450,7 +3462,6 @@ void* rx_socket_thread(void *ch) {
 				printf("Could not alloc memory for container! %d\n", sizeof(container));
 				fflush(stdout);
 
-				//return 0;
 				continue;
 			}
 
@@ -3516,7 +3527,7 @@ void* rx_socket_thread(void *ch) {
 					//End
 
 					//return 0;
-					continue;
+					//continue;
 				}
 			}
 			else { // (strcmp(channel->s->src_addr, "") == 0) {
@@ -3564,7 +3575,6 @@ void* rx_socket_thread(void *ch) {
 			//close_alc_channel(channel, channel->s);
 			//close_alc_session(channel->s->s_id);
 
-			//return 0;
 			continue; // Tolerate some packet loss past timer of Select command
 		}
 
@@ -3616,7 +3626,7 @@ void* rx_thread(void *s) {
 		}
 		else {
 #ifdef _MSC_VER
-			Sleep(1);
+			Sleep(1);	// Allow process to be interrupted
 #else
 			usleep(1000);
 #endif
@@ -4037,7 +4047,7 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			if(to == NULL) {
 
 #ifdef _MSC_VER
-				Sleep(1);	// This sleep helps reduce CPU usage, and SLS is once per second anyway
+				Sleep(1);	// This sleep helps reduce CPU usage
 				//printf("NO FDT LIST in session %d\n", s_id);
 				//fflush(stdout);
 #else
