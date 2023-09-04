@@ -1368,8 +1368,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 		// REPAIR FLOW
 		else if (!strcmp(name, "SourceTOI")) {
-			//printf("found SourceTOI\n");
-			//fflush(stdout);
+			printf("found SourceTOI\n");
+			fflush(stdout);
 
 			if (srctoi == NULL) {
 
@@ -1482,6 +1482,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			}
 
 			if (!strcmp(*atts, "sessionDescription")) {
+				//printf("found ProtectedObject sessionDescription\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -1514,7 +1517,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "tsi")) {
-
+				//printf("found ProtectedObject TSI\n");
+				//fflush(stdout);
 #ifdef _MSC_VER     
 				obj->objecttsi = atoi(*(++atts));
 
@@ -1643,7 +1647,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #endif
 			}
 			else if (!strcmp(*atts, "fecOTI")) {
-
+				//printf("found FECParameters fecOTI\n");
+				//fflush(stdout);
 #ifdef _MSC_VER     
 				lct->fecOTI = atoi(*(++atts));
 

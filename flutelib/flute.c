@@ -1196,6 +1196,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 		fclose(env_fp);
 
+		printf("Decoding MIME envelope\n"); fflush(stdout);
+
 		env = decode_env_payload(env_buf);
 		free(env_buf);
 
@@ -1526,9 +1528,24 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		printf("ADDED ALL CHANNELS\n");
 		fflush(stdout);
 	}
+
+	// Monitor FDT Thread for updates to files (SLS)
 	while (get_session_state(receiver.s_id) == SActive) {
-		// Just wait until first session (SLS) state is complete (checking every second)
-		Sleep(1000);
+
+		if (receiver.fdt->file_list != NULL) {
+			// Recover updated SLS
+			if (a->alc_a.verbosity == 4) {
+				printf("Updating files in first LCT Channel\n"); fflush(stdout);
+			}
+			retval = receiver_in_fdt_based_mode(a, &receiver);
+
+		}
+#ifdef _MSC_VER
+		Sleep(5);
+#else
+		usleep(5000);
+#endif
+		continue;
 	}
 
 	/*

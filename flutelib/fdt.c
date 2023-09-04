@@ -719,8 +719,8 @@ int update_fdt(fdt_t *fdt_db, fdt_t *instance) {
 		fdt_file = fdt_db->file_list;
 
 		for(;; fdt_file = fdt_file->next) {
-			//printf("File list TOI %llu (%s) of status %d\n", fdt_file->toi, fdt_file->location, fdt_file->status);
-			//fflush(stdout);
+			printf("File list TOI %llu (%s) of status %d\n", fdt_file->toi, fdt_file->location, fdt_file->status);
+			fflush(stdout);
 
 			if(tmp_file->toi == fdt_file->toi) {
 				//printf("First entry or already have this file\n");

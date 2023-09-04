@@ -683,8 +683,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
     i = 0;
     retcode = 0;
     toi = 0;
-    
-    if(rx_memory_mode == 0) {
+
+	if (rx_memory_mode == 0) {
       transfer_len = 0;
     }
 
@@ -694,7 +694,12 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 			fflush(stdout);
 	  }
       if(is_all_files_received) {
-	
+
+		 if (receiver->verbosity > 0) {
+			printf("ALL files received, waiting for new files\n");
+			fflush(stdout);
+		 }
+
 		if(receiver->fdt->complete) {
 
 		  if(any_files_received) {
@@ -702,9 +707,6 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 			  printf("All files received\n");
 			  fflush(stdout);
 			}
-
-			return 1;
-
 		  }
 		  else {
 			if(receiver->verbosity > 0) {
@@ -713,32 +715,32 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 			}
 		  }
 
-		  //continue;
-	
+		  return 1;
 		}
 		else {
 	
 		  if(((!is_printed) && (any_files_received))) {
 
 			if(receiver->verbosity > 0) {
-				printf("All files received, waiting for new files\n");
+				printf("ANY files received, waiting for new files\n");
 				fflush(stdout);
 			}
 	    
 			is_printed = TRUE;
+
 		  }
-	  
+
 #ifdef _MSC_VER
 		  Sleep(1);
 #else
 		  usleep(1000);
 #endif
-		  //continue;
+		  continue;
 		}
       }
     }
 
-    if(rx_memory_mode == 1 || rx_memory_mode == 2) {
+	if (rx_memory_mode == 1 || rx_memory_mode == 2) {
 		if (receiver->verbosity > 0) {
 			printf("Memory Mode is Medium(1) or Low(2), alc_recv3 for channel %i, TOI: %lli\tfile: %s\n", receiver->s_id, file->toi, file->location);
 			fflush(stdout);
@@ -752,10 +754,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       memcpy(tmp_filename, tmp_file_name, strlen(tmp_file_name));
       free(tmp_file_name);
 
-      next_file = receiver->fdt->file_list;
-      
       /* Find correct file structure, to get the file->location for file creation purpose */
-      
+      next_file = receiver->fdt->file_list;
       while(next_file != NULL) {
 		file = next_file;
 		if(file->toi == toi) {
@@ -778,13 +778,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		return retcode;
       }
 
-	  printf("Get updated Receiver.fdt now\n");
-	  fflush(stdout);
-
+	  /* Find correct file structure, to get the file->location for file creation purpose */
       next_file = receiver->fdt->file_list;
-
-      /* Find correct file structure, to get the file->location for file creation purpose */
-
       while(next_file != NULL) {
 		file = next_file;
 
@@ -797,7 +792,6 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       }
 
       /* open tmp file and write buffer to it */
-      
       memset(tmp_filename, 0, MAX_PATH_LENGTH);
       
       if(file->encoding == NULL) {
@@ -844,6 +838,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       free(buf);
       close(fd);
     }
+
+	printf("ALC RX returned\n"); fflush(stdout);
 
 	//Malek El Khatib 06.05.2014
 	//Start
@@ -1078,7 +1074,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	
 	// MIME Parse the SLS
 	if ((strcmp(file->location, "SLS") == 0) || (strcmp(file->location, "sls") == 0)) {
-		printf("Parse the SLS at %s\n", session_basedir);
+		printf("Parse the SLS at %s\n", fullpath);
 		fflush(stdout);
 
 		FILE* fp = fopen(fullpath, "rb");
@@ -1087,14 +1083,15 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 
 		// Clean up fullpath the way we found it
 		memcpy((fullpath + strlen(fullpath) - 4), "", 1);
+
 	}
-	
+
 	free_uri(uri);		
 	free(tmp);
 	free(filepath);
     
 	#ifdef _MSC_VER
-	if(openfile) {
+	if (openfile) {
 		ShellExecute(NULL, "Open", fullpath, NULL, NULL, SW_SHOWNORMAL);
 	}
 	#endif      
@@ -1113,12 +1110,12 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//END Malek El Khatib
 
 #ifdef _MSC_VER
-    Sleep(1);
+	Sleep(1);
 #else
-    usleep(1000);
+	usleep(1000);
 #endif
 
-	printf("FDTbasedRx End\n\n");
+	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
 	fflush(stdout);
 
   }
@@ -1126,89 +1123,83 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
   return 1;
 }
 
-int receiver_in_fdt_based_mode(arguments_t *a, flute_receiver_t *receiver) {
+int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 
-  int retval = 0;
-  int retcode = 0;
-  char *cont_desc = NULL;
- 
-  if(strcmp(a->sdp_file, "") != 0) {
-    cont_desc = sdp_attr_get(a->sdp, "content-desc");
-  }
+	int retval = 0;
+	int retcode = 0;
+	char* cont_desc = NULL;
 
-  if(a->rx_automatic) {
-    if(a->alc_a.verbosity > 0) {
-      printf("FLUTE Receiver in automatic mode\n");
-    }
-  }
-  else if(strchr(a->file_path, '*') != NULL) {
-    if(a->alc_a.verbosity > 0) {
-      printf("FLUTE Receiver in wild card mode\n");
-    }
-  }
-  else {
-    if(a->alc_a.verbosity > 0) {
-      printf("FLUTE Receiver in fileURI list mode\n");
-    }
-  }
-  
-  if(cont_desc != NULL) {
-    if(a->alc_a.verbosity > 0) {
-      printf("Session content information available at:\n");
-      printf("%s\n", cont_desc);
-    }
-  }
-  fflush(stdout);
+	if (strcmp(a->sdp_file, "") != 0) {
+		cont_desc = sdp_attr_get(a->sdp, "content-desc");
+	}
 
-  //Malek El Khatib.....JUST A COMMENT: THIS NEEDS TO BE MODIFIED TO ALLOW RECEPTION BEFORE FDT
-  while (receiver->fdt == NULL) {
+	if (a->rx_automatic) {
+		if (a->alc_a.verbosity > 0) {
+			printf("FLUTE Receiver in automatic mode\n");
+		}
+	}
+	else if (strchr(a->file_path, '*') != NULL) {
+		if (a->alc_a.verbosity > 0) {
+			printf("FLUTE Receiver in wild card mode\n");
+		}
+	}
+	else {
+		if (a->alc_a.verbosity > 0) {
+			printf("FLUTE Receiver in fileURI list mode\n");
+		}
+	}
 
-    if(get_session_state(receiver->s_id) == SExiting) {
-      return -2;
-    }
-    else if(get_session_state(receiver->s_id) == STxStopped) {
-      return -3;
-    }
+	if (cont_desc != NULL) {
+		if (a->alc_a.verbosity > 0) {
+			printf("Session content information available at:\n");
+			printf("%s\n", cont_desc);
+		}
+	}
+	fflush(stdout);
+
+	//Malek El Khatib.....JUST A COMMENT: THIS NEEDS TO BE MODIFIED TO ALLOW RECEPTION BEFORE FDT
+	while (receiver->fdt == NULL) {
+
+		if (get_session_state(receiver->s_id) == SExiting) {
+			return -2;
+		}
+		else if (get_session_state(receiver->s_id) == STxStopped) {
+			return -3;
+		}
 
 #ifdef _MSC_VER
-    Sleep(1);
+		Sleep(1);
 #else
-    usleep(1000);
+		usleep(1000);
 #endif
+		continue;
 
-    continue;
+	}
 
-  }
+	if (a->alc_a.verbosity == 4) {
+		printf("RX #FILES: %d\n", receiver->fdt->nb_of_files);
+		fflush(stdout);
+	}
+	
+	retcode = fdtbasedrecv(a->alc_a.rx_memory_mode,
+	#ifdef _MSC_VER
+			a->open_file,  // Boolean value if file is available
+	#else
+			0,
+	#endif
+			receiver);
 
-
-  //while (receiver->fdt->nb_of_files != 0) {
-  //while (receiver->file_uri_table != NULL) {
-	  printf("RX #FILES: %d\n", receiver->fdt->nb_of_files);
-	  fflush(stdout);
-
-	  retcode = fdtbasedrecv(a->alc_a.rx_memory_mode,
-#ifdef _MSC_VER
-		  a->open_file,  // Boolean value if file is available
-#else 
-		  0,
-#endif
-		  receiver);
-
-	  if (retcode == -1) {
-		  printf("Error: fdtbasedrecv() failed\n");
-		  fflush(stdout);
-		  retval = -1;
-	  }
-	  else if (retcode == -2) {
-		  retval = -2;
-	  }
-	  else if (retcode == -3) {
-		  retval = -3;
-	  }
-  //}
-
-  printf("Exit Rx in FDT based mode\n");
-  fflush(stdout);
+	if (retcode == -1) {
+		printf("Error: fdtbasedrecv() failed\n");
+		fflush(stdout);
+		retval = -1;
+	}
+	else if (retcode == -2) {
+		retval = -2;
+	}
+	else if (retcode == -3) {
+		retval = -3;
+	}
 
   return retval;
 }
@@ -1258,12 +1249,8 @@ int receiver_in_ui_mode(arguments_t *a, flute_receiver_t *receiver) {
 			return -3;
 		}
 
-#ifdef _MSC_VER
-		//Sleep(1);
-#else
-		//usleep(1000);
-#endif
 		continue;
+
 	}
 
 	while(1) {
@@ -1557,7 +1544,7 @@ void* fdt_thread(void *s) {
 
     /* Get initial fdt */
     if(receiver->fdt == NULL) { 
-		printf("get first EFDT at TSI:0, TOI:0\n");
+		printf("get first FDT at TSI:0, TOI:0\n");
 		fflush(stdout);
 
       buf = fdt_recv(receiver->s_id, &buflen, &retval, &fdt_content_enc_algo, &fdt_instance_id);
@@ -1641,10 +1628,10 @@ void* fdt_thread(void *s) {
 	  receiver->efdt = efdt_instance;
       
 	  if(receiver->verbosity == 4) {
-		printf("EFDT Instance received (ID=%i)\n", fdt_instance_id);
-		printf("EFDT updated, new %d file description(s) added\n", fdt_instance->nb_of_files);
+		printf("FDT Instance received (ID=%i)\n", fdt_instance_id);
+		printf("FDT updated, new %d file description(s) added\n", fdt_instance->nb_of_files);
 		fflush(stdout);
-		PrintEFDT(efdt_instance, receiver->s_id);
+		PrintFDT(fdt_instance, receiver->s_id);
       }
       
       free(buf);
@@ -1755,6 +1742,7 @@ void* fdt_thread(void *s) {
 	}
 	else { /* Receive new FDT Instance when it comes */
       updated = 0;
+
 	  if (receiver->verbosity == 4) {
 		  printf("Wait for another SLS if Segment Timeline\n\n");
 		  fflush(stdout);
@@ -1762,8 +1750,6 @@ void* fdt_thread(void *s) {
 
 	  // FLUTE OPERATION BELOW, ROUTE Operation uses S-TSID above
       buf = fdt_recv(receiver->s_id, &buflen, &retval, &fdt_content_enc_algo, &fdt_instance_id);
-
-	  printf("2nd SLS FDT received\n"); fflush(stdout);
 
 	  if(buf == NULL) {
 	
@@ -1831,7 +1817,7 @@ void* fdt_thread(void *s) {
 		receiver->fdt->complete = TRUE;
       }
       
-      updated = update_efdt(receiver->efdt, efdt_instance);
+      //updated = update_efdt(receiver->efdt, efdt_instance);
       /*Copy efdt to fdt accordingly*/
 	  fdt_instance= calloc(1, sizeof(fdt_t));
 	  fdt_instance->expires=              efdt_instance->expires;
@@ -1849,8 +1835,8 @@ void* fdt_thread(void *s) {
 	  fdt_instance->complete =            efdt_instance->complete;
 
 	  updated = update_fdt(receiver->fdt, fdt_instance);
-      receiver->fdt = fdt_instance;
-      receiver->efdt= efdt_instance;
+      //receiver->fdt = fdt_instance;
+      //receiver->efdt= efdt_instance;
 // Luke Fay already declared      FILE *fabcd;
 	  fabcd=fopen("ErrorDebugging.txt", "w");	
 	  //  fprintf(fabcd, "%llu\n", tmp->toi);
@@ -1862,9 +1848,11 @@ void* fdt_thread(void *s) {
 		  fflush(stdout);
 	  }
 
-	  if(updated <= 0) {
-		  remove_wanted_object(receiver->s_id, receiver->fdt->file_list->toi);
-		continue;
+	  if(updated < 0) {
+		  printf("FDT not updated, error...\n");
+		  fflush(stdout);
+		  //remove_wanted_object(receiver->s_id, receiver->fdt->file_list->toi);
+		  //continue;
       }
       else if(updated == 1) {
 		if(receiver->verbosity == 4) {
@@ -1981,6 +1969,7 @@ void* fdt_thread(void *s) {
       FreeFDT(fdt_instance);
 
 	}
+	
   }
 
 #ifdef _MSC_VER
@@ -2140,9 +2129,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 						printf("All files received\n");
 						fflush(stdout);
 					}
-
-					//return 1;
-
 				}
 				else {
 					if (s->verbosity > 0) {
@@ -2151,7 +2137,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					}
 				}
 
-				continue;
+				break;
+				//continue;
 
 			}
 			else {
@@ -2166,6 +2153,11 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					is_printed = TRUE;
 				}
 
+#ifdef _MSC_VER
+				Sleep(1);
+#else
+				usleep(1000);
+#endif
 				continue;
 			}
 		}
@@ -2227,7 +2219,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			next_file = s->ls->fdt->file_list;
 
 			/* Find correct file structure, to get the file->location for file creation purpose */
-
 			while (next_file != NULL) {
 				file = next_file;
 
@@ -2488,38 +2479,71 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 		}
 
-		if (s->codepoint == NRT_ENTITY_MODE || s->codepoint == MEDIA_SEG_ENTITY) {	// This looks at LCT Header Codepoint
-		// if (s->ls->codePoint == NRT_ENTITY_MODE || s->ls->codePoint == MEDIA_SEG_ENTITY) {	// This looks at OPTIONAL Payload element
+		// ENTITY MODE PROCESSING
+		if ((s->codepoint == NRT_ENTITY_MODE || s->codepoint == MEDIA_SEG_ENTITY) // This looks at LCT Header Codepoint
+		|| (s->ls->codePoint == NRT_ENTITY_MODE || s->ls->codePoint == MEDIA_SEG_ENTITY)) {	// This looks at OPTIONAL Payload element
+		//if(!s->ls->codePoint == NRT_ENTITY_MODE || !s->ls->codePoint == MEDIA_SEG_ENTITY) {	// This looks at OPTIONAL Payload element
 			//printf("ENTITY MODE processing\n"); fflush(stdout);
 			FILE* fp = fopen(tmp_filename, "r");
 			char newpath[MAX_PATH_LENGTH];
 			char line[255];
+			int llen = 0;
 			char cdel[4] = ": ";  // Delimiter for parsing string into tokens
 			char* params = { NULL };
-			memset(newpath, 0, MAX_PATH_LENGTH);
+
 			int clen = 0;
+			BOOL noheader = FALSE;
 
 			while (fgets(line, sizeof(line), fp)) {
-
+				llen += strlen(line);
+				//printf("ENTITY READLINE\n"); fflush(stdout);
 				if (line[0] == '\n') {
-					//printf("\n Entity Header end\n"); fflush(stdout);
+					llen += strlen(line) + 1;	// '\n' is CR LF...2 bytes
+					if (s->verbosity == 4) {
+						printf("\n Entity Header end with %d bytes\n", llen); fflush(stdout);
+					}
+
 					break;
 				}
 				else {
 					// get first token
 					params = strtok(line, cdel);
-					if (strcmp(params, "Content-Location") == 0) {
+					if (params == NULL) {
+						if (s->verbosity == 4) {
+							printf("NO ENTITY HEADER FOUND, despite LCT Header signaling\n");  fflush(stdout);
+						}
+						noheader = TRUE;
+						fclose(fp);
+
+						break;
+					}
+					else if (strcmp(params, "Content-Location") == 0) {
 						params = strtok(NULL, cdel);
-						//printf("ENTITY name %s", params); fflush(stdout);
+						if (s->verbosity == 4) {
+							printf("ENTITY name %s", params);
+						}
+						memset(newpath, 0, MAX_PATH_LENGTH);
 						memcpy(newpath, session_basedir, strlen(session_basedir));
 						memcpy((newpath + strlen(newpath)), "/", 1);
-						memcpy((newpath + strlen(newpath)), params, strlen(params)-1);
+						memcpy((newpath + strlen(newpath)), params, strlen(params)-1);	
 					}
 					else if (strcmp(params, "Content-Length") == 0) {
 						params = strtok(NULL, cdel);
-						//printf("ENTITY length %s", params); fflush(stdout);
+						if (s->verbosity == 4) {
+							printf("ENTITY length %s", params); fflush(stdout);
+						}
 						/* find nth position back from end of file */
 						clen = atoi(params);
+					}
+					else {
+						// There is no Content-Length or Content-Location attribute
+						if (s->verbosity == 4) {
+							printf("No used ENTITY ATTRIBUTES FOUND\t"); fflush(stdout);
+						}
+						noheader = TRUE;
+						fclose(fp);
+
+						break;
 					}
 					//// walk through other tokens
 					//while (params != NULL) {
@@ -2529,12 +2553,14 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 			}
-
+			// Cleanup
 			fclose(fp);
 
 			// rename old file with new name in ENTITY MODE
-			if (rename(tmp_filename, newpath) != 0) {
-
+			if (s->verbosity == 4) {
+				printf("ENTITY Renaming\n"); fflush(stdout);
+			}
+			if (!noheader && (rename(tmp_filename, newpath) != 0)) {
 				if (errno == EEXIST) {
 
 					retval = remove(newpath);
@@ -2557,57 +2583,72 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 			}
+			else if (!noheader) {
+				// Also remove ENTITY HEADER from file
+				FILE* src = fopen(newpath, "rb");
+				FILE* dst = fopen(tmp_filename, "wb");
+				int start = ftell(src);
+				long pos;
+				char buf[256];
+				size_t n;			
 
-			// Also remove ENTITY HEADER from file
-			FILE* src = fopen(newpath, "rb");
-			FILE* dst = fopen(tmp_filename, "wb");
-			long pos;
-			char buf[256];
-			size_t n;			
+				// In case there is just the Content-Location attribute
+				if (clen == 0) {
+					fseek(src, 0L, SEEK_END);
+					clen = ftell(src);
+					fseek(src, start, SEEK_SET);
+					//rewind(fp);
+					clen -= llen;
+					//printf(" length %d\n", clen); fflush(stdout);
+					
+				}
 
-			// find nth position back from end of file
-			//printf("ENTITY file resize: %d\n", clen); fflush(stdout);
-			if ((pos = fseek(src, -clen, SEEK_END)) != 0) 
-				retval = -1;
+				// find nth position back from end of file
+				if (s->verbosity == 4) {
+					printf("ENTITY file resize: %d\n", clen); fflush(stdout);
+				}
+				if ((pos = fseek(src, -clen, SEEK_END)) != 0) 
+					retval = -1;
 
-			while ((n = fread(buf, 1, sizeof buf, src)))
-				fwrite(buf, 1, n, dst);
+				while ((n = fread(buf, 1, sizeof buf, src)))
+					fwrite(buf, 1, n, dst);
 
-			/* close the files */
-			fclose(src);
-			fclose(dst);
+				/* close the files */
+				fclose(src);
+				fclose(dst);
 
-			/* delete old file & rename new one to same name as old one */
-			remove(newpath);
-			if (rename(tmp_filename, newpath) != 0) {
-				if (errno == EEXIST) {
+				/* delete old file & rename new one to same name as old one */
+				remove(newpath);
+				if (rename(tmp_filename, newpath) != 0) {
+					if (errno == EEXIST) {
 
-					retval = remove(newpath);
+						retval = remove(newpath);
 
-					if (retval == -1) {
+						if (retval == -1) {
+							printf("errno: %i\n", errno);
+							fflush(stdout);
+						}
+
+						if (rename(tmp_filename, newpath) < 0) {
+							printf("rename() error1: %s\n", tmp_filename);
+							fflush(stdout);
+						}
+					}
+					else {
+						printf("rename() error2: %s\n", tmp_filename);
+						printf("fullpath: %s\n", newpath);
 						printf("errno: %i\n", errno);
 						fflush(stdout);
 					}
-
-					if (rename(tmp_filename, newpath) < 0) {
-						printf("rename() error1: %s\n", tmp_filename);
-						fflush(stdout);
-					}
 				}
-				else {
-					printf("rename() error2: %s\n", tmp_filename);
-					printf("fullpath: %s\n", newpath);
-					printf("errno: %i\n", errno);
-					fflush(stdout);
-				}
+				// Cleanup
+				remove(tmp_filename);
 			}
-			// Cleanup
-			remove(tmp_filename);
 
 		}
 
-		else if (rename(tmp_filename, fullpath) != 0) {	// Else FILE MODE is used.
-
+		// FILE MODE PROCESSING
+		if (rename(tmp_filename, fullpath) != 0) {
 			if (errno == EEXIST) {
 
 				retval = remove(fullpath);
@@ -2667,6 +2708,11 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		fprintf(logFilePtr, "End Segment Generation Time %llu\n", timeInUsec);
 		//END Malek El Khatib
 
+#ifdef _MSC_VER
+		Sleep(1);
+#else
+		usleep(1000);
+#endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
 
@@ -2713,6 +2759,7 @@ void* channel_file_mode_thread(c) {
 		usleep(1000);
 #endif
 		continue;
+
 	}
 	
 	if (s->verbosity == 4) {
