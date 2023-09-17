@@ -465,9 +465,11 @@ int insert_unit(trans_unit_t *tu, trans_block_t *tb, trans_obj_t *to) {
         return retval;
     }
 
-    for(;;) {
-        if(tu->esi < tmp->esi) {
-            //Delayed unit
+    for(;;) {	// Loop over units in a source block...assumes in-order packet delivery
+		//printf("Unit symbol count: %u/%u\n", tmp->esi, tu->esi); fflush(stdout);
+		
+        if(tu->esi < tmp->esi) {	// total unit count < current unit count
+            //Delayed unit...no, just out of order.
 
             to->rx_bytes += tu->len;
 
@@ -483,24 +485,24 @@ int insert_unit(trans_unit_t *tu, trans_block_t *tb, trans_obj_t *to) {
 
                 tmp->prev = tu;
 
-                tb->unit_list = tu;
+                tb->unit_list = tu;	// Start at beginning
             }
             else {
                 tu->next = tmp;
                 tu->prev = tmp->prev;
 
-                tmp->prev->next = tu;
-                tmp->prev = tu;
+                tmp->prev->next = tu;	// Move one unit up
+                tmp->prev = tu;	// replace last unit with this one
 
             }
             break;
         }
-        else if(tu->esi == tmp->esi) {
+        else if(tu->esi == tmp->esi) {	// total unit count == current unit count
             //Duplicated unit
             retval = 1;
             break;
         }
-        if(tmp->next == NULL) {
+        if(tmp->next == NULL) {	// total unit count > current unit count, more to come
             // Last unit (normal order)
 
             to->rx_bytes += tu->len;
@@ -518,6 +520,7 @@ int insert_unit(trans_unit_t *tu, trans_block_t *tb, trans_obj_t *to) {
             tmp->next = tu;
             break;
         }
+
         tmp = tmp->next;
     }
 
