@@ -1485,6 +1485,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 			set_fdt_instance_parsed(s->s_id);
 
+			//FreeFDT(lct_fdt);
+
 			// Create LCT Channel receiving threads
 	#ifdef _MSC_VER
 			s->handle_lct_thread =
@@ -1540,6 +1542,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			retval = receiver_in_fdt_based_mode(a, &receiver);
 
 		}
+
 #ifdef _MSC_VER
 		Sleep(5);
 #else
@@ -1548,7 +1551,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		continue;
 	}
 
-	/*
+	
 	if (a->alc_a.verbosity > 0) {
 		printf("Build Report\n");
 		fflush(stdout);
@@ -1578,10 +1581,10 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		CloseHandle(handle_fdt_thread);
 	}
 
-	if(((a->rx_automatic) && (a->file_table_output))) {
-		WaitForSingleObject(handle_receiver_file_table_output_thread, INFINITE);
-		CloseHandle(handle_receiver_file_table_output_thread); 
-	}
+	//if(((a->rx_automatic) && (a->file_table_output))) {
+	//	WaitForSingleObject(handle_receiver_file_table_output_thread, INFINITE);
+	//	CloseHandle(handle_receiver_file_table_output_thread); 
+	//}
 #else
 	if(get_alc_session(*s_id)->rx_thread_id != 0) {
 		join_retval = pthread_join(get_alc_session(*s_id)->rx_thread_id, NULL);
@@ -1596,15 +1599,15 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		pthread_detach(fdt_thread_id);
 	}
 
-	if(((a->rx_automatic) && (a->file_table_output))) {
-		join_retval = pthread_join(receiver_file_table_output_thread_id, NULL);
-		assert(join_retval == 0);
-		pthread_detach(receiver_file_table_output_thread_id);
-	}
+	//if(((a->rx_automatic) && (a->file_table_output))) {
+	//	join_retval = pthread_join(receiver_file_table_output_thread_id, NULL);
+	//	assert(join_retval == 0);
+	//	pthread_detach(receiver_file_table_output_thread_id);
+	//}
 #endif
 	
 	remove_alc_channels(*s_id);
-	*/
+	
 
 #ifdef USE_FILE_REPAIR
 

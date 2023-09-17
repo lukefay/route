@@ -339,6 +339,11 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				lct->overhead = 0;
 				lct->fecMinBuffSize = 0;
 				lct->fecOTI = 0;
+				lct->nb_of_obj = 0;
+				/* initialize Protected Object */
+				lct->sessionDescription = NULL;
+				lct->objecttsi = 0;
+				lct->nb_of_stoi = 0;
 
 				rs->nb_of_ls++;
 
@@ -1368,38 +1373,38 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 		// REPAIR FLOW
 		else if (!strcmp(name, "SourceTOI")) {
-			printf("found SourceTOI\n");
-			fflush(stdout);
+			//printf("found SourceTOI\n");
+			//fflush(stdout);
 
-			if (srctoi == NULL) {
-
-				if (!(srctoi = (stoi_t*)calloc(1, sizeof(stoi_t)))) {
-					printf("Could not alloc memory for S-TSID repair source TOIs!\n");
-					return;
-				}
-
-				/* initialize repair source TOI parameters */
-				srctoi->prev = NULL;
-				srctoi->next = NULL;
-				srctoi->x = 0;
-				srctoi->y = 0;
-		
-				obj->nb_of_stoi++;
-
-			}
+			//if (srctoi == NULL) {
+			//
+			//	if (!(srctoi = (stoi_t*)calloc(1, sizeof(stoi_t)))) {
+			//		printf("Could not alloc memory for S-TSID repair source TOIs!\n");
+			//		return;
+			//	}
+			//
+			//	/* initialize repair source TOI parameters */
+			//	srctoi->prev = NULL;
+			//	srctoi->next = NULL;
+			//	srctoi->x = 0;
+			//	srctoi->y = 0;
+			//
+			//	obj->nb_of_stoi++;
+			//
+			//}
 
 			if (!strcmp(*atts, "x")) {
 
 #ifdef _MSC_VER     
-				srctoi->x = atoi(*(++atts));
+				lct->stoi_list->x = atoi(*(++atts));
 
-				if (srctoi->x > (unsigned int)0xFFFFFFFF) {
+				if (lct->stoi_list->x > (unsigned int)0xFFFFFFFF) {
 					printf("LCT Repair Flow Source TOI 'x' too big for unsigned int (32 bits)\n");
 					fflush(stdout);
 					return;
 				}
 #else               
-				srctoi->x = strtoul(*(++atts), &ep, 10);
+				lct.stoi_list->x = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow Source TOI 'x' not a number\n");
@@ -1414,31 +1419,31 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				}
 #endif
 
-				if (is_first_srctoi) {
-					obj->stoi_list = srctoi;
-					is_first_srctoi = FALSE;
-				}
-				else {
-					prev_toi->next = srctoi;
-					srctoi->prev = prev_toi;
-				}
-
-				prev_toi = srctoi;
+				//if (is_first_srctoi) {
+				//	obj->stoi_list = srctoi;
+				//	is_first_srctoi = FALSE;
+				//}
+				//else {
+				//	prev_toi->next = srctoi;
+				//	srctoi->prev = prev_toi;
+				//}
+				//
+				//prev_toi = srctoi;
 
 
 			}
 			else if (!strcmp(*atts, "y")) {
 
 #ifdef _MSC_VER     
-				srctoi->y = atoi(*(++atts));
+				lct->stoi_list->y = atoi(*(++atts));
 
-				if (srctoi->y > (unsigned int)0xFFFFFFFF) {
+				if (lct->stoi_list->y > (unsigned int)0xFFFFFFFF) {
 					printf("LCT Repair Flow Source TOI 'y' too big for unsigned int (32 bits)\n");
 					fflush(stdout);
 					return;
 				}
 #else               
-				srctoi->y = strtoul(*(++atts), &ep, 10);
+				lct.stoi_list->y = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow Source TOI 'y' not a number\n");
@@ -1464,22 +1469,22 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//printf("found ProtectedObject\n");
 			//fflush(stdout);
 
-			if (obj == NULL) {
-				if (!(obj = (protectobj_t*)calloc(1, sizeof(protectobj_t)))) {
-					printf("Could not alloc memory for S-TSID Payload Messages!\n");
-					return;
-				}
-
-				/* initialize ratings parameters */
-				obj->prev = NULL;
-				obj->next = NULL;
-				obj->sessionDescription = NULL;
-				obj->objecttsi = 0;
-				obj->stoi_list = NULL;
-
-				lct->nb_of_obj++;
-
-			}
+			//if (obj == NULL) {
+			//	if (!(obj = (protectobj_t*)calloc(1, sizeof(protectobj_t)))) {
+			//		printf("Could not alloc memory for S-TSID Payload Messages!\n");
+			//		return;
+			//	}
+			//
+			//	/* initialize ratings parameters */
+			//	obj->prev = NULL;
+			//	obj->next = NULL;
+			//	obj->sessionDescription = NULL;
+			//	obj->objecttsi = 0;
+			//	obj->stoi_list = NULL;
+			//
+			//	lct->nb_of_obj++;
+			//
+			//}
 
 			if (!strcmp(*atts, "sessionDescription")) {
 				//printf("found ProtectedObject sessionDescription\n");
@@ -1495,40 +1500,40 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
 
-				if (!(obj->sessionDescription = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+				if (!(lct->sessionDescription = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
 					printf("Could not alloc memory for Repair Flow protected object Session Description!\n");
 					fflush(stdout);
 					return;
 				}
 
-				memcpy(obj->sessionDescription, mbstr, strlen(mbstr));
+				memcpy(lct->sessionDescription, mbstr, strlen(mbstr));
 				free(mbstr);
 
-				if (is_first_obj) {
-					lct->obj_list = obj;
-					is_first_obj = FALSE;
-				}
-				else {
-					prev_obj->next = obj;
-					obj->prev = prev_obj;
-				}
-
-				prev_obj = obj;
+				//if (is_first_obj) {
+				//	lct->obj_list = obj;
+				//	is_first_obj = FALSE;
+				//}
+				//else {
+				//	prev_obj->next = obj;
+				//	obj->prev = prev_obj;
+				//}
+				//
+				//prev_obj = obj;
 
 			}
 			else if (!strcmp(*atts, "tsi")) {
 				//printf("found ProtectedObject TSI\n");
 				//fflush(stdout);
 #ifdef _MSC_VER     
-				obj->objecttsi = atoi(*(++atts));
+				lct->objecttsi = atoi(*(++atts));
 
-				if (obj->objecttsi > (unsigned int)0xFFFFFFFF) {
+				if (lct->objecttsi > (unsigned int)0xFFFFFFFF) {
 					printf("LCT Repair Flow object TSI too big for unsigned int (32 bits)\n");
 					fflush(stdout);
 					return;
 				}
 #else               
-				obj->objecttsi = strtoul(*(++atts), &ep, 10);
+				lct->objecttsi = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow object TSI not a number\n");

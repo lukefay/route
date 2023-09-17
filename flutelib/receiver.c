@@ -611,6 +611,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
     
     next_file = receiver->fdt->file_list;
 
+	// Initialize
     while(next_file != NULL) {
 
       file = next_file;
@@ -1065,6 +1066,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 #endif
 		fflush(stdout);
 	}
+
+	set_file_received(receiver->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
+
 
 	if(!(receiver->rx_automatic || receiver->wildcard_token != NULL)) {
 		printf("DO WE SET FILE RXd...\n");
@@ -2034,78 +2038,83 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 	session_basedir = get_session_basedir(s->s_id);
 
-	if (get_session_state(s->s_id) == SExiting) {
-		printf("SESSION EXITING\n");
-		fflush(stdout);
-		//return -2;
-	}
-	else if (get_session_state(s->s_id) == STxStopped) {
-		printf("SESSION STOPPED\n");
-		fflush(stdout);
-		//return -3;
-	}
-
-	//is_all_files_received = TRUE;
-
-	time(&systime);
-	curr_time = systime + 2208988800U;
-
-	//ch = s->ch_list[s->nb_channel];  // Get the proper channel
-	next_file = s->ls->fdt->file_list;
-
-	while (next_file != NULL) {
-
-		file = next_file;
-		//i = 0;
-		//is_all_files_received = all_files_received(s->file_uri_table);
-		if (s->verbosity == 4) {
-			printf("working on session %d file %s\n", s->s_id, s->ls->location);
+	while(1) {
+		if (get_session_state(s->s_id) == SExiting) {
+			printf("SESSION EXITING\n");
 			fflush(stdout);
+			//return -2;
+		}
+		else if (get_session_state(s->s_id) == STxStopped) {
+			printf("SESSION STOPPED\n");
+			fflush(stdout);
+			//return -3;
 		}
 
-		if (((file->expires < curr_time) && (!s->accept_expired_fdt_inst))) {
+		//is_all_files_received = TRUE;
 
-			if (file->next != NULL) {
-				file->next->prev = file->prev;
+		time(&systime);
+		curr_time = systime + 2208988800U;
+
+		//ch = s->ch_list[s->nb_channel];  // Get the proper channel
+		next_file = s->ls->fdt->file_list;
+
+		// Initialize
+		while (next_file != NULL) {
+
+			file = next_file;
+			//i = 0;
+			//is_all_files_received = all_files_received(s->file_uri_table);
+			if (s->verbosity == 4) {
+				printf("working on session %d file %s\n", s->s_id, s->ls->location);
+				fflush(stdout);
 			}
 
-			if (file->prev != NULL) {
-				file->prev->next = file->next;
+			if (((file->expires < curr_time) && (!s->accept_expired_fdt_inst))) {
+
+				if (file->next != NULL) {
+					file->next->prev = file->prev;
+				}
+
+				if (file->prev != NULL) {
+					file->prev->next = file->next;
+				}
+
+				if (file == s->ls->fdt->file_list) {
+					s->ls->fdt->file_list = file->next;
+				}
+
+				if (file->encoding != NULL) {
+					free(file->encoding);
+				}
+
+				if (file->location != NULL) {
+					free(file->location);
+				}
+
+				if (file->md5 != NULL) {
+					free(file->md5);
+				}
+
+				if (file->type != NULL) {
+					free(file->type);
+				}
+
+				next_file = file->next;
+				free(file);
+
+				continue;
 			}
 
-			if (file == s->ls->fdt->file_list) {
-				s->ls->fdt->file_list = file->next;
+			if (file->status != 2) {
+				is_all_files_received = FALSE;
+				is_printed = FALSE;
 			}
+			else if (file->status == 2) {
+				any_files_received = TRUE;
 
-			if (file->encoding != NULL) {
-				free(file->encoding);
-			}
-
-			if (file->location != NULL) {
-				free(file->location);
-			}
-
-			if (file->md5 != NULL) {
-				free(file->md5);
-			}
-
-			if (file->type != NULL) {
-				free(file->type);
 			}
 
 			next_file = file->next;
-			free(file);
-
-			continue;
-		}
-
-		if (file->status != 2) {
-			is_all_files_received = FALSE;
-			is_printed = FALSE;
-		}
-		else if (file->status == 2) {
-			any_files_received = TRUE;
-
 		}
 
 		i = 0;
@@ -2681,7 +2690,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		}
 		
 
-		//set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
+		set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
 
 		free_uri(uri);
 		free(tmp);
@@ -2716,7 +2725,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		//printf("Session processing time\n");
 		//fflush(stdout);
 
-		next_file = file->next;
 		
 	}
 
