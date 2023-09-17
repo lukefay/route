@@ -2616,8 +2616,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				//trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
 				trans_obj->bs = compute_blocking_structure(trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
-				printf("Calculated blocking structure with transfer len: %llu\tmax_sb: %d\tes: %d\n", trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
-				fflush(stdout);
+				//printf("Calculated blocking structure with transfer len: %llu\tmax_sb: %d\tes: %d\n", trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
+				//fflush(stdout);
 
 				// For ROUTE SRC_FLOW keep the number of Source blocks ready, as N is only available at Start Offset == 0 -- Luke Fay
 				trans_obj->bs->N = nb_of_iterations;
@@ -4243,8 +4243,8 @@ BOOL block_ready_to_decode(trans_block_t *tb) {
 	else 
 	{//END
 		//printf("Check if ready to decode: #source blocks: %u/%u\n", tb->nb_of_rx_units, tb->k);
-		printf("Check if ready to decode: #source blocks: %u/%u \n", tb->nb_of_rx_units, tb->k);
-		fflush(stdout);
+		//printf("Check if ready to decode: #source blocks: %u/%u \n", tb->nb_of_rx_units, tb->k);
+		//fflush(stdout);
 		if(tb->nb_of_rx_units >= tb->k) {
 			ready = TRUE;
 		}
