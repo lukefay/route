@@ -1867,7 +1867,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				// Dummy #'s to get through check below
 				es_len = (unsigned short)(len - hdrlen - 4);
 				//max_sb_len = (unsigned short)(len - hdrlen - 4);
-				max_sb_len = 100 * es_len;
+				max_sb_len = 1000 * es_len;
 				if (ch->s->verbosity == 4) {
 					printf("EXT_TOLL transfer length: %lli\t, FEC Instance ID: %i\tEncoded symbol length: %i\tMax Source block length %i\n", transfer_len, fec_inst_id, es_len, max_sb_len);
 					fflush(stdout);
@@ -2141,10 +2141,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				}
 			}
 
-			// Add another FDT for new found file
-			//set_fdt_instance_id(ch->s->s_id, ch->s->fdt_instance_id);
-			//set_received_instance(ch->s, ch->s->fdt_instance_id);  // FDT is already in S-TSID
-
 			// Update FDT			
 			updated = update_fdt(lsl->fdt, lct_fdt);
 
@@ -2247,7 +2243,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		max_sb_len = wanted_obj->max_sb_len;
 		max_nb_of_es = wanted_obj->max_nb_of_es;
 		fec_enc_id = wanted_obj->fec_enc_id;
-		transfer_len = wanted_obj->transfer_len;
+		//transfer_len = wanted_obj->transfer_len;
 		content_enc_algo = wanted_obj->content_enc_algo;
 		
 		if (ch->s->verbosity == 4) {
@@ -2256,6 +2252,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		}
 		// Update the es_len
 		update_wanted_object(ch->s->s_id, toi, transfer_len, es_len, max_sb_len, fec_inst_id, fec_enc_id, max_nb_of_es, content_enc_algo, finite_field, nb_of_es_per_group);
+
 	}
 	else {	// Repair flow?  Just store file and continue.
 		if (ch->s->verbosity == 4) {
@@ -2334,12 +2331,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		}
 		close(fr);
 
-#ifdef USE_RETRIEVE_UNIT
-		trans_unit->used = 0;
-#else
-		free(trans_unit->data);
-		free(trans_unit);
-#endif
 		unlock_lct_header();
 
 		return REPAIR;
@@ -2740,8 +2731,12 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					// Update the number of units
 					trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
 
-					// For ROUTE SRC_FLOW, the number of Source blocks is 1 -- Luke Fay
-					trans_obj->bs->N = 1;
+					// Check blocking structure N count -- Luke Fay
+					if ((trans_obj->bs->N != 1) && (ch->s->verbosity == 4)) {
+						printf("Blocking structure computes N = %i with Xfer len %llu, SBN %u and symbol length %u\n", trans_obj->bs->N, transfer_len, max_sb_len, es_len); fflush(stdout);
+
+						trans_obj->bs->N = 1;	// Accouting for last small packets falsely signaling more blocks.
+					}
 
 					/* if large file mode data symbol is stored in the tmp file */
 					if(toi != FDT_TOI && ch->s->rx_memory_mode == 2) {
@@ -2791,32 +2786,10 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					//printf("__ %f\n", rx_percent);
 					//fflush(stdout);
 				}
-				else {
 
-#ifdef USE_RETRIEVE_UNIT
-					trans_unit->used = 0;
-#else
-					free(trans_unit->data);
-					free(trans_unit);
-#endif
-					unlock_lct_header();
-
-					return DUP_PACKET;
-				}
 
 			}
-			else { // Block is ready to decode
 
-#ifdef USE_RETRIEVE_UNIT
-				trans_unit->used = 0;
-#else
-				free(trans_unit->data);
-				free(trans_unit);
-#endif
-				unlock_lct_header();
-
-				return DUP_PACKET;
-			}
 			if(toi != FDT_TOI) {
 				if(ch->s->rx_memory_mode == 1 || ch->s->rx_memory_mode == 2) {
 
@@ -3333,10 +3306,6 @@ int recv_packet(alc_session_t* s) {
 							}
 						}
 
-						// Add another FDT for new found file
-						//set_fdt_instance_id(s->s_id, s->fdt_instance_id);
-						//set_received_instance(s, s->fdt_instance_id);  // Add latest FDT to the list
-
 						// Update FDT			
 						updated = update_fdt(ls->fdt, lct_fdt);
 
@@ -3437,7 +3406,8 @@ int recv_packet(alc_session_t* s) {
 
 
 					if (retval == HDR_ERROR) {
-						continue;
+						//continue;
+						return -1;
 					}
 					else if (retval == DUP_PACKET) {
 						//printf("Duplicate packet seen\n"); fflush(stdout);
@@ -3447,8 +3417,8 @@ int recv_packet(alc_session_t* s) {
 						//set_fdt_instance_id(s->s_id, s->fdt_instance_id);
 						//set_received_instance(s, s->fdt_instance_id);  // FDT is already in S-TSID
 
-						continue;
-						//return 0;
+						//continue;
+						return 0;
 					}
 					else if (retval == MEM_ERROR) {
 						return -1;
@@ -4233,7 +4203,7 @@ BOOL block_ready_to_decode(trans_block_t *tb) {
 	//If multiple encoding symbols (es) are sent in payload, less units (i.e. packets) are to be received
 	if (numEncSymbPerPacket == 0) {
 		//printf("Check if ready to decode: %u %u %u %u\n",tb->nb_of_rx_units,tb->k,nb_of_symb_to_decode_simult,(unsigned int)ceil((double)tb->k/(double)(nb_of_symb_to_decode_simult)));
-		//printf("Check if ready to decode: #source blocks: %u/%u \n", tb->nb_of_rx_units, tb->k);
+		//printf("Check if ready to decode #symbols: %u/%u \n", tb->nb_of_rx_units, tb->k);
 		//fflush(stdout);
 
 		if(tb->nb_of_rx_symbols >= tb->k) {
@@ -4242,8 +4212,8 @@ BOOL block_ready_to_decode(trans_block_t *tb) {
 	}
 	else 
 	{//END
-		//printf("Check if ready to decode: #source blocks: %u/%u\n", tb->nb_of_rx_units, tb->k);
-		//printf("Check if ready to decode: #source blocks: %u/%u \n", tb->nb_of_rx_units, tb->k);
+		//printf("Check if ready to decode #symbols: %u/%u\n", tb->nb_of_rx_units, tb->k);
+		//printf("Check if ready to decode #symbols: %u/%u \n", tb->nb_of_rx_units, tb->k);
 		//fflush(stdout);
 		if(tb->nb_of_rx_units >= tb->k) {
 			ready = TRUE;
