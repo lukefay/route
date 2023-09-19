@@ -2718,9 +2718,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		//END Malek El Khatib
 
 #ifdef _MSC_VER
-		Sleep(1);
+		//Sleep(1);
 #else
-		usleep(1000);
+		//usleep(1000);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
