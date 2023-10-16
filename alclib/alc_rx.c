@@ -2732,8 +2732,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
 
 					// Check blocking structure N count -- Luke Fay
-					if ((trans_obj->bs->N != 1) && (ch->s->verbosity == 4)) {
-						printf("Blocking structure computes N = %i with Xfer len %llu, SBN %u and symbol length %u\n", trans_obj->bs->N, transfer_len, max_sb_len, es_len); fflush(stdout);
+					if (trans_obj->bs->N != 1) {
+						//printf("Blocking structure computes N = %i with Xfer len %llu, SBN %u and symbol length %u\n", trans_obj->bs->N, transfer_len, max_sb_len, es_len); fflush(stdout);
 
 						trans_obj->bs->N = 1;	// Accouting for last small packets falsely signaling more blocks.
 					}
@@ -2934,9 +2934,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			}
 			//printf("End of analyzed packet for TOI: %lli\n", toi);
 			//fflush(stdout);
-
-			continue;
-
 		} 
 	}
 	else { // We have an empty packet with FEC Payload ID
@@ -3087,9 +3084,9 @@ int recv_packet(alc_session_t* s) {
 		}
 
 #ifdef _MSC_VER
-		Sleep(5);	// While waiting for a new packet, sleep to save CPU usage.
+		Sleep(1);	// While waiting for a new packet, sleep to save CPU usage.
 #else
-		usleep(5000);
+		usleep(1000);
 #endif
 
 		if (s->state == SAFlagReceived) {
@@ -3440,8 +3437,6 @@ int recv_packet(alc_session_t* s) {
 		// If receiving list is empty, continue to the next TSI
 		//printf("channel Rx list is empty\n"); fflush(stdout);
 
-		continue;
-
 	}
 
 	return recv_pkts;
@@ -3501,7 +3496,7 @@ void* rx_socket_thread(void *ch) {
 
 	while(channel->s->state == SActive) {
 
-		time_out.tv_sec = 10;
+		time_out.tv_sec = 1;
 		time_out.tv_usec = 0;
 
 		FD_ZERO(&read_set);
@@ -3732,14 +3727,12 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 				to = to->next;
 			}
 
-			if(to == NULL) {
 #ifdef _MSC_VER
-				Sleep(1);
+			Sleep(1);
 #else
-				usleep(1000);
+			usleep(1000);
 #endif
-				continue;
-			}
+
 		}
 
 		obj_completed = object_completed(to);
@@ -3824,17 +3817,14 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 
 		//printf("Number of received objects: %d\n", s->rx_objs);
 		//fflush(stdout);
-		if (to == NULL) {
 
 #ifdef _MSC_VER
-			Sleep(1);	// This sleep helps reduce CPU usage
-			//printf("NO FDT LIST in session %d\n", s_id);
-			//fflush(stdout);
+		Sleep(1);	// This sleep helps reduce CPU usage
+		//printf("NO FDT LIST in session %d\n", s_id);
+		//fflush(stdout);
 #else
-			usleep(1000);
+		usleep(1000);
 #endif
-			continue;
-		}
 
 		while(to != NULL) {
 
@@ -3946,6 +3936,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 		to = s->obj_list;
 
+		//printf("Processing session %d\n", s_id); fflush(stdout);
+
 		if(s->state == SExiting) {
 			/*printf("alc_recv3() SExiting\n");
 			fflush(stdout);*/
@@ -3966,17 +3958,14 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		}
 		
 		//printf("Number of received objects: %d\n", s->rx_objs); fflush(stdout);
-		if (to == NULL) {
 
 #ifdef _MSC_VER
-			Sleep(1);	// This sleep helps reduce CPU usage
-			//printf("NO FDT LIST in session %d\n", s_id);
-			//fflush(stdout);
+		Sleep(1);	// This sleep helps reduce CPU usage
+		//printf("NO FDT LIST in session %d\n", s_id);
+		//fflush(stdout);
 #else
-			usleep(1000);
+		usleep(1000);
 #endif
-			continue;
-		}
 
 		while(to != NULL) {
 
@@ -4075,29 +4064,29 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 
 		s = get_alc_session(s_id);
 
-		while(1) {
+		while (1) {
 			to = s->fdt_list;
 
-			if(s->state == SExiting) {
+			if (s->state == SExiting) {
 				/*printf("fdt_recv() SExiting\n");
 				fflush(stdout);*/
 				*retval = -2;
 				return NULL;
 			}
-			else if(s->state == SClosed) {
+			else if (s->state == SClosed) {
 				/*printf("fdt_recv() SClosed\n");
 				fflush(stdout);*/
 				*retval = 0;
 				return NULL;
 			}
-			else if(s->state == STxStopped) {
+			else if (s->state == STxStopped) {
 				/*printf("fdt_recv() STxStopped\n");
 				fflush(stdout);*/
 				*retval = -3;
-				return NULL;	
+				return NULL;
 			}
 
-			if(to == NULL) {
+			if (to == NULL) {
 
 #ifdef _MSC_VER
 				Sleep(1);	// This sleep helps reduce CPU usage
@@ -4106,7 +4095,8 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 #else
 				usleep(1000);
 #endif
-				continue;	
+
+				continue;
 			}
 
 			do {

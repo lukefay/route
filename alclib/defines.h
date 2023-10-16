@@ -42,7 +42,7 @@ extern "C" {
  * Receiver socket buffer size
  */
 
-#define RECEIVER_SOCKET_BUFFER_SIZE 2000000
+#define RECEIVER_SOCKET_BUFFER_SIZE 12000
 
 #define MAD_FCL_RELEASE_VERSION "1.7"			/**< Release version */
 #define MAD_FCL_RELEASE_DATE "March 2, 2007"	/**< Release date */
