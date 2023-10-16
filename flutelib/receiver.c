@@ -732,9 +732,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		  }
 
 #ifdef _MSC_VER
-		  Sleep(1);
+		  Sleep(5);
 #else
-		  usleep(1000);
+		  usleep(5000);
 #endif
 		  continue;
 		}
@@ -1114,9 +1114,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//END Malek El Khatib
 
 #ifdef _MSC_VER
-	Sleep(1);
+	Sleep(5);
 #else
-	usleep(1000);
+	usleep(5000);
 #endif
 
 	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
@@ -2163,9 +2163,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 #ifdef _MSC_VER
-				Sleep(1);
+				Sleep(5);
 #else
-				usleep(1000);
+				usleep(5000);
 #endif
 				continue;
 			}
@@ -2585,7 +2585,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					}
 				}
 				else {
-					printf("rename() error2: %s\n", tmp_filename);
+					printf("ENTITY rename() error2: %s\n", tmp_filename);
 					printf("fullpath: %s\n", newpath);
 					printf("errno: %i\n", errno);
 					fflush(stdout);
@@ -2644,7 +2644,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 						}
 					}
 					else {
-						printf("rename() error2: %s\n", tmp_filename);
+						printf("ENTITY rename() error2: %s\n", tmp_filename);
 						printf("fullpath: %s\n", newpath);
 						printf("errno: %i\n", errno);
 						fflush(stdout);
@@ -2672,12 +2672,12 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					fflush(stdout);
 				}
 			}
-			else {
-				printf("rename() error2: %s\n", tmp_filename);
-				printf("fullpath: %s\n", fullpath);
-				printf("errno: %i\n", errno);
-				fflush(stdout);
-			}
+			//else {
+			//	printf("FILE rename() error2: %s\n", tmp_filename);
+			//	printf("fullpath: %s\n", fullpath);
+			//	printf("errno: %i\n", errno);
+			//	fflush(stdout);
+			//}
 		}
 
 		if (s->verbosity == 4) {
@@ -2718,9 +2718,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		//END Malek El Khatib
 
 #ifdef _MSC_VER
-		//Sleep(1);
+		Sleep(1);
 #else
-		//usleep(1000);
+		usleep(1000);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);

@@ -1512,12 +1512,6 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 					fflush(stdout);
 			}
 
-	#ifdef _MSC_VER
-			Sleep(1);
-	#else
-			usleep(1000);
-	#endif
-
 			next_stsid_lct = stsid_lct->next;
 
 		}
@@ -1544,9 +1538,9 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 #ifdef _MSC_VER
-		Sleep(5);
+		Sleep(50);	// Wait for shortest PHY Frame length 50msec
 #else
-		usleep(5000);
+		usleep(50000);
 #endif
 		continue;
 	}
