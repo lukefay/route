@@ -234,7 +234,7 @@ int close_alc_channel(alc_channel_t *ch, alc_session_t *s) {
   }	
   
   //assert(s->ch_list[ch_id] == ch);
-  assert(ch->ch_id = (unsigned int)s->tsi);
+  assert(ch->ch_id == (unsigned int)s->tsi);
 
   freeaddrinfo(ch->addrinfo);
 

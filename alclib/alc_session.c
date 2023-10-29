@@ -289,7 +289,7 @@ int open_alc_session(alc_arguments_t *a) {
     if(alc_session_list[i] == NULL) {
       s->s_id = i;
       alc_session_list[s->s_id] = s;
-      printf("New alc_session_list count: %d\ts_id: %d\tthread ID: %u\n", i, s->s_id, s->rx_thread_id);
+      printf("New alc_session_list count: %d\ts_id: %d\tthread ID: %lu\n", i, s->s_id, s->rx_thread_id);
       fflush(stdout);
       break;
     }
@@ -448,7 +448,7 @@ int read_alc_session(alc_arguments_t* a, unsigned long long tsi) {
         if (alc_session_list[i] == NULL) {
             s->s_id = i;
             alc_session_list[s->s_id] = s;
-            printf("New alc_session_list count: %d\ts_id: %d\tthread ID: %u\n", i, s->s_id, s->rx_thread_id);
+            printf("New alc_session_list count: %d\ts_id: %d\tthread ID: %lu\n", i, s->s_id, s->rx_thread_id);
             fflush(stdout);
             break;
         }

@@ -38,6 +38,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <sys/timeb.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #include <process.h>

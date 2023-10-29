@@ -58,7 +58,7 @@ extern "C" {
 
 #define SSM
 
-// #define USE_ZLIB /**< Use ZLIB compression library */ - Has library link issue LUKE FAY
+#define USE_ZLIB /**< Use ZLIB compression library */
 #define USE_RETRIEVE_UNIT /**< Use retrieve_unit() function */
 
 #if defined(LINUX) || defined(_MSC_VER)

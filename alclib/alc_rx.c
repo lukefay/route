@@ -363,28 +363,30 @@ int newWriteToBuffer(struct packetBuffer buffer)
 		return -1;
 	}
 	
+	/*
 	if(workingPort == 4001 || workingPort == 4003)
 	{
-// Luke Fay        FILE * sendMergeFile;
-// Luke Fay        FILE * pktFile;
-// Luke Fay        static int first = 1;
-// Luke Fay        char packetFiles[200];
+        FILE * sendMergeFile;
+        FILE * pktFile;
+        static int first = 1;
+        char packetFiles[200];
 		static int first = 0;
-		//sprintf(packetFiles,"Merge/Pkt%.4d_%.4d.mp4",buffer.toi,buffer.esi);
-        //if(first)
-        //    sendMergeFile = fopen("sendMerge.mp4","w");
-        //else
-        //    sendMergeFile = fopen("sendMerge.mp4","a");
+		sprintf(packetFiles,"Merge/Pkt%.4d_%.4d.mp4",buffer.toi,buffer.esi);
+        if(first)
+            sendMergeFile = fopen("sendMerge.mp4","w");
+        else
+            sendMergeFile = fopen("sendMerge.mp4","a");
 
-// Luke Fay        first = 0;
+        first = 0;
 
-        //fwrite(buffer.buffer,1,buffer.length,sendMergeFile);
-        //fclose(sendMergeFile);
-        //pktFile = fopen(packetFiles,"w");
-        //fwrite(buffer.buffer,1,buffer.length,pktFile);
-        //fclose(pktFile);
+        fwrite(buffer.buffer,1,buffer.length,sendMergeFile);
+        fclose(sendMergeFile);
+        pktFile = fopen(packetFiles,"w");
+        fwrite(buffer.buffer,1,buffer.length,pktFile);
+        fclose(pktFile);
 	}
-    struct packetBuffer *emptySlot = getEmptyBufferSlot();
+    */
+	struct packetBuffer *emptySlot = getEmptyBufferSlot();
 
     emptySlot->occupied = TRUE;
     emptySlot->toi = buffer.toi;
@@ -401,6 +403,7 @@ int newWriteToBuffer(struct packetBuffer buffer)
 
     fullness++;
 	
+	/*
 	if(workingPort == 4001 || workingPort == 4003)
 	{       
 	#define mmy emptySlot->buffer
@@ -409,18 +412,19 @@ int newWriteToBuffer(struct packetBuffer buffer)
     static unsigned long long stsi = 0;
     static unsigned int ssbn = 0;
     static unsigned int sesi = 0;
-		//FILE * tempff = fopen("bufferLog.txt","a");
+		FILE * tempff = fopen("bufferLog.txt","a");
     
-		//fprintf(tempff,"WRITE: fullness %d, toi %llu, tsi %llu, sbn %u, esi %u, len %d, bytes %2x %2x %2x %2x %2x %2x %2x %2x",newBufferFullness(),buffer.toi,buffer.tsi,buffer.sbn,buffer.esi,buffer.length,mmy[0],mmy[1],mmy[2],mmy[3],mmy[4],mmy[5],mmy[6],mmy[7]);
-        //if(buffer.toi != stoi || buffer.tsi != stsi || buffer.sbn != ssbn || (buffer.esi - sesi) > 1)
-        //    fprintf(tempff,"<==========================");
-        //fprintf(tempff,"\n");
-        //fclose(tempff);
+		fprintf(tempff,"WRITE: fullness %d, toi %llu, tsi %llu, sbn %u, esi %u, len %d, bytes %2x %2x %2x %2x %2x %2x %2x %2x",newBufferFullness(),buffer.toi,buffer.tsi,buffer.sbn,buffer.esi,buffer.length,mmy[0],mmy[1],mmy[2],mmy[3],mmy[4],mmy[5],mmy[6],mmy[7]);
+        if(buffer.toi != stoi || buffer.tsi != stsi || buffer.sbn != ssbn || (buffer.esi - sesi) > 1)
+            fprintf(tempff,"<==========================");
+        fprintf(tempff,"\n");
+        fclose(tempff);
         sesi = buffer.esi;
         ssbn = buffer.sbn;
         stsi = buffer.tsi;
         stoi = buffer.toi;
 	}
+	*/
 	
 	pthread_mutex_unlock(&bufferLock);
 	
@@ -568,22 +572,24 @@ struct packetBuffer newReadFromBuffer()
         pthread_mutex_unlock(&bufferLock);
         return buffer;
     }
-    	
+    
+	/*
 	if(workingPort == 4001 || workingPort == 4003)
 	{
         static unsigned long long savedTOI = 0;
         static unsigned int savedESI = 0;
-// Luke Fay - mmy not used in this routine and is defined above.
-//#define mmy buffer.buffer
-		//FILE * tempff = fopen("bufferLogRead.txt","a");
-		//fprintf(tempff,"***AD: fullness %d, toi %llu, esi %u, bytes %2x %2x %2x %2x %2x %2x %2x %2x",fullness,buffer.toi,buffer.esi,mmy[0],mmy[1],mmy[2],mmy[3],mmy[4],mmy[5],mmy[6],mmy[7]);
-        //if(savedTOI != buffer.toi || (buffer.esi - savedESI) > 1)
-        //    fprintf(tempff,"<==========");
-        //fprintf(tempff,"\n");
-        //fclose(tempff);
+
+#define mmy buffer.buffer
+		FILE * tempff = fopen("bufferLogRead.txt","a");
+		fprintf(tempff,"***AD: fullness %d, toi %llu, esi %u, bytes %2x %2x %2x %2x %2x %2x %2x %2x",fullness,buffer.toi,buffer.esi,mmy[0],mmy[1],mmy[2],mmy[3],mmy[4],mmy[5],mmy[6],mmy[7]);
+        if(savedTOI != buffer.toi || (buffer.esi - savedESI) > 1)
+            fprintf(tempff,"<==========");
+        fprintf(tempff,"\n");
+        fclose(tempff);
         savedTOI = buffer.toi;
         savedESI = buffer.esi;
 	}
+	*/
 
 	fullness --;
 	
@@ -722,15 +728,15 @@ struct packetBuffer readFromBuffer()
 
 int parse_packet(char *data, int len, int *hdrlenp, unsigned long long *toip, unsigned long long *tsip, unsigned int *sbnp, unsigned int *esip, alc_channel_t *ch) {
 
-	int retval = 0;
+//	int retval = 0;
 	int het = 0;
 	int hel = 0;
 	int exthdrlen = 0;
 	unsigned int word = 0;	
 	short fec_enc_id = 0; 
 	unsigned long long ull = 0;
-	unsigned long long block_len = 0;
-	unsigned long long pos = 0;
+//	unsigned long long block_len = 0;
+//	unsigned long long pos = 0;
 
 	/* LCT header upto CCI */
 
@@ -762,18 +768,17 @@ int parse_packet(char *data, int len, int *hdrlenp, unsigned long long *toip, un
 
 	/* FEC Payload ID */
 
+//	trans_obj_t *trans_obj = NULL;
+//	trans_block_t *trans_block = NULL;
+//	trans_unit_t *trans_unit = NULL;
+//	trans_unit_t *tu = NULL;
+//	trans_unit_t *next_tu = NULL;
+//	wanted_obj_t *wanted_obj = NULL;
 
-	trans_obj_t *trans_obj = NULL;
-	trans_block_t *trans_block = NULL;
-	trans_unit_t *trans_unit = NULL;
-	trans_unit_t *tu = NULL;
-	trans_unit_t *next_tu = NULL;
-	wanted_obj_t *wanted_obj = NULL;
+//	char *buf = NULL;
 
-	char *buf = NULL;
-
-// Luke Fay	char filename[MAX_PATH_LENGTH];
-	double rx_percent = 0;
+//	char filename[MAX_PATH_LENGTH];
+//	double rx_percent = 0;
 
 	unsigned short j = 0;
 	unsigned short nb_of_symbols = 0;
@@ -1394,8 +1399,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			tsi = (word & 0xFFFF0000) >> 16;
 
 			if(tsi != ch->s->tsi) {
-				//printf("Packet to wrong session: wrong TSI: %llu\n", tsi);
-				printf("Packet to wrong session: wrong TSI: %I64u\n", tsi);
+				printf("Packet to wrong session: wrong TSI: %llu\n", tsi);
 				fflush(stdout);
 				unlock_lct_header();
 
@@ -1414,8 +1418,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			tsi += (word & 0xFFFF0000) >> 16;
 
 			if(tsi != ch->s->tsi) {
-				//printf("Packet to wrong session: wrong TSI: %llu\n", tsi);
-				printf("Packet to wrong session: wrong TSI: %I64u\n", tsi);
+				printf("Packet to wrong session: wrong TSI: %llu\n", tsi);
 				fflush(stdout);
 				unlock_lct_header();
 
@@ -1463,7 +1466,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			if(tsi != ch->s->tsi) {
 				//printf("Packet to wrong session: wrong TSI: %llu\n", tsi);
 				if (ch->s->verbosity == 4) {
-					printf("Packet to different session, see TSI: %I64u\tworking in TSI: %d\n", tsi, ch->ch_id);
+					printf("Packet to different session, see TSI: %llu\tworking in TSI: %d\n", tsi, ch->ch_id);
 					fflush(stdout);
 				}
 				unlock_lct_header();
@@ -1472,7 +1475,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			}
 			else {
 				if (ch->s->verbosity == 4) {
-					printf("Packet to current session, see TSI: %I64u\tworking in TSI: %d\n", tsi, ch->ch_id);
+					printf("Packet to current session, see TSI: %llu\tworking in TSI: %d\n", tsi, ch->ch_id);
 					fflush(stdout);
 				}
 			}
@@ -1542,7 +1545,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		}*/
 	}
     
-	if (!tsi == ch->ch_id) {
+	if ((!tsi) == ch->ch_id) {
 		unlock_lct_header();
 
 		return EMPTY_PACKET;	// Quickly exit packet inspection if packet is not for this LCT Channel
@@ -1567,7 +1570,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			// Start 12.11.2014
 			// Always rebuffer since if fdt is sent at beginning, a packet might be dropped      Malek El Khatib 16.07.2014
 			if (ch->s->rx_fdt_instance_list == NULL || ch->s->waiting_fdt_instance == TRUE || sendFDTAfterObj == TRUE) {
-				printf("MalekElKhatib: Packet rebuffering for toi %I64u in TSI: %I64i  waitingFDT %d, sendingFDT %d\n", toi, tsi, ch->s->waiting_fdt_instance, sendFDTAfterObj);
+				printf("MalekElKhatib: Packet rebuffering for toi %llu in TSI: %lli  waitingFDT %d, sendingFDT %d\n", toi, tsi, ch->s->waiting_fdt_instance, sendFDTAfterObj);
 				fflush(stdout);
 				unlock_lct_header();
 
@@ -1666,7 +1669,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				flute_version = (word & 0x00F00000) >> 20;
 				fdt_instance_id = (word & 0x000FFFFF);
 
-				if(!flute_version == (FLUTE_VERSION || ROUTE_VERSION)) {	// Version 1 or Version 2
+				if((!flute_version) == (FLUTE_VERSION || ROUTE_VERSION)) {	// Version 1 or Version 2
 					printf("ROUTE version: %i is not supported\n", flute_version);
 					fflush(stdout);
 					unlock_lct_header();
@@ -2290,7 +2293,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			rplcval = str_replace(filename, 64, "$TSI$", stra);  // Store LCT channel repair flow
 			rplcval = str_replace(filename, 64, "$SB$", str);  // Store Repair flow source blocks
 			rplcval = str_replace(filename, 64, "$ESN$", strb);  // Store Repair Flow Symbol count
-			if (!rplcval) printf("Not enough room to replace strings\n"); fflush(stdout);
+			if (!rplcval) printf("Not enough room to replace strings\n"); 
+			fflush(stdout);
 		}
 #ifdef USE_ZLIB
 		else if (content_enc_algo == GZIP) {
@@ -2298,7 +2302,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			rplcval = str_replace(filename, 64, "$TSI$", stra);  // Store LCT channel repair flow
 			rplcval = str_replace(filename, 64, "$SB$", str);  // Store Repair flow source blocks
 			rplcval = str_replace(filename, 64, "$ESN$", strb);  // Store Repair Flow Symbol count
-			if (!rplcval) printf("Not enough room to replace strings\n"); fflush(stdout);
+			if (!rplcval) printf("Not enough room to replace strings\n"); 
+			fflush(stdout);
 			strcat(filename, GZ_SUFFIX);
 		}
 #endif
@@ -2740,12 +2745,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 					/* if large file mode data symbol is stored in the tmp file */
 					if(toi != FDT_TOI && ch->s->rx_memory_mode == 2) {
-// Luke Fay						trans_unit->offset = lseek64(trans_obj->fd_st, 0, SEEK_END);
+#if defined (WIN32)
 						trans_unit->offset = _lseeki64(trans_obj->fd_st, 0, SEEK_END);
-
+#else
+						trans_unit->offset = lseek64(trans_obj->fd_st, 0, SEEK_END);
+#endif
 						if(trans_unit->offset == -1) {
-// Luke Fay							printf("lseek error, toi: %llu\n", toi);
-							printf("lseek error, toi: %I64u\n", toi);
+							printf("lseek error, toi: %llu\n", toi);
 							fflush(stdout);
 							set_session_state(ch->s->s_id, SExiting);
 							unlock_lct_header();
@@ -2810,12 +2816,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 							while(next_tu != NULL) {
 
-								tu = next_tu;
-
-// Luke Fay								if(lseek64(trans_obj->fd_st, tu->offset, SEEK_SET) == -1) {
+								tu = next_tu;							
+#if defined (WIN32)
 								if (_lseeki64(trans_obj->fd_st, tu->offset, SEEK_SET) == -1) {
-// Luke Fay									printf("alc_rx.c line 1035 lseek error, toi: %llu\n", toi);
-									printf("alc_rx.c line 1035 lseek error, toi: %I64u\n", toi);
+#else 
+								if (lseek64(trans_obj->fd_st, tu->offset, SEEK_SET) == -1) {
+#endif 
+									printf("alc_rx.c line 1035 lseek error, toi: %llu\n", toi);
 									fflush(stdout);
 									set_session_state(ch->s->s_id, SExiting);
 									unlock_lct_header();
@@ -2889,12 +2896,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 						}
 
 						/* set correct position */
-						//printf("set correct position: %lld\tvs. Startoffset: %lld\n", pos, start_offset); fflush(stdout);
-
-// Luke Fay						if(lseek64(trans_obj->fd, pos, SEEK_SET) == -1) {
+						//printf("set correct position: %lld\tvs. Startoffset: %lld\n", pos, start_offset); fflush(stdout);					
+#if defined(WIN32)
 						if (_lseeki64(trans_obj->fd, pos, SEEK_SET) == -1) {
-// Luke Fay							printf("alc_rx.c line 1111 lseek error, toi: %llu\n", toi);
-							printf("alc_rx.c line 1111 lseek error, toi: %I64u\n", toi);
+#else
+						if (lseek64(trans_obj->fd, pos, SEEK_SET) == -1) {
+#endif
+							printf("alc_rx.c line 1111 lseek error, toi: %llu\n", toi);
 							fflush(stdout);
 							free(buf);
 							set_session_state(ch->s->s_id, SExiting);
@@ -2927,6 +2935,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 							printf("%u/%u Source Blocks decoded (TOI=%llu SBN=%u)\n", trans_obj->nb_of_ready_blocks, trans_obj->bs->N, toi, sbn);
 							fflush(stdout);
 						}
+
 					}
 
 				}
@@ -3038,7 +3047,7 @@ int recv_packet(alc_session_t* s) {
 	fdt_t* lct_fdt;
 	file_t* lct_file;
 	file_t* next_file;
-	struct sockaddr_storage from;
+	//struct sockaddr_storage from;
 
 	double loss_prob;
 	int content_enc_algo = -1;
@@ -3047,7 +3056,7 @@ int recv_packet(alc_session_t* s) {
 	int my_list_not_empty = 0;
 	int updated;
 
-	socklen_t fromlen;
+	//socklen_t fromlen;
 
 	time_t systime;
 	unsigned long long curr_time;
@@ -3058,7 +3067,7 @@ int recv_packet(alc_session_t* s) {
 
 
 	//memset(recvbuf, 0, MAX_PACKET_LENGTH);
-	char* buf = NULL;
+	//char* buf = NULL;
 
 	for (i = 0; i < s->nb_channel; i++) {
 		ch = s->ch_list[i];
@@ -3119,8 +3128,8 @@ int recv_packet(alc_session_t* s) {
 			assert(container != NULL); // Ensure it is not empty while we look at the packet
 
 			recvlen = container->recvlen;
-			from = container->from;
-			fromlen = container->fromlen;
+			//from = container->from;
+			//fromlen = container->fromlen;
 			memcpy(s->recvbuf, container->recvbuf, MAX_PACKET_LENGTH);
 
 			if (recvlen < 0) {
@@ -3436,7 +3445,6 @@ int recv_packet(alc_session_t* s) {
 
 		// If receiving list is empty, continue to the next TSI
 		//printf("channel Rx list is empty\n"); fflush(stdout);
-
 	}
 
 	return recv_pkts;
@@ -3451,18 +3459,18 @@ void* rx_socket_thread(void *ch) {
 	fd_set read_set;
 	struct timeval time_out;
 	char hostname[100];
-    char *tempBuf;
+//    char *tempBuf;
 	int retval;
 	unsigned long long id;
-// Luke Fay	int index;
-    int hdrlen = 0;         /* length of whole FLUTE/ALC/LCT header */
-    unsigned long long tsi = 0; /* TSI */
-    unsigned long long toi = 0; /* TOI */
-    unsigned int sbn = 0;
-    unsigned int esi = 0;
+//	int index;
+//    int hdrlen = 0;         /* length of whole FLUTE/ALC/LCT header */
+//    unsigned long long tsi = 0; /* TSI */
+//    unsigned long long toi = 0; /* TOI */
+//    unsigned int sbn = 0;
+//    unsigned int esi = 0;
 
 	channel = (alc_channel_t *)ch;
-    tempBuf = malloc(MAX_PACKET_LENGTH);
+//    tempBuf = malloc(MAX_PACKET_LENGTH);
 
 	//Malek El Khatib 04.04.2014
 	//Start
@@ -3727,12 +3735,12 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 				to = to->next;
 			}
 
+
 #ifdef _MSC_VER
 			Sleep(1);
 #else
 			usleep(1000);
 #endif
-
 		}
 
 		obj_completed = object_completed(to);
@@ -4058,91 +4066,90 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 	unsigned char *content_enc_algo, int* fdt_instance_id) {
 
-		alc_session_t *s;                                                                                                                                          
-		char *buf = NULL; /* Buffer where to construct the object from data units */                                                                                                                                     
-		trans_obj_t *to;
+	alc_session_t *s;                                                                                                                                          
+	char *buf = NULL; /* Buffer where to construct the object from data units */                                                                                                                                     
+	trans_obj_t *to;
 
-		s = get_alc_session(s_id);
+	s = get_alc_session(s_id);
 
-		while (1) {
-			to = s->fdt_list;
+	while(1) {
+		to = s->fdt_list;
 
-			if (s->state == SExiting) {
-				/*printf("fdt_recv() SExiting\n");
-				fflush(stdout);*/
-				*retval = -2;
-				return NULL;
-			}
-			else if (s->state == SClosed) {
-				/*printf("fdt_recv() SClosed\n");
-				fflush(stdout);*/
-				*retval = 0;
-				return NULL;
-			}
-			else if (s->state == STxStopped) {
-				/*printf("fdt_recv() STxStopped\n");
-				fflush(stdout);*/
-				*retval = -3;
-				return NULL;
-			}
-
-			if (to == NULL) {
-
-#ifdef _MSC_VER
-				Sleep(1);	// This sleep helps reduce CPU usage
-				//printf("NO FDT LIST in session %d\n", s_id);
-				//fflush(stdout);
-#else
-				usleep(1000);
-#endif
-
-				continue;
-			}
-
-			do {
-				if(object_completed(to)) {
-
-					if (!is_received_instance(s, (unsigned int)to->toi)) {
-						printf("HAVE NOT SEEN TOI %llu YET\n", to->toi); fflush(stdout);
-						set_received_instance(s, (unsigned int)to->toi);
-					}
-					else {
-						printf("HAVE SEEN TOI %llu ALREADY\n", to->toi); fflush(stdout);
-						free_object(to, s, 0);
-
-						return 0;
-					}
-
-					*content_enc_algo = to->content_enc_algo;
-					*fdt_instance_id = (int)to->toi;
-
-					if(to->fec_enc_id == COM_NO_C_FEC_ENC_ID) {
-						buf = null_fec_decode_object(to, data_len, s);
-					}
-					else if(to->fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
-						buf = xor_fec_decode_object(to, data_len, s);
-					}
-					else if(to->fec_enc_id == RS_FEC_ENC_ID) {
-						buf = rs_fec_decode_object(to, data_len, s);
-					}
-					else if(to->fec_enc_id == SB_SYS_FEC_ENC_ID && to->fec_inst_id == REED_SOL_FEC_INST_ID) {
-						buf = rs_fec_decode_object(to, data_len, s);
-					}
-
-					if(buf == NULL) {
-						*retval = -1;
-					}
-
-					free_object(to, s, 0);
-					return buf;
-				}
-				to = to->next;
-			} 
-			while(to != NULL);
-
+		if(s->state == SExiting) {
+			/*printf("fdt_recv() SExiting\n");
+			fflush(stdout);*/
+			*retval = -2;
+			return NULL;
+		}
+		else if(s->state == SClosed) {
+			/*printf("fdt_recv() SClosed\n");
+			fflush(stdout);*/
+			*retval = 0;
+			return NULL;
+		}
+		else if(s->state == STxStopped) {
+			/*printf("fdt_recv() STxStopped\n");
+			fflush(stdout);*/
+			*retval = -3;
+			return NULL;	
 		}
 
-		return buf;
+		if(to == NULL) {
+
+#ifdef _MSC_VER
+			Sleep(1);	// This sleep helps reduce CPU usage
+			//printf("NO FDT LIST in session %d\n", s_id);
+			//fflush(stdout);
+#else
+			usleep(1000);
+#endif
+			continue;	
+		}
+
+		do {
+			if(object_completed(to)) {
+
+				if (!is_received_instance(s, (unsigned int)to->toi)) {
+					printf("HAVE NOT SEEN TOI %llu YET\n", to->toi); fflush(stdout);
+					set_received_instance(s, (unsigned int)to->toi);
+				}
+				else {
+					printf("HAVE SEEN TOI %llu ALREADY\n", to->toi); fflush(stdout);
+					free_object(to, s, 0);
+
+					return 0;
+				}
+
+				*content_enc_algo = to->content_enc_algo;
+				*fdt_instance_id = (int)to->toi;
+
+				if(to->fec_enc_id == COM_NO_C_FEC_ENC_ID) {
+					buf = null_fec_decode_object(to, data_len, s);
+				}
+				else if(to->fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
+					buf = xor_fec_decode_object(to, data_len, s);
+				}
+				else if(to->fec_enc_id == RS_FEC_ENC_ID) {
+					buf = rs_fec_decode_object(to, data_len, s);
+				}
+				else if(to->fec_enc_id == SB_SYS_FEC_ENC_ID && to->fec_inst_id == REED_SOL_FEC_INST_ID) {
+					buf = rs_fec_decode_object(to, data_len, s);
+				}
+
+				if(buf == NULL) {
+					*retval = -1;
+				}
+
+				free_object(to, s, 0);
+				return buf;
+			}
+			to = to->next;
+		} 
+		while(to != NULL);
+
+	}
+
+	return buf;
 }
 
 trans_obj_t* object_exist(unsigned long long toi, alc_session_t *s, int type) {
