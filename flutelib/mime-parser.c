@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 //#include "util.h"
 #include "rfc822parse.h"
@@ -164,7 +165,7 @@ xmalloc(size_t n)
 }
 
 #ifndef HAVE_STPCPY
-static char*
+char*
 stpcpy(char* a, const char* b)
 {
     while (*b)
@@ -485,10 +486,12 @@ parse_message_cb(void *opaque, rfc822parse_event_t event, rfc822parse_t msg)
                                          &valueoff);
           if (value)
             {
-              if (!stricmp(value+valueoff, "quoted-printable"))
-                ctx->decode_part = 1;
-              else if (!stricmp(value+valueoff, "base64"))
-                {
+              //if (!stricmp(value+valueoff, "quoted-printable")) /* Case in-sensitive */
+              if (!strcmp(value + valueoff, "quoted-printable")) /* case sensitive */
+                      ctx->decode_part = 1;
+              //else if (!stricmp(value+valueoff, "base64")) /* Case in-sensitive */
+              else if (!strcmp(value + valueoff, "base64")) /* Case sensitive */
+              {
                   ctx->decode_part = 2;
 //                  if (ctx->b64state)
 //                    b64dec_finish(ctx->b64state); /* Reuse state.  */
@@ -926,7 +929,7 @@ mime_parser_parse(mime_parser_t ctx, FILE *fp)
 /* This function is called by the parser to communicate events.  This
    callback communicates with the main program using a structure
    passed in OPAQUE. Should return 0 or set errno and return -1. */
-static int
+int
 message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
 {
     struct parse_info_s* info = opaque;
@@ -1102,7 +1105,7 @@ parse_message(FILE* fp, char* session_basedir)
     struct parse_info_s info;
     char* sls_file = session_basedir;
     size_t URLlength = strlen(session_basedir);
-    int tmp;
+    int tmp = 0;
 
     memset(&info, 0, sizeof info);
 
@@ -1201,9 +1204,10 @@ parse_message(FILE* fp, char* session_basedir)
 
             if (info.show_data_as_note)
             {
-                if (verbose)
+                if (verbose) {
                     printf("# DATA: %s\n", line);
                     fflush(stdout);
+                }
                 info.show_data_as_note = 0;
             }
             else if (info.file) { // Write the file

@@ -1538,7 +1538,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 #ifdef _MSC_VER
-		Sleep(50);	// Wait for shortest PHY Frame length 50msec
+		Sleep(50);	// Sleep for shortest PHY Frame Length 50msec
 #else
 		usleep(50000);
 #endif
@@ -1615,6 +1615,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			/* should do file repairing */
 
 			while(1) {
+				printf("IS OBJECT NOT COMPLETE?...\n"); fflush(stdout);
 
 				if(file->status != 2) {
 					repairing_needed = 1;
@@ -1635,6 +1636,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			/* is not downloaded completely we should do file repairing. */
 
 			while(1) {
+				printf("IS OBJECT NOT COMPLETE?...\n"); fflush(stdout);
 
 				if(strstr(file->location, receiver.wildcard_token) != NULL) {
 					if(file->status == 1) {
@@ -1883,6 +1885,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		else {
 
 			/* if NULL then we should do ptp repair */
+			printf("Performing FILE REPAIR...\n"); fflush(stdout);
 
 			while(1) {
 				http_server_index = 0;

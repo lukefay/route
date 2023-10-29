@@ -632,7 +632,7 @@ efdt_t* decode_efdt_payload(char *efdt_payload) {
 
 
 	if(XML_Parse(parser, efdt_payload, len, 1) == XML_STATUS_ERROR) {
-		fprintf(stderr, "%s at line %d\n",
+		fprintf(stderr, "%s at line %ld\n",
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);

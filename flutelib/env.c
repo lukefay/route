@@ -4,6 +4,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 #include <expat.h>
 
@@ -22,7 +24,7 @@
 
 item_t *item;			/**< Envelope items */
 item_t *prev;			/**< previous parsed item */
-BOOL is_first_item;		/**< is first item parsed or not? */
+bool is_first_item;		/**< is first item parsed or not? */
 env_t *env;				/**< Envelope */
 
 /**
@@ -129,10 +131,6 @@ int copy_item_info(item_t *src, item_t *dest) {
 
 static void startElement_env(void *userData, const char *name, const char **atts) {
 
-#ifndef _MSC_VER
-	char *ep;
-#endif
-
 	char* mbstr;
 
 	while(*atts != NULL) {
@@ -178,7 +176,7 @@ static void startElement_env(void *userData, const char *name, const char **atts
 
 				if (is_first_item) {
 					env->item_list = item;
-					is_first_item = FALSE;
+					is_first_item = false;
 				}
 				else {
 					prev->next = item;
@@ -270,12 +268,12 @@ env_t* decode_env_payload(char *env_payload) {
 
 	item = NULL;
 	prev = NULL;
-	is_first_item = TRUE;
+	is_first_item = true;
 
 	XML_SetStartElementHandler(parser, startElement_env);
 
 	if(XML_Parse(parser, env_payload, len, 1) == XML_STATUS_ERROR) {
-		fprintf(stderr, "%s at line %d\n",
+		fprintf(stderr, "%s at line %ld\n",
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);

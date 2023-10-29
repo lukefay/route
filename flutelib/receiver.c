@@ -2039,6 +2039,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 	session_basedir = get_session_basedir(s->s_id);
 
 	while(1) {
+
 		if (get_session_state(s->s_id) == SExiting) {
 			printf("SESSION EXITING\n");
 			fflush(stdout);
@@ -2135,7 +2136,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 				if (any_files_received) {
 					if (s->verbosity > 0) {
-						printf("All files received\n");
+						printf("Session All files received\n");
 						fflush(stdout);
 					}
 				}
@@ -2147,7 +2148,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 				break;
-				//continue;
 
 			}
 			else {
@@ -2155,7 +2155,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				if (((!is_printed) && (any_files_received))) {
 
 					if (s->verbosity > 0) {
-						printf("All files received, waiting for new files\n");
+						printf("Session All files received, waiting for new files\n");
 						fflush(stdout);
 					}
 

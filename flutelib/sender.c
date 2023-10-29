@@ -1875,8 +1875,11 @@ int fdtbasedsend(flute_sender_t *sender, int tx_mode, arguments_t *a) {
 	  elapsedTime = (unsigned long long)end_timer.tv_sec*1000000 + (unsigned long long)end_timer.tv_usec - (unsigned long long)start_timer.tv_sec*1000000 - (unsigned long long)start_timer.tv_usec;
 	  printf("elapsedTime %llu\n", elapsedTime);
 	  if (USDSent >=1)
-// Luke Fay		  usleep(video_segment - elapsedTime);
+#ifndef _MSC_VER
+		  usleep(video_segment - elapsedTime);
+#else
 		  Sleep((unsigned long)(video_segment - elapsedTime) / 1000);
+#endif
 	  else
 		  USDSent++;
 	  //End

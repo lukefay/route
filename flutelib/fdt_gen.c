@@ -257,168 +257,172 @@ int encode_file(char *file, char *base_dir, FILE *fp, int *s_id) {
 	fprintf(fp, "\n\t\t");
 	fprintf(fp, "Content-Length=\"%llu\"", file_stats.st_size);
 #ifdef USE_ZLIB
-	if(s->encode_content == 0 || s->encode_content == ZLIB_FDT) {
+	if (s->encode_content == 0 || s->encode_content == ZLIB_FDT) {
 #endif // USE_ZLIB
-	if (s->encode_content == 0) {
-		if(is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, file_stats.st_size,
-								   s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
-			printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
-			fflush(stdout);
-			if(hostname != NULL) {
-				free(hostname);
-			}
-			free_uri(uri);
-			return -1;
-		}
-	}
-
-	if(s->encode_content == PAD_FILES) {
-		padding_length = compute_padding_length(file_stats.st_size, s->def_max_sblen, s->def_eslen);
-
-        if(padding_length) {
-        	fprintf(fp, "\n\t\t");
-        	fprintf(fp, "Content-Encoding=\"%s\"", "pad");
-
-        	fprintf(fp, "\n\t\t");
-            fprintf(fp, "Transfer-Length=\"%llu\"", (file_stats.st_size + padding_length));
-        }
-
-		if(is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, (file_stats.st_size + padding_length),
-								   s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
-			printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
-			fflush(stdout);
-			if(hostname != NULL) {
-				free(hostname);
-			}
-			free_uri(uri);
-			return -1;
-		}
-	}
-
-#ifdef USE_ZLIB       	
-	else if(s->encode_content == ZLIB_FDT_AND_GZIP_FILES) {
-                
-		retcode = file_gzip_compress(fullpath, "wb");
-                                                                                                                                                              
-        	if(retcode == 0) {
-                	fprintf(fp, "\n\t\t");
-                	fprintf(fp, "Content-Encoding=\"%s\"", "gzip");
-                                                                                                                                                              
-               		memset(enc_fullpath, 0 , MAX_PATH_LENGTH);
-                	strcpy(enc_fullpath, fullpath);
-                	strcat(enc_fullpath, GZ_SUFFIX);
-#ifdef _MSC_VER                                                                                                                                                      
-                	if(_stat64(enc_fullpath, &enc_file_stats) == -1) {
-#else
-                	if(stat64(enc_fullpath, &enc_file_stats) == -1) {
-#endif
-                        printf("Error: %s is not valid file name\n", enc_fullpath);
-                        fflush(stdout);
-						if(hostname != NULL) {
-							free(hostname);
-						}
-						free_uri(uri);
-                        return -1;
-                }
-
-#ifdef USE_OPENSSL
-					if(s->calculate_session_size == FALSE) {
-					 md5 = file_md5(enc_fullpath);
-
-					 if(md5 == NULL) {
-						if(hostname != NULL) {
-							free(hostname);
-						}
-						free_uri(uri);
-						return -1;
-					 } 
-					
-					 fprintf(fp, "\n\t\t");
-					 fprintf(fp, "Content-MD5=\"%s\"", md5);
-					}
-#endif
-                                                                                                                                                              
-					fprintf(fp, "\n\t\t");
-					fprintf(fp, "Transfer-Length=\"%llu\"", enc_file_stats.st_size);
-
-					if(is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, enc_file_stats.st_size,
-								   s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
-						printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
-						fflush(stdout);
-						if(hostname != NULL) {
-							free(hostname);
-						}
-						free_uri(uri);
-						return -1;
-					}
-		}
-      	}
-#endif
-	else {
-
-#ifdef USE_OPENSSL
-			if(s->calculate_session_size == FALSE) {
-			 md5 = file_md5(fullpath);
-
-			 if(md5 == NULL) {
-				if(hostname != NULL) {
+		if (s->encode_content == 0) {
+			if (is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, file_stats.st_size,
+				s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
+				printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
+				fflush(stdout);
+				if (hostname != NULL) {
 					free(hostname);
 				}
 				free_uri(uri);
 				return -1;
-			 }
-
-			 fprintf(fp, "\n\t\t");
-			 fprintf(fp, "Content-MD5=\"%s\"", md5);
 			}
+		}
+
+		if (s->encode_content == PAD_FILES) {
+			padding_length = compute_padding_length(file_stats.st_size, s->def_max_sblen, s->def_eslen);
+
+			if (padding_length) {
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "Content-Encoding=\"%s\"", "pad");
+
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "Transfer-Length=\"%llu\"", (file_stats.st_size + padding_length));
+			}
+
+			if (is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, (file_stats.st_size + padding_length),
+				s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
+				printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
+				fflush(stdout);
+				if (hostname != NULL) {
+					free(hostname);
+				}
+				free_uri(uri);
+				return -1;
+			}
+		}
+
+#ifdef USE_ZLIB       	
+		else if (s->encode_content == ZLIB_FDT_AND_GZIP_FILES) {
+
+			retcode = file_gzip_compress(fullpath, "wb");
+
+			if (retcode == 0) {
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "Content-Encoding=\"%s\"", "gzip");
+
+				memset(enc_fullpath, 0, MAX_PATH_LENGTH);
+				strcpy(enc_fullpath, fullpath);
+				strcat(enc_fullpath, GZ_SUFFIX);
+#ifdef _MSC_VER                                                                                                                                                      
+				if (_stat64(enc_fullpath, &enc_file_stats) == -1) {
+#else
+				if (stat64(enc_fullpath, &enc_file_stats) == -1) {
 #endif
-	}
-	
-#ifdef FDT_INST_FEC_OTI_FILE
-	if(!s->use_fec_oti_ext_hdr) {
-
-		fprintf(fp, "\n\t\t");
-		fprintf(fp, "FEC-OTI-FEC-Encoding-ID=\"%u\"", s->def_fec_enc_id);
-
-		if(s->def_fec_enc_id >= 128) {
-			fprintf(fp, "\n\t\t");
-			fprintf(fp, "FEC-OTI-FEC-Instance-ID=\"%u\"", s->def_fec_inst_id);
-		}
-
-		if(s->def_fec_enc_id == RS_FEC_ENC_ID) {
-			fprintf(fp, "\n\t");
-			fprintf(fp, "FEC-OTI-Finite-Field-Parameter=\"%u\"", GF_BITS);
-			fprintf(fp, "\n\t");
-			fprintf(fp, "FEC-OTI-Number-of-Encoding-Symbols-per-Group=\"%u\"", 1);
-		}
-
-		fprintf(fp, "\n\t\t");
-		fprintf(fp, "FEC-OTI-Maximum-Source-Block-Length=\"%u\"", s->def_max_sblen);
-		fprintf(fp, "\n\t\t");
-		fprintf(fp, "FEC-OTI-Encoding-Symbol-Length=\"%u\"", s->def_eslen);
-
-		if(s->def_fec_enc_id == SB_SYS_FEC_ENC_ID) {
-			fprintf(fp, "\n\t\t");
-			fprintf(fp, "FEC-OTI-Max-Number-of-Encoding-Symbols=\"%u\"", max_n);	
-		}
-	}
-#endif
-
-	fprintf(fp, "/>\n");
-	toi++;
-	free_uri(uri);
+					printf("Error: %s is not valid file name\n", enc_fullpath);
+					fflush(stdout);
+					if (hostname != NULL) {
+						free(hostname);
+					}
+					free_uri(uri);
+					return -1;
+				}
 
 #ifdef USE_OPENSSL
-	if(s->calculate_session_size == FALSE) {
-		free(md5);
-	}
-#endif
-	
-	if(hostname != NULL) {
-		free(hostname);
-	}
+				if (s->calculate_session_size == FALSE) {
+					md5 = file_md5(enc_fullpath);
 
-	return 0;
+					if (md5 == NULL) {
+						if (hostname != NULL) {
+							free(hostname);
+						}
+						free_uri(uri);
+						return -1;
+					}
+
+					fprintf(fp, "\n\t\t");
+					fprintf(fp, "Content-MD5=\"%s\"", md5);
+				}
+#endif
+
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "Transfer-Length=\"%llu\"", enc_file_stats.st_size);
+
+				if (is_enough_source_block_numbers(s->def_max_sblen, s->def_eslen, enc_file_stats.st_size,
+					s->def_fec_enc_id, s->def_fec_inst_id) < 0) {
+					printf("Maximum source block length %i too small for the file: %s\n", s->def_max_sblen, file);
+					fflush(stdout);
+					if (hostname != NULL) {
+						free(hostname);
+					}
+					free_uri(uri);
+					return -1;
+				}
+			}
+		}
+#endif
+		else {
+
+#ifdef USE_OPENSSL
+			if (s->calculate_session_size == FALSE) {
+				md5 = file_md5(fullpath);
+
+				if (md5 == NULL) {
+					if (hostname != NULL) {
+						free(hostname);
+					}
+					free_uri(uri);
+					return -1;
+				}
+
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "Content-MD5=\"%s\"", md5);
+			}
+#endif
+		}
+
+#ifdef FDT_INST_FEC_OTI_FILE
+		if (!s->use_fec_oti_ext_hdr) {
+
+			fprintf(fp, "\n\t\t");
+			fprintf(fp, "FEC-OTI-FEC-Encoding-ID=\"%u\"", s->def_fec_enc_id);
+
+			if (s->def_fec_enc_id >= 128) {
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "FEC-OTI-FEC-Instance-ID=\"%u\"", s->def_fec_inst_id);
+			}
+
+			if (s->def_fec_enc_id == RS_FEC_ENC_ID) {
+				fprintf(fp, "\n\t");
+				fprintf(fp, "FEC-OTI-Finite-Field-Parameter=\"%u\"", GF_BITS);
+				fprintf(fp, "\n\t");
+				fprintf(fp, "FEC-OTI-Number-of-Encoding-Symbols-per-Group=\"%u\"", 1);
+			}
+
+			fprintf(fp, "\n\t\t");
+			fprintf(fp, "FEC-OTI-Maximum-Source-Block-Length=\"%u\"", s->def_max_sblen);
+			fprintf(fp, "\n\t\t");
+			fprintf(fp, "FEC-OTI-Encoding-Symbol-Length=\"%u\"", s->def_eslen);
+
+			if (s->def_fec_enc_id == SB_SYS_FEC_ENC_ID) {
+				fprintf(fp, "\n\t\t");
+				fprintf(fp, "FEC-OTI-Max-Number-of-Encoding-Symbols=\"%u\"", max_n);
+			}
+		}
+#endif
+
+		fprintf(fp, "/>\n");
+		toi++;
+		free_uri(uri);
+
+#ifdef USE_OPENSSL
+		if (s->calculate_session_size == FALSE) {
+			free(md5);
+		}
+#endif
+
+		if (hostname != NULL) {
+			free(hostname);
+		}
+
+		return 0;
+
+#ifdef USE_ZLIB
+	}
+#endif // USE_ZLIB
 }
 
 /**

@@ -633,7 +633,7 @@ fdt_t* decode_fdt_payload(char *fdt_payload) {
 	
 
 	if(XML_Parse(parser, fdt_payload, len, 1) == XML_STATUS_ERROR) {
-		fprintf(stderr, "%s at line %d\n",
+		fprintf(stderr, "%s at line %ld\n",
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);

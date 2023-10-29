@@ -1404,7 +1404,7 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 #else               
-				lct.stoi_list->x = strtoul(*(++atts), &ep, 10);
+				lct->stoi_list->x = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow Source TOI 'x' not a number\n");
@@ -1443,7 +1443,7 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 #else               
-				lct.stoi_list->y = strtoul(*(++atts), &ep, 10);
+				lct->stoi_list->y = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow Source TOI 'y' not a number\n");
@@ -1610,7 +1610,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 #else               
-				lct->overhead = strtouint16(*(++atts), &ep, 10);
+				//lct->overhead = strtouint16(*(++atts), &ep, 10);
+				lct->overhead = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
 					printf("LCT Repair Flow percent Overhead not a number\n");
@@ -1763,7 +1764,7 @@ stsid_t* decode_stsid_payload(char *stsid_payload) {
 	XML_SetStartElementHandler(parser, startElement_stsid);
 
 	if(XML_Parse(parser, stsid_payload, len, 1) == XML_STATUS_ERROR) {
-		fprintf(stderr, "%s at line %d\n",
+		fprintf(stderr, "%s at line %ld\n",
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);
@@ -1833,7 +1834,7 @@ void Printstsid(stsid_t *stsid) {
 
 #else
 		printf("TSI %d \n", ls->tsi); 
-		printf("TSI %d (TOI=%llu)\n",  ls->tsi, ls->srcflow->EFDT->file_list->toi);
+		printf("TSI %d (TOI=%llu)\n",  ls->tsi, ls->toi);
 #endif
 		fflush(stdout);
 

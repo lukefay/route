@@ -130,7 +130,7 @@ length_sans_trailing_ws (const unsigned char *line, size_t len)
 
 
 static void
-lowercase_string (unsigned char *string)
+lowercase_string (char *string)
 {
   for (; *string; string++)
     if (*string >= 'A' && *string <= 'Z')
@@ -263,7 +263,7 @@ rfc822_valid_header_name_p (const char *name)
 /* Transform a header NAME into a standard capitalized format.
  * Conversion stops at the colon. */
 void
-rfc822_capitalize_header_name (char *name)
+rfc822_capitalize_header_name (unsigned char *name)
 {
   unsigned char *p = name;
   int first = 1;
@@ -572,7 +572,7 @@ insert_body (rfc822parse_t msg, const unsigned char *line, size_t length)
 /* Insert the next line into the parser. Return 0 on success or true
    on error with errno set appropriately. */
 int
-rfc822parse_insert (rfc822parse_t msg, const unsigned char *line, size_t length)
+rfc822parse_insert (rfc822parse_t msg, const char *line, size_t length)
 {
   return (msg->in_body
           ? insert_body (msg, line, length)
@@ -845,7 +845,7 @@ parse_field (HDR_LINE hdr)
                                                      include '.'?*/
   static struct
   {
-    const unsigned char *name;
+    const char *name;
     size_t namelen;
   } tspecial_header[] = {
     { "Content-Type", 12},
@@ -856,7 +856,7 @@ parse_field (HDR_LINE hdr)
   };
   const char *delimiters;
   const char *delimiters2;
-  const unsigned char *line, *s, *s2;
+  const char *line, *s, *s2;
   size_t n;
   int i, invalid = 0;
   TOKEN t, tok, *tok_tail;

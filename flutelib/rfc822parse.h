@@ -49,7 +49,7 @@ typedef int (*rfc822parse_cb_t) (void *opaque,
                                  rfc822parse_t msg);
 
 int rfc822_valid_header_name_p (const char *name);
-void rfc822_capitalize_header_name (char *name);
+void rfc822_capitalize_header_name (unsigned char *name);
 
 rfc822parse_t rfc822parse_open (rfc822parse_cb_t cb, void *opaque_value);
 
@@ -59,7 +59,7 @@ void rfc822parse_cancel (rfc822parse_t msg);
 int rfc822parse_finish (rfc822parse_t msg);
 
 int rfc822parse_insert (rfc822parse_t msg,
-                        const unsigned char *line, size_t length);
+                        const char *line, size_t length);
 
 char *rfc822parse_get_field (rfc822parse_t msg, const char *name, int which,
                              size_t *valueoff);
