@@ -21,7 +21,9 @@
  */
 
  // Luke Fay inserted for Windows OS operation
-#include <WinSock2.h>
+#if defined(WIN32)
+    #include <WinSock2.h>
+#endif
 #include <stdint.h> // portable: uint64_t    MSVC: __int64
 // Luke Fay inserted for Windows OS operation
 
@@ -82,8 +84,10 @@ extern "C"
 
   };
 
-// Luke Fay inserted for Windows OS operation
-  int gettimeofday(struct timeval* tp, struct timezone* tzp);
+#if defined(WIN32)
+    // Luke Fay inserted for Windows OS operation
+    int gettimeofday(struct timeval* tp, struct timezone* tzp);
+#endif
 
 /* added by bennewit@cs.tu-berlin.de */
 #define osip_list_iterator_has_elem( it ) ( 0 != (it).actual && (it).pos < (it).li->nb_elt )
