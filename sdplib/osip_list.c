@@ -305,7 +305,7 @@ osip_list_remove (osip_list_t * li, int pos)
   return li->nb_elt;
 }
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
     // Luke Fay inserted for Windows OS operation
     int gettimeofday(struct timeval* tp, struct timezone* tzp)
     {

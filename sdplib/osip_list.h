@@ -21,7 +21,7 @@
  */
 
  // Luke Fay inserted for Windows OS operation
-#if defined(WIN32)
+#if defined(_MSC_VER)
     #include <WinSock2.h>
 #endif
 #include <stdint.h> // portable: uint64_t    MSVC: __int64
@@ -84,7 +84,7 @@ extern "C"
 
   };
 
-#if defined(WIN32)
+#if defined(_MSC_VER)
     // Luke Fay inserted for Windows OS operation
     int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #endif
