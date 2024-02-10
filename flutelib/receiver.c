@@ -732,9 +732,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		  }
 
 #ifdef _MSC_VER
-		  Sleep(5);
+		  //Sleep(5);
 #else
-		  usleep(5000);
+		  //usleep(5000);
 #endif
 		  continue;
 		}
@@ -1114,9 +1114,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//END Malek El Khatib
 
 #ifdef _MSC_VER
-	Sleep(5);
+	//Sleep(5);
 #else
-	usleep(5000);
+	//usleep(5000);
 #endif
 
 	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
@@ -1172,9 +1172,9 @@ int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 		}
 
 #ifdef _MSC_VER
-		Sleep(1);
+		//Sleep(1);
 #else
-		usleep(1000);
+		//usleep(1000);
 #endif
 		continue;
 
@@ -2163,9 +2163,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 #ifdef _MSC_VER
-				Sleep(5);
+				//Sleep(5);
 #else
-				usleep(5000);
+				//usleep(5000);
 #endif
 				continue;
 			}
@@ -2718,9 +2718,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		//END Malek El Khatib
 
 #ifdef _MSC_VER
-		Sleep(1);
+		//Sleep(1);
 #else
-		usleep(1000);
+		//usleep(1000);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
@@ -2762,9 +2762,9 @@ void* channel_file_mode_thread(c) {
 		}
 
 #ifdef _MSC_VER
-		Sleep(1);
+		//Sleep(1);
 #else
-		usleep(1000);
+		//usleep(1000);
 #endif
 		continue;
 

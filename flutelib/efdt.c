@@ -220,7 +220,7 @@ static void startElement_EFDT(void *userData, const char *name, const char **att
 	char *mbstr;
 
 	while(*atts != NULL) {
-		if(!strcmp(name, "File")) {
+		if(!strcmp(name, "File") || !strcmp(name, "fdt:File")) {
 
 			if(file == NULL) {
 				if(!(file = (file_t*)calloc(1, sizeof(file_t)))) {
