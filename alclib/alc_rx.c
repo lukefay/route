@@ -1552,17 +1552,17 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	}
 
 	*toir = toi; 
-	//printf("See TOI: %llu\n", toi); fflush(stdout);
-	
+
+
+	// Once complete reading LCT HEADER, set wanted object
 	if (!toi == FDT_TOI && tsi == ch->ch_id) {
 		if (ch->s->verbosity == 4) {
 			printf("See object %llu in session %d\n", toi, ch->s->s_id);
 			fflush(stdout);
 		}
-		
 
+		// Register desired object
 		wanted_obj = get_wanted_object(ch->s, toi);
-		//printf("Did we exit get_wanted_object????\n"); fflush(stdout);
 
 		if (wanted_obj == NULL) {
 			// Malek El Khatib
@@ -1572,18 +1572,29 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			if (ch->s->rx_fdt_instance_list == NULL || ch->s->waiting_fdt_instance == TRUE || sendFDTAfterObj == TRUE) {
 				printf("MalekElKhatib: Packet rebuffering for toi %llu in TSI: %lli  waitingFDT %d, sendingFDT %d\n", toi, tsi, ch->s->waiting_fdt_instance, sendFDTAfterObj);
 				fflush(stdout);
+
 				unlock_lct_header();
 
 				return WAITING_FDT;
 			}
 			else if (ch->s->s_id > 0) {
 				//printf("MALEK_WANTED PACKET IS DROPPED2\n"); fflush(stdout);
-				//printf("Packet is real time %d in Session %d\n", ch->s->ls->rt, ch->s->s_id); fflush(stdout);
-				//return HDR_ERROR;
+				//printf("Packet is real time %d in Session %d\n", ch->s->ls->rt, ch->s->s_id);
+				//fflush(stdout);
+				
+				// Avoid race condition
+				#ifdef _MSC_VER
+					for (int dly = 0; dly < 2000; dly++) {
+						printf("");
+						fflush(stdout);
+					}
+				#else
+					usleep(200);
+				#endif
+
 				unlock_lct_header();
 
 				return NEW_TOI;
-
 			}
 			else {
 				//printf("SLS found again\n"); fflush(stdout);
@@ -1606,7 +1617,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			content_enc_algo = wanted_obj->content_enc_algo;
 		}
 
-		if(fec_enc_id == RS_FEC_ENC_ID) {
+		if (fec_enc_id == RS_FEC_ENC_ID) {
 			//printf("See Reed Solomon FEC\n"); fflush(stdout);
 			finite_field = wanted_obj->finite_field;
 			nb_of_es_per_group = wanted_obj->nb_of_es_per_group;
@@ -1635,7 +1646,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			return HDR_ERROR;
 	}
 
-	// LCT HEADER EXTENSIONS !!!!
+	// Read LCT HEADER EXTENSIONS !!!!
 	if(def_lct_hdr->hdr_len > (hdrlen >> 2)) { 
 		if (ch->s->verbosity == 4) {
 			printf("Reading LCT Header extensions in toi: %llu in tsi: %llu\n", toi, tsi);
@@ -1646,6 +1657,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		go through all possible Extension Headers */
 
 		exthdrlen = def_lct_hdr->hdr_len - (hdrlen >> 2);
+
+		if (ch->s->verbosity == 4) {
+			printf("Reading LCT Header length %u, Extended Header Length %u\n", def_lct_hdr->hdr_len, exthdrlen);
+			fflush(stdout);
+		}
 
 		while(exthdrlen > 0) {
 
@@ -1658,9 +1674,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			if(het < 128) {
 				hel = (word & 0x00FF0000) >> 16;
 			}
-
-			//printf("Extender LCT Header type: %d\n", het);
-			//fflush(stdout);
+			
+			if (ch->s->verbosity == 4) {
+				printf("Extended LCT Header type: %d\n", het);
+				fflush(stdout);
+			}
 
 			switch(het) {  // Switch on which type of extended header is present
 
@@ -1905,6 +1923,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 	
 	//printf("LCT header length with Header Extensions: %i\n", hdrlen);
+	//fflush(stdout);
 	// Extended LCT Header complete, now get FEC Payload ID ( OR SOURCE FLOW start_offset )
 
 	/* Check if we have an empty packet without FEC Payload ID */
@@ -1921,7 +1940,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				fflush(stdout);
 			}
 			unlock_lct_header();
-
+	
 			return DUP_PACKET;
 		}
 		else {
@@ -2028,6 +2047,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 
 
+
+	// COLLECT OBJECT UNITS
 	/* TODO: check if instance_id is set --> EXT_FDT header exists in packet */
 	lct_ch_t* lsl = ch->s->ls;
 	//lct_ch_t* lsl = ch->ls;
@@ -2040,7 +2061,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 	char stra[16];
 	char strb[16];
 	char* rplcval;
-
+	
 	if (start_offset == 0 && tsi == ch->ch_id && def_lct_hdr->psi == 2) {	// Look for 1st packet in Source Flows
 		if (ch->s->verbosity == 4) {
 			printf("Start offset = 0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\tSource blocks %d\n", toi, transfer_len, es_len, max_sb_len);
@@ -2053,7 +2074,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		ch->s->fdt_instance_id = (long)toi;
 		//ch->fdt_instance_id = (long)toi;
 		ch->s->last_given = NULL;
-		
+
 		// Also add FDT for the next file
 		lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
 		lct_file = (file_t*)calloc(1, sizeof(file_t));
@@ -2069,7 +2090,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				fflush(stdout);
 			}
 		}
-		
+
 		//else if (ch->s->tsi != 0) {
 		//else if (ch->ch_id != 0) {
 		else if (ch->ch_id != 0 && lsl->rt == TRUE) { // Add another File to the real time stream FDT
@@ -2123,6 +2144,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				if (lsl->fileTemplate != NULL) {
 					sprintf(lct_file->location, "%s", lsl->fileTemplate);  // This is from AFDT and copyied to lct_file.location
 					rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+					rplcval = str_replace(lct_file->location, 64, "$Time$", str);  // Spec violation tolerance
 				}
 				else {
 					sprintf(lct_file->location, "%s", "$TSI$_$TOI$");  // If fileTemplate is not in AFDT, just use TOI
@@ -2219,10 +2241,10 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				printf("Analyzed packet FDT #files: %d\tTOI: %lld\tURI: %s\tXfer Length: %lld\n", lsl->fdt->nb_of_files, lct_file->toi, lct_file->location, lct_file->transfer_len);
 				fflush(stdout);
 			}
-			
+
 			FreeFDT(lct_fdt);
 			//FreeFile(lct_file);
-			
+
 		}
 		else {
 			// Else keep NRT file listing already in the S-TSID
@@ -2240,7 +2262,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 		wanted_obj = get_wanted_object(ch->s, toi);
 
-		//es_len = wanted_obj->es_len;
+		//es_len = wanted_obj->es_len;	// This works for MediaCast vendor
 		es_len = len - hdrlen;  // Just make one iteration (no repair in SRC FLOW)
 		//max_sb_len = len - hdrlen;
 		max_sb_len = wanted_obj->max_sb_len;
@@ -2248,7 +2270,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		fec_enc_id = wanted_obj->fec_enc_id;
 		//transfer_len = wanted_obj->transfer_len;
 		content_enc_algo = wanted_obj->content_enc_algo;
-		
+
 		if (ch->s->verbosity == 4) {
 			printf("Start offset !0 double check TOI %lld\tTransfer LEN %lld\tES_LEN %d\tSB_LEN %d\n", toi, transfer_len, es_len, max_sb_len);
 			fflush(stdout);
@@ -2264,7 +2286,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		}
 		// Get repair data
 		trans_unit = retrieve_unit(ch->s, len - hdrlen);
-		
+
 		if (trans_unit == NULL) {
 			if (ch->s->verbosity == 4) {
 				printf("REPAIR transport unit is NULL, memory error\n");
@@ -2274,7 +2296,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 			return MEM_ERROR;
 		}
-		
+
 		trans_unit->len = (unsigned short)(len - hdrlen);
 		memcpy(trans_unit->data, (data + hdrlen), trans_unit->len);	// Copy over data from Rx circular buffer to transmission unit
 		if (ch->s->verbosity == 4) {
@@ -2293,7 +2315,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			rplcval = str_replace(filename, 64, "$TSI$", stra);  // Store LCT channel repair flow
 			rplcval = str_replace(filename, 64, "$SB$", str);  // Store Repair flow source blocks
 			rplcval = str_replace(filename, 64, "$ESN$", strb);  // Store Repair Flow Symbol count
-			if (!rplcval) printf("Not enough room to replace strings\n"); 
+			if (!rplcval) printf("Not enough room to replace strings\n");
 			fflush(stdout);
 		}
 #ifdef USE_ZLIB
@@ -2302,7 +2324,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			rplcval = str_replace(filename, 64, "$TSI$", stra);  // Store LCT channel repair flow
 			rplcval = str_replace(filename, 64, "$SB$", str);  // Store Repair flow source blocks
 			rplcval = str_replace(filename, 64, "$ESN$", strb);  // Store Repair Flow Symbol count
-			if (!rplcval) printf("Not enough room to replace strings\n"); 
+			if (!rplcval) printf("Not enough room to replace strings\n");
 			fflush(stdout);
 			strcat(filename, GZ_SUFFIX);
 		}
@@ -2339,16 +2361,16 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		unlock_lct_header();
 
 		return REPAIR;
-	}  
+		}
 
-	if(len - hdrlen != 0) {  // Find payload length (Received packet length - LCT header) is not zero: Start FEC decoding
+	if (len - hdrlen != 0) {  // Find payload length (Received packet length - LCT header) is not zero: Start FEC decoding
 		//printf("packet length: %d\t Packet header length: %d\n", len, hdrlen);
 		//printf("transfer len: %lld\tFEC enc id: %d\t FEC inst id: %d\tes_len: %d\t max_sb_len: %d\n", transfer_len, fec_enc_id, fec_inst_id, es_len, max_sb_len);
 		//fflush(stdout);
 
 		/* check if we have enough information to perform FEC */
 		// REPAIR FLOW requires Encoded Symbol count and Source Block numbers, but SOURCE FLOW does not.
-		if(def_lct_hdr->psi == 0 && ((transfer_len == 0) || (fec_enc_id == -1) || ((fec_enc_id > 127) && (fec_inst_id == -1)) ||
+		if (def_lct_hdr->psi == 0 && ((transfer_len == 0) || (fec_enc_id == -1) || ((fec_enc_id > 127) && (fec_inst_id == -1)) ||
 			(esi == 0) || (sbn == 0))) {
 			if (ch->s->verbosity == 4) {
 				printf("Not enough information to create Repair Flow Transport Object, TOI: %llu in TSI: %llu\tFEC encoding ID: %i\n", toi, tsi, fec_enc_id);
@@ -2364,12 +2386,12 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				printf("Not enough information to create Source Flow Transport Object, TOI: %llu in TSI: %llu\tFEC encoding ID: %i\n", toi, tsi, fec_enc_id);
 				fflush(stdout);
 			}
-				unlock_lct_header();
+			unlock_lct_header();
 
-				return HDR_ERROR;
+			return HDR_ERROR;
 		}
 
-		if(fec_enc_id == RS_FEC_ENC_ID) {
+		if (fec_enc_id == RS_FEC_ENC_ID) {
 			nb_of_symbols = nb_of_es_per_group;
 		}
 		else {
@@ -2381,10 +2403,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		//Malek El Khatib 08.08.2014
 		//If payload contains consecutive es, it is better to decode them at once (i.e. without extracting them into seperate tr_units
 		int nb_of_iterations = nb_of_symbols;
-		//printf("The number of symbols per source block is: %u\n", nb_of_symbols); fflush(stdout);
+		//printf("The number of symbols per source block is: %u\n", nb_of_symbols); 
+		//fflush(stdout);
 
 
-		if((fec_enc_id == COM_NO_C_FEC_ENC_ID) && (numEncSymbPerPacket == 0)) //numEncSymbPerPacket = 0 means that it is varying with each packet
+		if ((fec_enc_id == COM_NO_C_FEC_ENC_ID) && (numEncSymbPerPacket == 0)) //numEncSymbPerPacket = 0 means that it is varying with each packet
 		{
 			nb_of_iterations = 1;			// <In this case, decode whole payload at once>
 			//nb_of_symb_to_decode_simult = nb_of_symbols;
@@ -2400,8 +2423,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 
 		//for(j = 0; j < nb_of_symbols; j++) {
-		for(j = 0; j < nb_of_iterations; j++) {
-		//End
+		for (j = 0; j < nb_of_iterations; j++) {
+			//End
 
 #ifdef USE_RETRIEVE_UNIT
 			/* Retrieve a transport unit from the session pool  */
@@ -2430,7 +2453,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				fflush(stdout);
 			}
 
-			if(trans_unit == NULL) {
+			if (trans_unit == NULL) {
 				if (ch->s->verbosity == 4) {
 					printf("transport unit is NULL, memory error\n");
 					fflush(stdout);
@@ -2449,12 +2472,14 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				trans_unit->len = es_len;
 
 			//END
-			//printf("tranport unit length: %d\n", trans_unit->len);
-			//fflush(stdout);
+			if (ch->s->verbosity == 4) {
+				printf("tranport unit length: %d\n", trans_unit->len);
+				fflush(stdout);
+			}
 
 #ifndef USE_RETRIEVE_UNIT
 			/* Alloc memory for incoming TU data */
-			if(!(trans_unit->data = (char*)calloc(es_len, sizeof(char)))) {
+			if (!(trans_unit->data = (char*)calloc(es_len, sizeof(char)))) {
 				printf("Could not alloc memory for transport unit's data!\n");
 				fflush(stdout);
 				unlock_lct_header();
@@ -2464,11 +2489,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 #endif
 			memcpy(trans_unit->data, (data + hdrlen + j * es_len), trans_unit->len);
 
-			//printf("%d memory copied transport unit in TOI: %llu\n", trans_unit->len, toi);
-			//fflush(stdout);
+			if (ch->s->verbosity == 4) {
+				printf("%d memory copied transport unit in TOI: %llu\n", trans_unit->len, toi);
+				fflush(stdout);
+			}
 
 			/* Check if object already exist */
-			if(toi == FDT_TOI) {
+			if (toi == FDT_TOI) {
 				trans_obj = object_exist(fdt_instance_id, ch->s, 0);
 			}
 			else {
@@ -2476,11 +2503,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			}
 
 
-			if(trans_obj == NULL) {
+			if (trans_obj == NULL) {
 
 				trans_obj = create_object();
 
-				if(trans_obj == NULL) {
+				if (trans_obj == NULL) {
 					printf("transport object is NULL, memory error\n");
 					fflush(stdout);
 					unlock_lct_header();
@@ -2488,7 +2515,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					return MEM_ERROR;
 				}
 
-				if(toi == FDT_TOI) {
+				if (toi == FDT_TOI) {
 					trans_obj->toi = fdt_instance_id;
 					trans_obj->content_enc_algo = content_enc_algo;
 
@@ -2500,29 +2527,29 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				else {
 					trans_obj->toi = toi;
 
-					if(ch->s->rx_memory_mode == 1 || ch->s->rx_memory_mode == 2) {
+					if (ch->s->rx_memory_mode == 1 || ch->s->rx_memory_mode == 2) {
 
 						memset(filename, 0, MAX_PATH_LENGTH);
 
-						if(content_enc_algo == 0) {
+						if (content_enc_algo == 0) {
 							sprintf(filename, "%s/%s", ch->s->base_dir, "object_XXXXXX");
 							mktemp(filename);
 						}
 #ifdef USE_ZLIB
-						else if(content_enc_algo == GZIP) {
+						else if (content_enc_algo == GZIP) {
 							sprintf(filename, "%s/%s", ch->s->base_dir, "object_XXXXXX");
 							mktemp(filename);
 							strcat(filename, GZ_SUFFIX);
 						}
 #endif
-						else if(content_enc_algo == PAD) {
+						else if (content_enc_algo == PAD) {
 							sprintf(filename, "%s/%s", ch->s->base_dir, "object_XXXXXX");
 							mktemp(filename);
 							strcat(filename, PAD_SUFFIX);
 						}
 
 						/* Alloc memory for tmp_filename */
-						if(!(trans_obj->tmp_filename = (char*)calloc(strlen(filename)+1, sizeof(char)))) {
+						if (!(trans_obj->tmp_filename = (char*)calloc(strlen(filename) + 1, sizeof(char)))) {
 							printf("Could not alloc memory for tmp_filename!\n");
 							fflush(stdout);
 							unlock_lct_header();
@@ -2532,25 +2559,25 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 						memcpy(trans_obj->tmp_filename, filename, strlen(filename));
 
-// Luke Fay 
+						// Luke Fay 
 #ifdef _MSC_VER
 						if ((trans_obj->fd = open((const char*)trans_obj->tmp_filename,
 							_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IREAD | _S_IWRITE)) < 0) {
-// Luke Fay
+							// Luke Fay
 #else
-						if((trans_obj->fd = open64(trans_obj->tmp_filename,
-							O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
-//Luke Fay
+						if ((trans_obj->fd = open64(trans_obj->tmp_filename,
+							O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
+							//Luke Fay
 #endif
-								printf("Error: unable to open file %s\n", trans_obj->tmp_filename);
-								fflush(stdout);
-								unlock_lct_header();
+							printf("Error: unable to open file %s\n", trans_obj->tmp_filename);
+							fflush(stdout);
+							unlock_lct_header();
 
-								return MEM_ERROR;
+							return MEM_ERROR;
 						}
-					}
+						}
 
-					if(ch->s->rx_memory_mode == 2) {
+					if (ch->s->rx_memory_mode == 2) {
 
 						/* when receiver is in large file mode a tmp file is used to store the data symbols */
 
@@ -2559,7 +2586,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 						mktemp(filename);
 
 						/* Alloc memory for tmp_st_filename */
-						if(!(trans_obj->tmp_st_filename = (char*)calloc(strlen(filename)+1, sizeof(char)))) {
+						if (!(trans_obj->tmp_st_filename = (char*)calloc(strlen(filename) + 1, sizeof(char)))) {
 							printf("Could not alloc memory for tmp_st_filename!\n");
 							fflush(stdout);
 							unlock_lct_header();
@@ -2569,29 +2596,29 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 						memcpy(trans_obj->tmp_st_filename, filename, strlen(filename));
 
-// Luke Fay 
+						// Luke Fay 
 #ifdef _MSC_VER
 						if ((trans_obj->fd_st = open((const char*)trans_obj->tmp_st_filename,
 							_O_RDWR | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IREAD | _S_IWRITE)) < 0) {
-// Luke Fay 
+							// Luke Fay 
 #else
-						if((trans_obj->fd_st = open64(trans_obj->tmp_st_filename,
-							O_RDWR | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
-// Luke Fay 
+						if ((trans_obj->fd_st = open64(trans_obj->tmp_st_filename,
+							O_RDWR | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
+							// Luke Fay 
 #endif
-								printf("Error: unable to open file %s\n", trans_obj->tmp_st_filename);
-								fflush(stdout);
-								unlock_lct_header();
+							printf("Error: unable to open file %s\n", trans_obj->tmp_st_filename);
+							fflush(stdout);
+							unlock_lct_header();
 
-								return MEM_ERROR;
+							return MEM_ERROR;
 						}
-					}  
+						}
 
 					if (ch->s->verbosity == 4) {
 						printf("TOI: %lli\t FEC algorithm: %i\t for filename:%s\n", toi, content_enc_algo, trans_obj->tmp_filename);
 						fflush(stdout);
 					}
-				}
+					}
 
 				trans_obj->len = transfer_len;
 				trans_obj->fec_enc_id = (unsigned char)fec_enc_id;
@@ -2612,14 +2639,16 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 				//trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
 				trans_obj->bs = compute_blocking_structure(trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
-				//printf("Calculated blocking structure with transfer len: %llu\tmax_sb: %d\tes: %d\n", trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
-				//fflush(stdout);
+				if (ch->s->verbosity == 4) {
+					printf("Calculated blocking structure with transfer len: %llu\tmax_sb: %d\tes: %d\n", trans_obj->len, trans_obj->max_sb_len, trans_obj->es_len);
+					fflush(stdout);
+				}
 
 				// For ROUTE SRC_FLOW keep the number of Source blocks ready, as N is only available at Start Offset == 0 -- Luke Fay
 				trans_obj->bs->N = nb_of_iterations;
 				//trans_obj->bs->N = 1;
 
-				if(!(trans_obj->block_list = (trans_block_t*)calloc(trans_obj->bs->N, sizeof(trans_block_t)))) {
+				if (!(trans_obj->block_list = (trans_block_t*)calloc(trans_obj->bs->N, sizeof(trans_block_t)))) {
 					printf("Could not alloc memory for transport block list!\n");
 					fflush(stdout);
 					unlock_lct_header();
@@ -2627,25 +2656,25 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					return MEM_ERROR;
 				}
 
-				if(toi == FDT_TOI) {
+				if (toi == FDT_TOI) {
 					insert_object(trans_obj, ch->s, 0);
 				}
 				else {
 					insert_object(trans_obj, ch->s, 1);
 				}
-			}
-			trans_block = trans_obj->block_list+sbn;
+					}
+			trans_block = trans_obj->block_list + sbn;
 
-			if(trans_block->nb_of_rx_units == 0) {  // If at the start of object reception, calculate # of units to expect
+			if (trans_block->nb_of_rx_units == 0) {  // If at the start of object reception, calculate # of units to expect
 				trans_block->sbn = sbn;
 
 				//Malek El Khatib 11.08.2014
 				//trans_block->nb_of_rx_symbols = 0;
 				//End
 
-				if(fec_enc_id == COM_NO_C_FEC_ENC_ID) { 
+				if (fec_enc_id == COM_NO_C_FEC_ENC_ID) {
 
-					if(sbn < trans_obj->bs->I) {
+					if (sbn < trans_obj->bs->I) {
 						trans_block->k = trans_obj->bs->A_large;
 					}
 					else {
@@ -2663,15 +2692,15 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					}
 
 				}
-				else if(fec_enc_id == SB_SYS_FEC_ENC_ID) {
+				else if (fec_enc_id == SB_SYS_FEC_ENC_ID) {
 
 					trans_block->k = sb_len;
 					trans_block->max_k = max_sb_len;
 					trans_block->max_n = max_nb_of_es;
 				}
-				else if(fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
+				else if (fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
 
-					if(sbn < trans_obj->bs->I) {
+					if (sbn < trans_obj->bs->I) {
 						trans_block->k = trans_obj->bs->A_large;
 					}
 					else {
@@ -2680,9 +2709,9 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 					trans_block->max_k = max_sb_len;
 				}
-				else if(fec_enc_id == RS_FEC_ENC_ID) {
+				else if (fec_enc_id == RS_FEC_ENC_ID) {
 
-					if(sbn < trans_obj->bs->I) {
+					if (sbn < trans_obj->bs->I) {
 						trans_block->k = trans_obj->bs->A_large;
 					}
 					else {
@@ -2695,7 +2724,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					/*trans_block->finite_field = finite_field;*/
 				}
 			}
-			
+
 			// Continually update the # of units
 			if (fec_enc_id == COM_NO_C_FEC_ENC_ID) {
 
@@ -2703,19 +2732,23 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					trans_block->k = trans_obj->bs->A_large;
 				}
 				else {
-					//printf("Setting # of units A_large %u\tA_small %u\n", trans_obj->bs->A_large, trans_obj->bs->A_small);
-					//fflush(stdout);
+					if (ch->s->verbosity == 4) {
+						printf("Setting # of units A_large %u\tA_small %u\n", trans_obj->bs->A_large, trans_obj->bs->A_small);
+						fflush(stdout);
+					}
 					trans_block->k = trans_obj->bs->A_small;
 					//trans_block->k = trans_block->nb_of_rx_units + ((transfer_len - start_offset) / trans_unit->len );
 				}
 			}
 
-			if(!block_ready_to_decode(trans_block)) {
-				//printf("Block not ready to decode\n");
-				//fflush(stdout);
+			if (!block_ready_to_decode(trans_block)) {
+				if (ch->s->verbosity == 4) {
+					printf("Block not ready to decode\n");
+					fflush(stdout);
+				}
 				trans_unit->offset = start_offset;	// Out of Order delivery support.
 
-				if(insert_unit(trans_unit, trans_block, trans_obj) != 1) {
+				if (insert_unit(trans_unit, trans_block, trans_obj) != 1) {
 					//printf("insert unit\n");
 					//fflush(stdout);
 
@@ -2723,16 +2756,18 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					trans_block->nb_of_rx_symbols += nb_of_symbols;
 					//End
 
-					if(toi == FDT_TOI || ch->s->rx_memory_mode == 0) { 
-						if(block_ready_to_decode(trans_block)) {
+					if (toi == FDT_TOI || ch->s->rx_memory_mode == 0) {
+						if (block_ready_to_decode(trans_block)) {
 							trans_obj->nb_of_ready_blocks++;
 						}
 					}
-                    //cachePacket(toi,tsi,sbn,esi,trans_unit->data,(unsigned int)len - hdrlen);
+					//cachePacket(toi,tsi,sbn,esi,trans_unit->data,(unsigned int)len - hdrlen);
 
-					//printf("Only now after LCT Header analysis is packet cached in buffer for TOI %llu\n", toi);
-					//fflush(stdout);
-					
+					if (ch->s->verbosity == 4) {
+						printf("Only now after LCT Header analysis is packet cached in buffer for TOI %llu\n", toi);
+						fflush(stdout);
+					}
+
 					// Update the number of units
 					trans_obj->bs = compute_blocking_structure(transfer_len, max_sb_len, es_len);
 
@@ -2744,13 +2779,13 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					}
 
 					/* if large file mode data symbol is stored in the tmp file */
-					if(toi != FDT_TOI && ch->s->rx_memory_mode == 2) {
+					if (toi != FDT_TOI && ch->s->rx_memory_mode == 2) {
 #if defined (WIN32)
 						trans_unit->offset = _lseeki64(trans_obj->fd_st, 0, SEEK_END);
 #else
 						trans_unit->offset = lseek64(trans_obj->fd_st, 0, SEEK_END);
 #endif
-						if(trans_unit->offset == -1) {
+						if (trans_unit->offset == -1) {
 							printf("lseek error, toi: %llu\n", toi);
 							fflush(stdout);
 							set_session_state(ch->s->s_id, SExiting);
@@ -2759,7 +2794,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 							return MEM_ERROR;
 						}
 
-						if(write(trans_obj->fd_st, trans_unit->data, (unsigned int)trans_unit->len) == -1) {
+						if (write(trans_obj->fd_st, trans_unit->data, (unsigned int)trans_unit->len) == -1) {
 							printf("write error, toi: %llu, sbn: %i\n", toi, sbn);
 							fflush(stdout);
 							set_session_state(ch->s->s_id, SExiting);
@@ -2774,32 +2809,32 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 #endif
 					}
 
-					//printf("calculate percent object received\n");
-					//fflush(stdout);
+					if (ch->s->verbosity == 4) {
+						printf("calculate percent object received\n");
+						fflush(stdout);
+					}
 
-					if(((toi == FDT_TOI && ch->s->verbosity == 4) || (toi != FDT_TOI && ch->s->verbosity > 1))) {
-
+					if (((toi == FDT_TOI && ch->s->verbosity == 4) || (toi != FDT_TOI && ch->s->verbosity > 1))) {
 						rx_percent = (double)((double)100 *
-							((double)(long long)trans_obj->rx_bytes/(double)(long long)trans_obj->len));
+							((double)(long long)trans_obj->rx_bytes / (double)(long long)trans_obj->len));
 
-						if(((rx_percent >= (trans_obj->last_print_rx_percent + 1)) || (rx_percent == 100))) {
+						if (((rx_percent >= (trans_obj->last_print_rx_percent + 1)) || (rx_percent == 100))) {
 							trans_obj->last_print_rx_percent = rx_percent;
 							printf("%.2f%% of object received (TOI=%llu LAYERS=%i)\n", rx_percent,
 								toi, ch->s->nb_channel);
 							fflush(stdout);
 						}
 					}
-					//printf("__ %f\n", rx_percent);
-					//fflush(stdout);
+
 				}
 
 
 			}
 
-			if(toi != FDT_TOI) {
-				if(ch->s->rx_memory_mode == 1 || ch->s->rx_memory_mode == 2) {
+			if (toi != FDT_TOI) {
+				if (ch->s->rx_memory_mode == 1 || ch->s->rx_memory_mode == 2) {
 
-					if(block_ready_to_decode(trans_block)) {
+					if (block_ready_to_decode(trans_block)) {
 
 						//Malek El Khatib 11.08.2014
 						if (ch->s->verbosity > 2) {
@@ -2808,15 +2843,15 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 						}
 						//End
 
-						if(ch->s->rx_memory_mode == 2) {
+						if (ch->s->rx_memory_mode == 2) {
 
 							/* We have to restore the data symbols to trans_units from the symbol store tmp file */
 
 							next_tu = trans_block->unit_list;
 
-							while(next_tu != NULL) {
+							while (next_tu != NULL) {
 
-								tu = next_tu;							
+								tu = next_tu;
 #if defined (WIN32)
 								if (_lseeki64(trans_obj->fd_st, tu->offset, SEEK_SET) == -1) {
 #else 
@@ -2834,14 +2869,14 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 								/* Alloc memory for restoring data symbol */
 
-								if(!(tu->data = (char*)calloc(tu->len, sizeof(char)))) {
+								if (!(tu->data = (char*)calloc(tu->len, sizeof(char)))) {
 									printf("Could not alloc memory for transport unit's data!\n");
 									unlock_lct_header();
 
 									return MEM_ERROR;
 								}
 
-								if(read(trans_obj->fd_st, tu->data, tu->len) == -1) {
+								if (read(trans_obj->fd_st, tu->data, tu->len) == -1) {
 									printf("read error, toi: %llu, sbn: %i\n", toi, sbn);
 									fflush(stdout);
 									set_session_state(ch->s->s_id, SExiting);
@@ -2851,28 +2886,28 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 								}
 
 								next_tu = tu->next;
+								}
 							}
-						}
 
 						/* decode the block and save data to the tmp file */
 						//printf("FEC ENC ID: %d with eslen %d\n", fec_enc_id, es_len); fflush(stdout);
 						//printf("FEC ENC ID: %d with xfer len %lld\n", fec_enc_id, transfer_len); fflush(stdout);
 
-						if(fec_enc_id == COM_NO_C_FEC_ENC_ID) {
+						if (fec_enc_id == COM_NO_C_FEC_ENC_ID) {
 							//buf = null_fec_decode_src_block(trans_block, &block_len, es_len);	// This is for FLUTE
 							buf = null_fec_decode_src_block(trans_block, &block_len, transfer_len);	// This is for ROUTE
 						}
-						else if(fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
+						else if (fec_enc_id == SIMPLE_XOR_FEC_ENC_ID) {
 							buf = xor_fec_decode_src_block(trans_block, &block_len, es_len);
 						}
-						else if(fec_enc_id == RS_FEC_ENC_ID) {
+						else if (fec_enc_id == RS_FEC_ENC_ID) {
 							buf = rs_fec_decode_src_block(trans_block, &block_len, es_len);
 						}
-						else if(fec_enc_id == SB_SYS_FEC_ENC_ID && fec_inst_id == REED_SOL_FEC_INST_ID) {		
+						else if (fec_enc_id == SB_SYS_FEC_ENC_ID && fec_inst_id == REED_SOL_FEC_INST_ID) {
 							buf = rs_fec_decode_src_block(trans_block, &block_len, es_len);
 						}
 
-						if(buf == NULL) {
+						if (buf == NULL) {
 							unlock_lct_header();
 
 							return MEM_ERROR;
@@ -2880,19 +2915,19 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 						/* We have to check if there is padding in the last source symbol of the last source block */
 
-						if(trans_block->sbn == ((trans_obj->bs->N) - 1)) {
+						if (trans_block->sbn == ((trans_obj->bs->N) - 1)) {
 							block_len = (trans_obj->len - ((unsigned int)es_len * (trans_obj->bs->I * trans_obj->bs->A_large +
-								(trans_obj->bs->N - trans_obj->bs->I -1) * trans_obj->bs->A_small)));
+								(trans_obj->bs->N - trans_obj->bs->I - 1) * trans_obj->bs->A_small)));
 
 						}
 
-						if(trans_block->sbn < trans_obj->bs->I) {
-							pos = ( (unsigned long long)trans_block->sbn * (unsigned long long)trans_obj->bs->A_large * (unsigned long long)trans_obj->es_len );
+						if (trans_block->sbn < trans_obj->bs->I) {
+							pos = ((unsigned long long)trans_block->sbn * (unsigned long long)trans_obj->bs->A_large * (unsigned long long)trans_obj->es_len);
 						}
 						else {
-							pos = ( ( ( (unsigned long long)trans_obj->bs->I * (unsigned long long)trans_obj->bs->A_large ) +
-								( (unsigned long long)trans_block->sbn - (unsigned long long)trans_obj->bs->I )  *
-								(unsigned long long)trans_obj->bs->A_small ) * (unsigned long long)trans_obj->es_len );
+							pos = ((((unsigned long long)trans_obj->bs->I * (unsigned long long)trans_obj->bs->A_large) +
+								((unsigned long long)trans_block->sbn - (unsigned long long)trans_obj->bs->I) *
+								(unsigned long long)trans_obj->bs->A_small) * (unsigned long long)trans_obj->es_len);
 						}
 
 						/* set correct position */
@@ -2911,7 +2946,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 							return MEM_ERROR;
 						}
 
-						if(write(trans_obj->fd, buf, (unsigned int)block_len) == -1) {
+						if (write(trans_obj->fd, buf, (unsigned int)block_len) == -1) {
 							printf("write error, toi: %llu, sbn: %i\n", toi, sbn);
 							fflush(stdout);
 							free(buf);
@@ -2931,29 +2966,31 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 						free_units(trans_block);
 #endif
 
-						if(ch->s->verbosity > 2) {	
+						if (ch->s->verbosity > 2) {
 							printf("%u/%u Source Blocks decoded (TOI=%llu SBN=%u)\n", trans_obj->nb_of_ready_blocks, trans_obj->bs->N, toi, sbn);
 							fflush(stdout);
 						}
 
+						}
+
+						}
+
 					}
-
-				}
-
-			}
 			//printf("End of analyzed packet for TOI: %lli\n", toi);
 			//fflush(stdout);
-		} 
-	}
+				}
+			}
 	else { // We have an empty packet with FEC Payload ID
 		unlock_lct_header();
 
-		return EMPTY_PACKET;	
+		return EMPTY_PACKET;
 	}
+
 	unlock_lct_header();
 
 	return OK;
 }
+
 
 void addPacket(unsigned long long toi, unsigned long long tsi, unsigned int sbn, unsigned int esi, char *buffer, int len)
 {
@@ -3202,13 +3239,14 @@ int recv_packet(alc_session_t* s) {
 					}
 
 					//  The FDT or SLS has not arrived yet...just put packet back in container and move on.
-					continue;
+					//continue;
+					return 0;
 
 				}
 				else if (retval == NEW_TOI) {
-					recv_pkts++;
-					free(container);
-					container = NULL;
+					//recv_pkts++;
+					//free(container);
+					//container = NULL;
 
 					s->fdt_instance_id = (long)toi;
 					//ch->fdt_instance_id = (long)toi;
@@ -3235,9 +3273,10 @@ int recv_packet(alc_session_t* s) {
 					} 
 					else {
 						if (s->verbosity == 4) {
-							printf("New TOI: %d in TSI: %llu\n", s->fdt_instance_id, s->tsi); fflush(stdout);
+							printf("New TOI: %u in TSI: %llu\n", s->fdt_instance_id, s->tsi); fflush(stdout);
 						}
 
+						// Also add FDT for the next file
 						lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
 						lct_file = (file_t*)calloc(1, sizeof(file_t));
 
@@ -3265,7 +3304,7 @@ int recv_packet(alc_session_t* s) {
 
 							//printf("fill in lct_file\n");
 							//fflush(stdout);
-							lct_file->toi = toi+1;
+							lct_file->toi = toi + 1;
 							lct_file->status = ls->status;
 							lct_file->transfer_len = ls->maxTransportSize;
 							lct_file->content_len = ls->content_len;
@@ -3291,6 +3330,7 @@ int recv_packet(alc_session_t* s) {
 							if (ls->fileTemplate != NULL) {
 								sprintf(lct_file->location, "%s", ls->fileTemplate);  // This is from AFDT and copyied to lct_file.location
 								rplcval = str_replace(lct_file->location, 64, "$TOI$", str);  // This goes to lct_file.location
+								rplcval = str_replace(lct_file->location, 64, "$Time$", str);  // Spec violation tolerance
 							}
 							else {
 								sprintf(lct_file->location, "%s", "$TSI$_$TOI$");  // If fileTemplate is not in AFDT, just use TSI_TOI
@@ -3393,7 +3433,11 @@ int recv_packet(alc_session_t* s) {
 						FreeFDT(lct_fdt);
 						//FreeFile(lct_file);
 
+						// Put datagram back in circular buffer to capture data (just getting FDT now)
+						push_back(ch->receiving_list, (void*)container);
+
 						continue;
+						//return 0;
 					}
 
 				}
@@ -3409,7 +3453,6 @@ int recv_packet(alc_session_t* s) {
 					//fflush(stdout);
 					recv_pkts++;
 					free(container);
-
 
 					if (retval == HDR_ERROR) {
 						//continue;
@@ -3582,7 +3625,7 @@ void* rx_socket_thread(void *ch) {
 					free(container);
 					//End
 
-					//return 0;
+					return 0;
 					//continue;
 				}
 			}
@@ -3682,9 +3725,9 @@ void* rx_thread(void *s) {
 		}
 		else {
 #ifdef _MSC_VER
-			Sleep(1);	// Allow process to be interrupted
+			//Sleep(1);	// Allow process to be interrupted
 #else
-			usleep(1000);
+			//usleep(1000);
 #endif
 		}
 	}
@@ -3711,14 +3754,14 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 	while(!obj_completed) {
 
 		if(s->state == SExiting) {
-			/*printf("alc_recv() SExiting\n");
-			fflush(stdout);*/
+			printf("alc_recv() SExiting\n");
+			fflush(stdout);
 			*retval = -2;
 			return NULL;	
 		}
 		else if(s->state == SClosed) {
-			/*printf("alc_recv() SClosed\n");
-			fflush(stdout);*/
+			printf("alc_recv() SClosed\n");
+			fflush(stdout);
 			*retval = 0;
 			return NULL;	
 		}
@@ -3746,8 +3789,8 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 		obj_completed = object_completed(to);
 
 		if(((s->state == STxStopped) && (!obj_completed))) {
-			/*printf("alc_recv() STxStopped, toi: %i\n", toi);
-			fflush(stdout);*/
+			printf("alc_recv() STxStopped, toi: %llu\n", toi);
+			fflush(stdout);
 			*retval = -3;
 			return NULL;	
 		}
@@ -3800,7 +3843,7 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 		fflush(stdout);
 	}
 
-	while(1) {
+	while(!obj_completed) {
 
 		to = s->obj_list;
 
@@ -3869,12 +3912,7 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 			to = to->next;
 		}
 
-		if(obj_completed) {
-			break;
-		} 
-		else {
-			continue;
-		}
+		continue;
 
 	}
 	if (s->verbosity == 4) {
@@ -3940,27 +3978,27 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		fflush(stdout);
 	}
 
-	while(1) {
+	while(!obj_completed) {
 
 		to = s->obj_list;
 
 		//printf("Processing session %d\n", s_id); fflush(stdout);
 
 		if(s->state == SExiting) {
-			/*printf("alc_recv3() SExiting\n");
-			fflush(stdout);*/
+			printf("alc_recv3() SExiting\n");
+			fflush(stdout);
 			*retval = -2;
 			return NULL;	
 		}
 		else if(s->state == SClosed) {
-			/*printf("alc_recv3() SClosed\n");
-			fflush(stdout);*/
+			printf("alc_recv3() SClosed\n");
+			fflush(stdout);
 			*retval = 0;
 			return NULL;	
 		}
 		else if(((s->state == STxStopped) && (to == NULL))) {
-			/*printf("alc_recv3() STxStopped, to == NULL\n");
-			fflush(stdout);*/
+			printf("alc_recv3() STxStopped, to == NULL\n");
+			fflush(stdout);
 			*retval = -3;
 			return NULL;	
 		}
@@ -3980,14 +4018,14 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 			//obj_completed = FALSE;
 
 			if(s->state == SExiting) {
-				/*printf("alc_recv3() SExiting\n");
-				fflush(stdout);*/
+				printf("alc_recv3() SExiting\n");
+				fflush(stdout);
 				*retval = -2;
 				return NULL;	
 			}
 			else if(s->state == SClosed) {
-				/*printf("alc_recv3() SClosed\n");
-				fflush(stdout);*/
+				printf("alc_recv3() SClosed\n");
+				fflush(stdout);
 				*retval = 0;
 				return NULL;	
 			}
