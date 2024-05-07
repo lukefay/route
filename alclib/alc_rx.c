@@ -1570,8 +1570,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			// Start 12.11.2014
 			// Always rebuffer since if fdt is sent at beginning, a packet might be dropped      Malek El Khatib 16.07.2014
 			if (ch->s->rx_fdt_instance_list == NULL || ch->s->waiting_fdt_instance == TRUE || sendFDTAfterObj == TRUE) {
-				printf("MalekElKhatib: Packet rebuffering for toi %llu in TSI: %lli  waitingFDT %d, sendingFDT %d\n", toi, tsi, ch->s->waiting_fdt_instance, sendFDTAfterObj);
-				fflush(stdout);
+				//printf("MalekElKhatib: Packet rebuffering for toi %llu in TSI: %lli  waitingFDT %d, sendingFDT %d\n", toi, tsi, ch->s->waiting_fdt_instance, sendFDTAfterObj);
+				//fflush(stdout);
 
 				unlock_lct_header();
 
@@ -1581,16 +1581,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 				//printf("MALEK_WANTED PACKET IS DROPPED2\n"); fflush(stdout);
 				//printf("Packet is real time %d in Session %d\n", ch->s->ls->rt, ch->s->s_id);
 				//fflush(stdout);
-				
-				// Avoid race condition
-				#ifdef _MSC_VER
-					for (int dly = 0; dly < 2000; dly++) {
-						printf("");
-						fflush(stdout);
-					}
-				#else
-					usleep(200);
-				#endif
 
 				unlock_lct_header();
 
@@ -2075,10 +2065,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		//ch->fdt_instance_id = (long)toi;
 		ch->s->last_given = NULL;
 
-		// Also add FDT for the next file
-		lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
-		lct_file = (file_t*)calloc(1, sizeof(file_t));
-
 		//printf("Channel #: %d Channel ID: %d\n", ch->s->fdt_instance_id, ch->ch_id);
 		//fflush(stdout);
 
@@ -2094,7 +2080,12 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		//else if (ch->s->tsi != 0) {
 		//else if (ch->ch_id != 0) {
 		else if (ch->ch_id != 0 && lsl->rt == TRUE) { // Add another File to the real time stream FDT
-			// Initialize next FDT with read value from LCT Extension Header				
+			// Initialize next FDT with read value from LCT Extension Header		
+
+			// Also add FDT for the next file
+			lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
+			lct_file = (file_t*)calloc(1, sizeof(file_t));
+
 			if (lct_fdt != NULL) {
 				//printf("fill in lct_efdt\n");
 				//fflush(stdout);
@@ -2411,7 +2402,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 		{
 			nb_of_iterations = 1;			// <In this case, decode whole payload at once>
 			//nb_of_symb_to_decode_simult = nb_of_symbols;
-			//printf("The number of symbols per source block is: %u\n", nb_of_symbols); fflush(stdout);
+			//printf("The number of symbols per source block is: %u\n", nb_of_symbols);
+			//fflush(stdout);
 		}
 
 
@@ -2432,7 +2424,11 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 			//fflush(stdout);
 			//Malek El Khatib 11.08.2014
 			//trans_unit = retrieve_unit(ch->s, es_len);
-			//printf("ES_LEN: %d\tTRANSFER_LEN: %lld\tLENGTH %d\n", es_len, transfer_len, (unsigned short)MAX_SYMB_LENGTH_IPv4_FEC_ID_0_3_130); fflush(stdout);
+			//printf("ES_LEN: %d\tTRANSFER_LEN: %lld\tLENGTH %d\n", es_len, transfer_len, (unsigned short)MAX_SYMB_LENGTH_IPv4_FEC_ID_0_3_130);
+			//fflush(stdout);
+			if (es_len > (unsigned short)MAX_SYMB_LENGTH_IPv4_FEC_ID_0_3_130) {	// Trick to work with different senders
+				numEncSymbPerPacket = 1;
+			}
 			if (numEncSymbPerPacket == 0)
 			{
 				if (ch->s->addr_family == PF_INET)
@@ -2810,7 +2806,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					}
 
 					if (ch->s->verbosity == 4) {
-						printf("calculate percent object received\n");
+						printf("calculate percent object received bytes/len %lld/%lld\n", trans_obj->rx_bytes, trans_obj->len);
 						fflush(stdout);
 					}
 
@@ -3231,22 +3227,22 @@ int recv_packet(alc_session_t* s) {
 					//Malek El Khatib 16.07.2014
 					// 
 					//Start
-					if (sendFDTAfterObj) {
-						push_back(ch->receiving_list, (void*)container);
-					}
-					else {  // END
-						push_front(ch->receiving_list, (void*)container);
-					}
+					//if (sendFDTAfterObj) {
+					//	push_back(ch->receiving_list, (void*)container);
+					//}
+					//else {  // END
+					//	push_front(ch->receiving_list, (void*)container);
+					//}
 
 					//  The FDT or SLS has not arrived yet...just put packet back in container and move on.
-					//continue;
-					return 0;
+					continue;
+					//return 0;
 
 				}
 				else if (retval == NEW_TOI) {
-					//recv_pkts++;
-					//free(container);
-					//container = NULL;
+					recv_pkts++;
+					free(container);
+					container = NULL;
 
 					s->fdt_instance_id = (long)toi;
 					//ch->fdt_instance_id = (long)toi;
@@ -3269,12 +3265,14 @@ int recv_packet(alc_session_t* s) {
 							//printf("Already received TOI: %d\n", ch->fdt_instance_id);
 							fflush(stdout);
 						}
-						continue;
+						//continue;
+						return 0;
 					} 
 					else {
-						if (s->verbosity == 4) {
-							printf("New TOI: %u in TSI: %llu\n", s->fdt_instance_id, s->tsi); fflush(stdout);
-						}
+						//if (s->verbosity == 4) {
+							printf("New TOI: %u in TSI: %llu\n", s->fdt_instance_id, s->tsi);
+							fflush(stdout);
+						//}
 
 						// Also add FDT for the next file
 						lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
@@ -3352,6 +3350,9 @@ int recv_packet(alc_session_t* s) {
 							}
 						}
 
+						// Add another FDT for new found file
+						set_fdt_instance_id(s->s_id, s->fdt_instance_id);
+
 						// Update FDT			
 						updated = update_fdt(ls->fdt, lct_fdt);
 
@@ -3424,6 +3425,7 @@ int recv_packet(alc_session_t* s) {
 						}
 
 						//set_fdt_instance_parsed(s->s_id);
+
 						if (s->verbosity == 4) {
 							//printf("ALC_RX.c FDT #files: %d\tTOI: %lld\tURI: %s\tFile Template: %s\n", s->fdt->nb_of_files, toi, lct_file->location, ls->fileTemplate);
 							printf("New TOI FDT #files: %d\tTOI: %lld\tURI: %s\tXfer Length: %lld\n", ls->fdt->nb_of_files, lct_file->toi, lct_file->location, lct_file->transfer_len);
@@ -3434,10 +3436,10 @@ int recv_packet(alc_session_t* s) {
 						//FreeFile(lct_file);
 
 						// Put datagram back in circular buffer to capture data (just getting FDT now)
-						push_back(ch->receiving_list, (void*)container);
+						//push_back(ch->receiving_list, (void*)container);
 
-						continue;
-						//return 0;
+						//continue;
+						return 0;
 					}
 
 				}
@@ -3455,8 +3457,10 @@ int recv_packet(alc_session_t* s) {
 					free(container);
 
 					if (retval == HDR_ERROR) {
-						//continue;
-						return -1;
+						//printf("LCT Header Error\n");
+						//fflush(stdout);
+						continue;
+						//return -1;
 					}
 					else if (retval == DUP_PACKET) {
 						//printf("Duplicate packet seen\n"); fflush(stdout);
@@ -3470,6 +3474,8 @@ int recv_packet(alc_session_t* s) {
 						return 0;
 					}
 					else if (retval == MEM_ERROR) {
+						printf("Memory Error\n");
+						fflush(stdout);
 						return -1;
 					}
 
@@ -3579,9 +3585,9 @@ void* rx_socket_thread(void *ch) {
 
 			if (container->recvlen == 0) {
 				printf("connection closed\n"); fflush(stdout);
+				free(container);
 
 				return 0;
-				//continue;
 			}
 			else if (container->recvlen < 0) {
 				printf("recv failed\n"); fflush(stdout);
@@ -3671,8 +3677,6 @@ void* rx_socket_thread(void *ch) {
 				printf("Lost packets in socket connection.\n");
 				fflush(stdout);
 			}
-			//close_alc_channel(channel, channel->s);
-			//close_alc_session(channel->s->s_id);
 
 			continue; // Tolerate some packet loss past timer of Select command
 		}
@@ -3717,18 +3721,22 @@ void* rx_thread(void *s) {
 
 	while(session->state == SActive || session->state == SAFlagReceived) {
 
+#ifdef _MSC_VER
+		Sleep(0);
+#else
+		usleep(100);
+#endif
+
 		if(session->nb_channel != 0) {
 			retval = recv_packet(session);
 
-			//if(retval != 0) printf("RX SESSION THREAD returns: %lld\n", retval);
-			//fflush(stdout);
-		}
-		else {
-#ifdef _MSC_VER
-			//Sleep(1);	// Allow process to be interrupted
-#else
-			//usleep(1000);
-#endif
+			//if (retval != 0) {
+			if (retval == -1) {
+				printf("RX SESSION THREAD returns: %d\n", retval);
+				fflush(stdout);
+
+				set_session_state(session->s_id, SExiting);
+			}
 		}
 	}
 	if (session->verbosity == 4) {
@@ -3799,6 +3807,7 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 
 	}
 
+	set_received_instance(s, (unsigned int)toi);
 	remove_wanted_object(s_id, toi);
 
 	/* Parse data from object to data buffer, return buffer and buffer length */
@@ -3920,7 +3929,7 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 		fflush(stdout);
 	}
 
-	//set_received_instance(s, (int)tmp_toi);
+	set_received_instance(s, (unsigned int)tmp_toi);
 
 	remove_wanted_object(s_id, tmp_toi);
 
@@ -4084,7 +4093,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		printf("alc_recv3 object recovered\n\n");
 		fflush(stdout);
 	}
-
+	
+	set_received_instance(s, (unsigned int)tmp_toi);
 	remove_wanted_object(s_id, tmp_toi);
 
 	if(!(tmp_filename = (char*)calloc((strlen(to->tmp_filename) + 1), sizeof(char)))) {
@@ -4139,7 +4149,7 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
 #else
-			usleep(1000);
+			usleep(100);
 #endif
 			continue;	
 		}
@@ -4148,8 +4158,8 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			if(object_completed(to)) {
 
 				if (!is_received_instance(s, (unsigned int)to->toi)) {
-					printf("HAVE NOT SEEN TOI %llu YET\n", to->toi); fflush(stdout);
-					set_received_instance(s, (unsigned int)to->toi);
+					//printf("HAVE NOT SEEN TOI %llu YET\n", to->toi); fflush(stdout);
+					//set_received_instance(s, (unsigned int)to->toi);
 				}
 				else {
 					printf("HAVE SEEN TOI %llu ALREADY\n", to->toi); fflush(stdout);
