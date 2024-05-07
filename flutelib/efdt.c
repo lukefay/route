@@ -640,8 +640,8 @@ efdt_t* decode_efdt_payload(char *efdt_payload) {
 		return NULL;
 	}
 
-	printf("parsed EFDT XML parameters with %d file(s)\n", efdt->nb_of_files);
-	fflush(stdout);
+	//printf("parsed EFDT XML parameters with %d file(s)\n", efdt->nb_of_files);
+	//fflush(stdout);
 
 	XML_ParserFree(parser);
 	unlock_efdt();

@@ -941,7 +941,7 @@ message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
            we won't see the BEGIN_HEADER event.  */
         if (info->smfm_state == 1)
         {
-            printf("c begin_hash\n");
+            //printf("c begin_hash\n");
             info->hashing = 1;
             info->hashing_level = info->nesting_level;
             info->smfm_state++;
@@ -967,6 +967,7 @@ message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
     {
         rfc822parse_field_t ctx, clx;
         info->file = NULL;
+        const char* sname = NULL;
 
         ctx = rfc822parse_parse_field(msg, "Content-Type", -1);
         clx = rfc822parse_parse_field(msg, "Content-Location", -1);
@@ -1010,36 +1011,57 @@ message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
                 }
                 else if (!strcmp(s1, "multipart"))
                 {
-                    if (!strcmp(s2, "signed"))
+                    if (!strcmp(s2, "signed")) {
                         printf("Start Mime Unsigning\n");
-                    //mime_signed_begin(info, msg, ctx);
-                    else if (!strcmp(s2, "encrypted"))
+                        //mime_signed_begin(info, msg, ctx);
+                    }
+                    else if (!strcmp(s2, "encrypted")) {
                         printf("Start Mime Decrypting\n");
-                    //mime_encrypted_begin(info, msg, ctx);
+                        //mime_encrypted_begin(info, msg, ctx);
+                    }
                 }
-                else if (!strcmp(s1, "application") && (!strcmp(s2, "pkcs7-mime") || !strcmp(s2, "x-pkcs7-mime")))
+                else if (!strcmp(s1, "application") && (!strcmp(s2, "pkcs7-mime") || !strcmp(s2, "x-pkcs7-mime"))) {
                     printf("PKCS7-MIME\n");
                     //pkcs7_begin(info, msg, ctx);
+                }
+
+                sname = rfc822parse_query_parameter(ctx, "name", 0);
+                if (sname) {
+                    //printf("Signature name: %s\n", sname);
+                    info->file = sname;
+                }
+                else {
+                    info->file = "sls.p7s";
+                }
+
             }
             else {
                 //printf("h media: %*s none\n", info->nesting_level * 2, "");
             }
 
+            //rfc822parse_release_field(ctx);
+        }
+        else {
             rfc822parse_release_field(ctx);
         }
         
         if (clx) {
             const char* l1;
-            l1 = rfc822parse_query_media_location(clx);
-            //printf("h location: %*s%s\n", info->nesting_level * 2, "", l1);
 
-            info->file = l1;
+            l1 = rfc822parse_query_media_location(clx);
+            if (l1) {
+                //printf("h location: %*s%s\n", info->nesting_level * 2, "", l1);
+                info->file = l1;
+            }
+            else {
+                info->file = "clx.l1";
+            }
 
             //rfc822parse_release_field(clx);
-
         }
-        
-        else //printf("h media: %*stext plain [assumed]\n", info->nesting_level * 2, "");
+        else {
+            rfc822parse_release_field(clx);
+        }
 
         info->show_header = 0;
         info->show_data = 1;
@@ -1078,13 +1100,13 @@ message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
 
         if (info->smfm_state == 2 && info->nesting_level == info->hashing_level)
         {
-            printf("c end_hash\n");
+            //printf("c end_hash\n");
             info->smfm_state++;
             info->hashing = 0;
         }
         else if (info->smfm_state == 4)
         {
-            printf("c end_signature\n");
+            //printf("c end_signature\n");
             info->verify_now = 1;
         }
     }

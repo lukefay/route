@@ -1404,7 +1404,6 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		
 			// Add another FDT for new found file
 			set_fdt_instance_id(s->s_id, s->fdt_instance_id);
-			set_received_instance(s, s->fdt_instance_id);  // FDT is already in S-TSID
 
 			// Load FDT			
 			updated = load_fdt(s->ls->fdt, lct_fdt);
@@ -1538,9 +1537,9 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 #ifdef _MSC_VER
-		Sleep(50);	// Sleep for shortest PHY Frame Length 50msec
+		Sleep(100);	// Sleep for 100msec to check next SLS
 #else
-		usleep(50000);
+		usleep(100000);
 #endif
 		continue;
 	}

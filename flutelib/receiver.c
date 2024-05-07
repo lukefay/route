@@ -213,7 +213,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
 #else
     if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
-      printf("Error: unable to open file %s\n", tmp_filename);
+      printf("Rx Error: unable to open file %s\n", tmp_filename);
       fflush(stdout);
       return MEM_ERROR;
     }
@@ -316,7 +316,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
 #else
 		 if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
-		printf("Error: unable to open file %s\n", tmp_filename);
+		printf("Rx Error: unable to open file %s\n", tmp_filename);
 		fflush(stdout);
 		return -1;
       }
@@ -818,7 +818,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 #else
       if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
-        printf("Error: unable to open file %s\n", tmp_filename);
+        printf("FDT Rx Error: unable to open file %s\n", tmp_filename);
         fflush(stdout);
         free(buf);
         return MEM_ERROR;
@@ -1114,9 +1114,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//END Malek El Khatib
 
 #ifdef _MSC_VER
-	//Sleep(5);
+	//Sleep(1);
 #else
-	//usleep(5000);
+	usleep(100);
 #endif
 
 	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
@@ -1174,7 +1174,7 @@ int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(1000);
+		usleep(100);
 #endif
 		continue;
 
@@ -2038,7 +2038,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 	session_basedir = get_session_basedir(s->s_id);
 
-	while(1) {
+	while(get_session_state(s->s_id) == SActive) {
 
 		if (get_session_state(s->s_id) == SExiting) {
 			printf("SESSION EXITING\n");
@@ -2271,10 +2271,11 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #else
 			if ((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
 #endif
-				printf("Error: unable to open file %s\n", tmp_filename);
+				printf("Session Error: unable to open file %s\n", tmp_filename);
 				fflush(stdout);
 				free(buf);
 				//return MEM_ERROR;
+				set_session_state(s->s_id, SExiting);
 			}
 
 			if (write(fd, buf, (unsigned int)transfer_len) == -1) {
@@ -2720,7 +2721,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(1000);
+		usleep(100);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
@@ -2764,7 +2765,7 @@ void* channel_file_mode_thread(c) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(1000);
+		usleep(100);
 #endif
 		continue;
 
