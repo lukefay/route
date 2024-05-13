@@ -3240,9 +3240,9 @@ int recv_packet(alc_session_t* s) {
 
 				}
 				else if (retval == NEW_TOI) {
-					recv_pkts++;
-					free(container);
-					container = NULL;
+					//recv_pkts++;
+					//free(container);
+					//container = NULL;
 
 					s->fdt_instance_id = (long)toi;
 					//ch->fdt_instance_id = (long)toi;
@@ -3265,14 +3265,14 @@ int recv_packet(alc_session_t* s) {
 							//printf("Already received TOI: %d\n", ch->fdt_instance_id);
 							fflush(stdout);
 						}
-						//continue;
-						return 0;
+						continue;
+						//return 0;
 					} 
 					else {
-						//if (s->verbosity == 4) {
+						if (s->verbosity == 4) {
 							printf("New TOI: %u in TSI: %llu\n", s->fdt_instance_id, s->tsi);
 							fflush(stdout);
-						//}
+						}
 
 						// Also add FDT for the next file
 						lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));
@@ -3351,7 +3351,7 @@ int recv_packet(alc_session_t* s) {
 						}
 
 						// Add another FDT for new found file
-						set_fdt_instance_id(s->s_id, s->fdt_instance_id);
+						//set_fdt_instance_id(s->s_id, s->fdt_instance_id);
 
 						// Update FDT			
 						updated = update_fdt(ls->fdt, lct_fdt);
@@ -3438,8 +3438,8 @@ int recv_packet(alc_session_t* s) {
 						// Put datagram back in circular buffer to capture data (just getting FDT now)
 						//push_back(ch->receiving_list, (void*)container);
 
-						//continue;
-						return 0;
+						continue;
+						//return 0;
 					}
 
 				}
@@ -3724,7 +3724,7 @@ void* rx_thread(void *s) {
 #ifdef _MSC_VER
 		Sleep(0);
 #else
-		usleep(100);
+		usleep(1000);
 #endif
 
 		if(session->nb_channel != 0) {
@@ -4149,7 +4149,7 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
 #else
-			usleep(100);
+			usleep(1000);
 #endif
 			continue;	
 		}
