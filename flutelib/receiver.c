@@ -1116,7 +1116,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 #ifdef _MSC_VER
 	//Sleep(1);
 #else
-	usleep(100);
+	//usleep(100);
 #endif
 
 	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
@@ -1174,7 +1174,7 @@ int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		usleep(100);
+		//usleep(100);
 #endif
 		continue;
 
@@ -2721,7 +2721,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		usleep(100);
+		//usleep(100);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
@@ -2765,7 +2765,7 @@ void* channel_file_mode_thread(c) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		usleep(100);
+		//usleep(100);
 #endif
 		continue;
 
