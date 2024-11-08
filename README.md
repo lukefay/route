@@ -1,7 +1,7 @@
 # route
 ROUTE protocol as per ATSC A/331.  
 This is updated code that originally came from Thomas Stockhammer, available at https://github.com/haudiobe/ATSC_ROUTE
-Only the receiver code from that URL is updated to comply with ATSC A/331 version of ROUTE.  (This is also available as RFC 9223 at https://www.rfc-editor.org/info/rfc9223).  Sender was not updated as live over the air captures provide transmitter streams.  This code binds to a socket, so playback of pcaps or live data (with Sony USB dongle) provide input data. 
+Only the receiver code from that URL is updated to comply with ATSC A/331 version of ROUTE.  (This is also available as RFC 9223 at https://www.rfc-editor.org/info/rfc9223).  Sender was not updated as live over the air captures provide transmitter streams.  This code binds to a socket, so playback of pcaps or live data (with Sony USB dongle) provide input IP stream data.  Both Source Flow and Repair Flow are supported.  Repair Flow support comes from nanorq library available at https://github.com/sleepybishop/nanorq.  A few edits were needed to allow for binary files and other errata, so that nanorq-stable library is included here. 
 
 To compile on Windows OS
 1. Install Project Studio (tested with version 2017 and 2022)
@@ -26,11 +26,15 @@ To compile on Linux OS
 
 EXAMPLE Command line runs in Windows command line are:
 >> a3route.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
+
 OR without verbose logging:
+
 >> a3route.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:0 -J:"Rcv_Log_MPD.txt"
 
 EXAMPLE Command line runs in Linux:
 >> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
+
 OR without verbose logging:
+
 >> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:0 -J:"Rcv_Log_MPD.txt"
 
