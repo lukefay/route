@@ -107,69 +107,70 @@ int copy_file_info(file_t *src, file_t *dest) {
 	/* Copy only if particular field is not present in destination, so file description can be only
 	complemented not modified */
 
+	//printf("TOI %llu\t", src->toi);
 	if(src->toi != 0) {
 		if(dest->toi == 0) {
 			dest->toi = src->toi;
 			updated = 1;
 		}
 	}
-
+	//printf("Expires %llu\t", src->expires);
 	if(src->expires != 0) {
 		if(dest->expires == 0) {
 			dest->expires = src->expires;
 			updated = 1;
 		}
 	}
-
+	//printf("Xfer Len %llu\t", src->transfer_len);
 	if(src->transfer_len != 0) {
 		if(dest->transfer_len == 0) {
 			dest->transfer_len = src->transfer_len;
 			updated = 1;
 		}
 	}
-
+	//printf("Content Len %llu\t", src->content_len);
 	if(src->content_len != 0) {
 		if(dest->content_len == 0) {
 			dest->content_len = src->content_len;
 			updated = 1;
 		}
 	}
-
+	//printf("FEC ENC ID %d\t", src->fec_enc_id);
 	if(src->fec_enc_id != -1) {
 		if(dest->fec_enc_id == -1) {
 			dest->fec_enc_id = src->fec_enc_id;
 			updated = 1;
 		}
 	}
-
+	//printf("FEC INST ID %d\t", src->fec_inst_id);
 	if(src->fec_inst_id != -1) {
 		if(dest->fec_inst_id == -1) {
 			dest->fec_inst_id = src->fec_inst_id;
 			updated = 1;
 		}
 	}
-
+	//printf("Max SB Len %d\t", src->max_sb_len);
 	if(src->max_sb_len != 0) {
 		if(dest->max_sb_len == 0) {
 			dest->max_sb_len = src->max_sb_len;
 			updated = 1;
 		}
 	}
-
+	//printf("ES_LEN %d\t", src->es_len);
 	if(src->es_len != 0) {
 		if(dest->es_len == 0) {
 			dest->es_len = src->es_len;
 			updated = 1;
 		}
 	}
-
+	//printf("MAX #ES %d\t", src->max_nb_of_es);
 	if(src->max_nb_of_es != 0) {
 		if(dest->max_nb_of_es == 0) {
 			dest->max_nb_of_es = src->max_nb_of_es;
 			updated = 1;
 		}
 	}
-
+	//printf("FILE Location %s\t", src->location);
 	if(src->location != NULL) {
 
 		if(dest->location == NULL) {
@@ -183,7 +184,7 @@ int copy_file_info(file_t *src, file_t *dest) {
 			updated = 1;
 		}
 	}
-
+	//printf("Type %s\t", src->type);
 	if(src->type != NULL) {
 
 		if(dest->type == NULL) {
@@ -197,7 +198,7 @@ int copy_file_info(file_t *src, file_t *dest) {
 			updated = 1;
 		}
 	}
-
+	//printf("MD5 %s\t", src->md5);
 	if(src->md5 != NULL) {
 
 		if(dest->md5 == NULL) {
@@ -211,7 +212,7 @@ int copy_file_info(file_t *src, file_t *dest) {
 			updated = 1;
 		}
 	}
-
+	//printf("Encoding %s\n", src->encoding);
 	if(src->encoding != NULL) {
 
 		if(dest->encoding == NULL) {
@@ -225,6 +226,7 @@ int copy_file_info(file_t *src, file_t *dest) {
 			updated = 1;
 		}
 	}
+	//fflush(stdout);
 
 	return updated;
 }
@@ -244,7 +246,7 @@ static void startElement_FDT(void *userData, const char *name, const char **atts
 	char *ep;
 #endif
 
-	char *mbstr;
+	//char *mbstr;
 
 	while(*atts != NULL) {
 		if(!strcmp(name, "File")) {
@@ -321,20 +323,23 @@ static void startElement_FDT(void *userData, const char *name, const char **atts
 
 				atts++;
 
-				if(!(mbstr = (char*)calloc((strlen(*atts)+ 1), sizeof(char)))) {
-					printf("Could not alloc memory for mbstr!\n");
+				//if(!(mbstr = (char*)calloc((strlen(*atts)+ 1), sizeof(char)))) {
+				//	printf("Could not alloc memory for mbstr!\n");
+				//	return;
+				//}
+				//
+				//x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+
+				//if(!(file->location = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+				if (!(file->location = (char*)calloc((size_t)(strlen(*atts) + 1), sizeof(char)))) {
+						printf("Could not alloc memory for file->location!\n");
 					return;
 				}
 
-				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+				x_utf8s_to_iso_8859_1s(file->location, *atts, strlen(*atts));
 
-				if(!(file->location = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
-					printf("Could not alloc memory for file->location!\n");
-					return;
-				}
-
-				memcpy(file->location, mbstr, strlen(mbstr));
-				free(mbstr);
+				//memcpy(file->location, mbstr, strlen(mbstr));
+				//free(mbstr);
 
 			}
 			else if(!strcmp(*atts, "Content-Length")) {
@@ -472,14 +477,16 @@ static void startElement_FDT(void *userData, const char *name, const char **atts
 						printf("Could not alloc memory for file->type!\n");
 						return;
 					}
-					memcpy(file->type, fdt->type, strlen(fdt->type));
+					//memcpy(file->type, fdt->type, strlen(fdt->type));
+					file->type = fdt->type;
 				}
 				if(file->encoding == NULL && fdt->encoding != NULL) {
 					if(!(file->encoding = (char*)calloc((strlen(fdt->encoding) + 1), sizeof(char)))) {
 						printf("Could not alloc memory for file->encoding!\n");
 						return;
 					}
-					memcpy(file->encoding, fdt->encoding, strlen(fdt->encoding));
+					//memcpy(file->encoding, fdt->encoding, strlen(fdt->encoding));
+					file->encoding = fdt->encoding;
 				}
 			}
 
@@ -668,7 +675,7 @@ void FreeFDT(fdt_t *fdt) {
 		}
 
 		if(file->location != NULL) {
-			//free(file->location); // We modify this parameter to replace $TOI$
+			//free(file->location);	// Something still wants this...
 		}
 
 		if(file->md5 != NULL) {
@@ -727,6 +734,9 @@ int update_fdt(fdt_t *fdt_db, fdt_t *instance) {
 				//fflush(stdout);
 
 				retval = copy_file_info(tmp_file, fdt_file);
+
+				//printf("Copied File info %d\n", retval);
+				//fflush(stdout);
 
 				if(retval < 0) {
 					unlock_fdt();

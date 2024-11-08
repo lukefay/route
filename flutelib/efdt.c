@@ -217,7 +217,7 @@ static void startElement_EFDT(void *userData, const char *name, const char **att
 	char *ep;
 #endif
 
-	char *mbstr;
+	//char *mbstr;
 
 	while(*atts != NULL) {
 		if(!strcmp(name, "File") || !strcmp(name, "fdt:File")) {
@@ -294,20 +294,23 @@ static void startElement_EFDT(void *userData, const char *name, const char **att
 
 				atts++;
 
-				if(!(mbstr = (char*)calloc((strlen(*atts)+ 1), sizeof(char)))) {
-					printf("Could not alloc memory for mbstr!\n");
+				//if(!(mbstr = (char*)calloc((strlen(*atts)+ 1), sizeof(char)))) {
+				//	printf("Could not alloc memory for mbstr!\n");
+				//	return;
+				//}
+				//
+				//x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+
+				//if(!(file->location = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+				if (!(file->location = (char*)calloc((size_t)(strlen(*atts) + 1), sizeof(char)))) {
+						printf("Could not alloc memory for file->location!\n");
 					return;
 				}
 
-				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+				x_utf8s_to_iso_8859_1s(file->location, *atts, strlen(*atts));
 
-				if(!(file->location = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
-					printf("Could not alloc memory for file->location!\n");
-					return;
-				}
-
-				memcpy(file->location, mbstr, strlen(mbstr));
-				free(mbstr);
+				//memcpy(file->location, mbstr, strlen(mbstr));
+				//free(mbstr);
 
 			}
 			else if(!strcmp(*atts, "Content-Length")) {
@@ -445,14 +448,16 @@ static void startElement_EFDT(void *userData, const char *name, const char **att
 						printf("Could not alloc memory for file->type!\n");
 						return;
 					}
-					memcpy(file->type, efdt->type, strlen(efdt->type));
+					//memcpy(file->type, efdt->type, strlen(efdt->type));
+					file->type = efdt->type;
 				}
 				if(file->encoding == NULL && efdt->encoding != NULL) {
 					if(!(file->encoding = (char*)calloc((strlen(efdt->encoding) + 1), sizeof(char)))) {
 						printf("Could not alloc memory for file->encoding!\n");
 						return;
 					}
-					memcpy(file->encoding, efdt->encoding, strlen(efdt->encoding));
+					//memcpy(file->encoding, efdt->encoding, strlen(efdt->encoding));
+					file->encoding = efdt->encoding;
 				}
 			}
 

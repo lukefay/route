@@ -782,6 +782,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 	pthread_t lct_thread_id;
 	int join_retval;
 #endif
+	char* session_basedir = NULL;
 
 	char *sdp_buf = NULL;
 	FILE *sdp_fp;
@@ -1128,13 +1129,13 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			if (a->alc_a.verbosity > 0) {
 				printf("in UI based mode\n");
 			}
+			fflush(stdout);
 			retval = receiver_in_ui_mode(a, &receiver);
 		}
 
 
 		/* Let's get the S-TSID listed in "envelope.xml" */
 		/* open envelope file and read it to its structure */
-		char* session_basedir = NULL;
 		session_basedir = get_session_basedir(receiver.s_id);
 
 		char tmp_filename[MAX_PATH_LENGTH];
@@ -1294,6 +1295,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			Printstsid(stsid);
 		}
 
+		//free(session_basedir);
+
 	}
 	
 	// NOW LAUNCH LCT CHANNELS (ALC SESSIONS)
@@ -1353,6 +1356,9 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			s->ls = stsid_lct;  // Tie each session's channel to S-TSID channel listing
 			s->ls->fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create memory for this channel FDT
 			s->ls->fdt->file_list = (file_t*)calloc(1, sizeof(file_t));
+			
+			// Add another FDT for new found file
+			set_fdt_instance_id(ch->s->s_id, (long)stsid_lct->toi);
 
 			lct_fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create local copy of the S-TSID FDT
 			lct_file = (file_t*)calloc(1, sizeof(file_t));
@@ -1383,11 +1389,12 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 				//fflush(stdout);
 				lct_file->toi = stsid_lct->toi;
 				lct_file->status = stsid_lct->status;
-				lct_file->transfer_len = stsid_lct->maxTransportSize;
+				lct_file->transfer_len = stsid_lct->transfer_len;
 				lct_file->content_len = stsid_lct->content_len;
 				lct_file->location = stsid_lct->location;
 				lct_file->md5 = stsid_lct->md5;
-				lct_file->type = stsid_lct->type;
+				//lct_file->type = stsid_lct->type;
+				lct_file->type = stsid_lct->fecOTI;	// If FEC OTI is signaled, pass as file type for REPAIR
 				lct_file->encoding = stsid_lct->encoding;
 				lct_file->expires = stsid_lct->expires;
 
@@ -1400,12 +1407,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 				lct_file->max_nb_of_es = stsid_lct->max_nb_of_es;
 			}
 
-			s->fdt_instance_id = (long)stsid_lct->toi;
-		
-			// Add another FDT for new found file
-			set_fdt_instance_id(s->s_id, s->fdt_instance_id);
-
 			// Load FDT			
+			//updated = load_fdt(receiver.fdt, lct_fdt);
 			updated = load_fdt(s->ls->fdt, lct_fdt);
 			//printf("updated: %d\n", updated);
 			//fflush(stdout);
@@ -1483,8 +1486,11 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			}
 
 			set_fdt_instance_parsed(s->s_id);
+			set_received_instance(ch->s, (long)stsid_lct->toi);
 
 			//FreeFDT(lct_fdt);
+			// For ATSC 3.0, FDT's are not sent for each file, rather an S-TSID is used for all files in a Source Flow.
+			// FDT's are used for SLS and NRT files.  Need to keep this FDT for SLS monitoring (Segment Timeline) below.
 
 			// Create LCT Channel receiving threads
 	#ifdef _MSC_VER
@@ -1530,16 +1536,28 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		if (receiver.fdt->file_list != NULL) {
 			// Recover updated SLS
 			if (a->alc_a.verbosity == 4) {
-				printf("Updating files in first LCT Channel\n"); fflush(stdout);
+				printf("Updating files in SLS LCT Channel\n");
+				fflush(stdout);
 			}
 			retval = receiver_in_fdt_based_mode(a, &receiver);
 
 		}
+		else {
+			// Exit SLS monitoring and write reports
+			if (a->alc_a.verbosity == 4) {
+				printf("No longer monitoring SLS LCT Channel\n");
+				fflush(stdout);
+			}
+
+			FreeFDT(receiver.fdt);
+
+			break;
+		}
 
 #ifdef _MSC_VER
-		Sleep(100);	// Sleep for 100msec to check next SLS
+		Sleep(1);	// Sleep for 1msec to check next SLS
 #else
-		usleep(100000);
+		usleep(1000);
 #endif
 		continue;
 	}

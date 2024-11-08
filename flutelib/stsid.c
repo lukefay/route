@@ -338,7 +338,7 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				lct->maximumDelay = 0;
 				lct->overhead = 0;
 				lct->fecMinBuffSize = 0;
-				lct->fecOTI = 0;
+				lct->fecOTI = NULL;
 				lct->nb_of_obj = 0;
 				/* initialize Protected Object */
 				lct->sessionDescription = NULL;
@@ -472,7 +472,7 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 		// SOURCE FLOW
 		else if (!strcmp(name, "SrcFlow")) {
-			//printf("found src\n");
+			//printf("found SOURCE FLOW\n");
 			//fflush(stdout);
 
 			//if (src == NULL) {
@@ -488,6 +488,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//}
 
 			if (!strcmp(*atts, "rt")) {
+				//printf("found rt\n");
+				//fflush(stdout);
 
 				if (!strcmp("true", *(++atts))) {
 					lct->rt = TRUE;
@@ -573,7 +575,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//}
 
 			if (!strcmp(*atts, "Expires")) {
-
+				//printf("found FDT-Instance Expires\n");
+				//fflush(stdout);
 #ifdef _MSC_VER
 				lct->expires = _atoi64(*(++atts));
 
@@ -649,6 +652,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->encoding, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "afdt:efdtVersion")) {
+				//printf("found AFDT Version\n");
+				//fflush(stdout);
 
 #ifdef _MSC_VER     
 				lct->efdtVersion = atoi(*(++atts));
@@ -675,6 +680,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #endif
 			}
 			else if (!strcmp(*atts, "afdt:maxExpiresDelta")) {
+				//printf("found AFDT maxExpiresDelta\n");
+				//fflush(stdout);
 
 #ifdef _MSC_VER     
 				lct->maxExpiresDelta = atoi(*(++atts));
@@ -701,6 +708,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #endif
 			}
 			else if (!strcmp(*atts, "afdt:maxTransportSize")) {
+				//printf("found AFDT maxTransportSize\n");
+				//fflush(stdout);
 
 #ifdef _MSC_VER     
 				lct->maxTransportSize = atoi(*(++atts));
@@ -727,6 +736,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #endif
 			}
 			else if (!strcmp(*atts, "afdt:fileTemplate")) {
+				//printf("found AFDT fileTemplate\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(lct->fileTemplate = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -737,6 +749,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->fileTemplate, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "afdt:appContextIdList")) {
+				//printf("found AFDT APP ContextId List\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(lct->appContextIdList = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -747,6 +762,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->appContextIdList, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "afdt:filterCodes")) {
+				//printf("found AFDT Filter Codes\n");
+				//fflush(stdout);
 
 #ifdef _MSC_VER     
 				lct->filterCodes = atoi(*(++atts));
@@ -771,6 +788,45 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 #endif
+			}
+			else if (!strcmp(*atts, "afdt:maxCacheMemory")) {
+				//printf("found AFDT max Cache Memory\n");
+				//fflush(stdout);
+
+#ifdef _MSC_VER     
+				lct->maxCacheMemory = atoi(*(++atts));
+
+				if (lct->maxCacheMemory > (unsigned int)0xFFFFFFFF) {
+					printf("Max Cache Memory too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->maxCacheMemory = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("Max Cache Memory not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->maxCacheMemory == 0xFFFFFFFF) {
+					printf("Max Cache Memory too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:order")) {
+				//printf("found AFDT order\n");
+				//fflush(stdout);
+
+				if (!strcmp("true", *(++atts))) {
+					lct->ext_order = TRUE;
+				}
+				else {
+					lct->ext_order = FALSE;
+				}
 			}
 			else {
 				atts++;
@@ -816,7 +872,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//}
 
 			if (!strcmp(*atts, "TOI")) {
-
+				//printf("found fdt:TOI\n");
+				//fflush(stdout);
 #ifdef _MSC_VER    
 				lct->toi = _atoi64(*(++atts));
 
@@ -843,6 +900,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				lct->nb_of_files++;
 			}
 			else if (!strcmp(*atts, "Content-Location")) {
+				//printf("found fdt:Content-Location\n");
+				//fflush(stdout);
 
 				atts++;
 
@@ -863,7 +922,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "Content-Length")) {
-
+				//printf("found fdt: Content-Length\n");
+				//fflush(stdout);
 #ifdef _MSC_VER     
 				lct->content_len = _atoi64(*(++atts));
 
@@ -893,7 +953,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "Transfer-Length")) {
-
+				//printf("found fdt: Transfer-Length\n");
+				//fflush(stdout);
 #ifdef _MSC_VER			  
 				lct->transfer_len = _atoi64(*(++atts));
 
@@ -920,7 +981,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "Content-Type")) {
-			
+				//printf("found fdt: Content-Type\n");
+				//fflush(stdout);
+
 				atts++;
 			
 				if (!(lct->type = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -931,7 +994,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->type, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "Content-Encoding")) {
-			
+				//printf("found fdt: Content-Encoding\n");
+				//fflush(stdout);
+
 				atts++;
 			
 				if (!(lct->encoding = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -942,6 +1007,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->encoding, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "Content-MD5")) {
+				//printf("found fdt: Content-MD5\n");
+				//fflush(stdout);
 
 				atts++;
 
@@ -953,25 +1020,219 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 				memcpy(lct->md5, *atts, strlen(*atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-FEC-Encoding-ID")) {
+				//printf("found fdt: FEC OTI FEC Encoding ID\n");
+				//fflush(stdout);
+
 				lct->fec_enc_id = (unsigned char)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-FEC-Instance-ID")) {
+				//printf("found fdt: FEC OTI FEC Instance ID\n");
+				//fflush(stdout);
+
 				lct->fec_inst_id = (unsigned short)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-Maximum-Source-Block-Length")) {
+				//printf("found fdt: FEC OTI Max Source Block Length\n");
+				//fflush(stdout);
+
 				lct->max_sb_len = (unsigned int)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-Encoding-Symbol-Length")) {
+				//printf("found fdt: FEC OTI Encoding Symbol Length\n");
+				//fflush(stdout);
+
 				lct->es_len = (unsigned short)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-Max-Number-of-Encoding-Symbols")) {
+				//printf("found fdt: FEC OTI Max # Encoding Symbols\n");
+				//fflush(stdout);
+
 				lct->max_nb_of_es = (unsigned short)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-Number-of-Encoding-Symbols-per-Group")) {
+				//printf("found fdt: FEC OTI # Encoding Symbols per Group\n");
+				//fflush(stdout);
+
 				lct->nb_of_es_per_group = (unsigned char)atoi(*(++atts));
 			}
 			else if (!strcmp(*atts, "FEC-OTI-Finite-Field-Parameter")) {
+				//printf("found fdt: FEC OTI Finite Field Parameter\n");
+				//fflush(stdout);
+
 				lct->finite_field = (unsigned char)atoi(*(++atts));
+			}
+			else if (!strcmp(*atts, "afdt:efdtVersion")) {
+				//printf("found AFDT Version\n");
+				//fflush(stdout);
+#ifdef _MSC_VER     
+				lct->efdtVersion = atoi(*(++atts));
+
+				if (lct->efdtVersion > (unsigned int)0xFFFFFFFF) {
+					printf("EFDT Version too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->efdtVersion = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("EFDT Version not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->efdtVersion == 0xFFFFFFFF) {
+					printf("EFDT Version too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:maxExpiresDelta")) {
+				//printf("found AFDT maxExpiresDelta\n");
+				//fflush(stdout);
+#ifdef _MSC_VER     
+				lct->maxExpiresDelta = atoi(*(++atts));
+
+				if (lct->maxExpiresDelta > (unsigned int)0xFFFFFFFF) {
+					printf("Max Expires Delta too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->maxExpiresDelta = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("Max Expires Delta not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->maxExpiresDelta == 0xFFFFFFFF) {
+					printf("Max Expires Delta too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:maxTransportSize")) {
+				//printf("found AFDT maxTransportSize\n");
+				//fflush(stdout);
+#ifdef _MSC_VER     
+				lct->maxTransportSize = atoi(*(++atts));
+
+				if (lct->maxTransportSize > (unsigned int)0xFFFFFFFF) {
+					printf("Max Transport Size too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->maxTransportSize = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("Max Transport Size not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->maxTransportSize == 0xFFFFFFFF) {
+					printf("Max Transport Size too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:fileTemplate")) {
+				//printf("found AFDT fileTemplate\n");
+				//fflush(stdout);
+
+				atts++;
+
+				if (!(lct->fileTemplate = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for afdt->fileTemplate!\n");
+					return;
+				}
+
+				memcpy(lct->fileTemplate, *atts, strlen(*atts));
+			}
+			else if (!strcmp(*atts, "afdt:appContextIdList")) {
+				//printf("found AFDT APP ContextId List\n");
+				//fflush(stdout);
+
+				atts++;
+
+				if (!(lct->appContextIdList = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for afdt->appContextIdList!\n");
+					return;
+				}
+
+				memcpy(lct->appContextIdList, *atts, strlen(*atts));
+			}
+			else if (!strcmp(*atts, "afdt:filterCodes")) {
+				//printf("found AFDT Filter Codes\n");
+				//fflush(stdout);
+
+#ifdef _MSC_VER     
+				lct->filterCodes = atoi(*(++atts));
+
+				if (lct->filterCodes > (unsigned int)0xFFFFFFFF) {
+					printf("Filter COdes too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->filterCodes = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("Filter Codes not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->filterCodes == 0xFFFFFFFF) {
+					printf("Filter Codes too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:maxCacheMemory")) {
+				//printf("found AFDT max Cache Memory\n");
+				//fflush(stdout);
+#ifdef _MSC_VER     
+				lct->maxCacheMemory = atoi(*(++atts));
+
+				if (lct->maxCacheMemory > (unsigned int)0xFFFFFFFF) {
+					printf("Max Cache Memory too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->maxCacheMemory = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("Max Cache Memory not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->maxCacheMemory == 0xFFFFFFFF) {
+					printf("Max Cache Memory too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else if (!strcmp(*atts, "afdt:order")) {
+				//printf("found AFDT order\n");
+				//fflush(stdout);
+
+				if (!strcmp("true", *(++atts))) {
+					lct->ext_order = TRUE;
+				}
+				else {
+					lct->ext_order = FALSE;
+				}
 			}
 			else {
 				atts++;
@@ -1292,6 +1553,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			//}
 
 			if (!strcmp(*atts, "startup")) {
+				//printf("found MediaInfo startup\n");
+				//fflush(stdout);
+
 				if (!strcmp("true", *(++atts))) {
 					lct->startup = TRUE;
 				}
@@ -1301,6 +1565,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "lang")) {
+				//printf("found MediaInfo lang\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -1322,6 +1589,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "contentType")) {
+				//printf("found MediaInfo contentType\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -1343,6 +1613,9 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 			}
 			else if (!strcmp(*atts, "repId")) {
+				//printf("found MediaInfo repId\n");
+				//fflush(stdout);
+
 				atts++;
 
 				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
@@ -1398,8 +1671,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #ifdef _MSC_VER     
 				lct->stoi_list->x = atoi(*(++atts));
 
-				if (lct->stoi_list->x > (unsigned int)0xFFFFFFFF) {
-					printf("LCT Repair Flow Source TOI 'x' too big for unsigned int (32 bits)\n");
+				if (lct->stoi_list->x > (unsigned short)0xFFFF) {
+					printf("LCT Repair Flow Source TOI 'x' too big for unsigned int (16 bits)\n");
 					fflush(stdout);
 					return;
 				}
@@ -1412,8 +1685,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 
-				if (errno == ERANGE && srctoi->x == 0xFFFFFFFF) {
-					printf("LCT Repair Flow Source TOI 'x' too big for unsigned int (32 bits)\n");
+				if (errno == ERANGE && srctoi->x == 0xFFFF) {
+					printf("LCT Repair Flow Source TOI 'x' too big for unsigned int (16 bits)\n");
 					fflush(stdout);
 					return;
 				}
@@ -1437,8 +1710,8 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #ifdef _MSC_VER     
 				lct->stoi_list->y = atoi(*(++atts));
 
-				if (lct->stoi_list->y > (unsigned int)0xFFFFFFFF) {
-					printf("LCT Repair Flow Source TOI 'y' too big for unsigned int (32 bits)\n");
+				if (lct->stoi_list->y > (unsigned short)0xFFFF) {
+					printf("LCT Repair Flow Source TOI 'y' too big for unsigned int (16 bits)\n");
 					fflush(stdout);
 					return;
 				}
@@ -1451,7 +1724,7 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 					return;
 				}
 
-				if (errno == ERANGE && srctoi->y == 0xFFFFFFFF) {
+				if (errno == ERANGE && srctoi->y == 0xFFFF) {
 					printf("LCT Repair Flow Source TOI 'y' too big for unsigned int (32 bits)\n");
 					fflush(stdout);
 					return;
@@ -1653,31 +1926,81 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 #endif
 			}
 			else if (!strcmp(*atts, "fecOTI")) {
+
 				//printf("found FECParameters fecOTI\n");
 				//fflush(stdout);
-#ifdef _MSC_VER     
-				lct->fecOTI = atoi(*(++atts));
 
-				if (lct->fecOTI > (unsigned int)0xFFFFFFFF) {
-					printf("LCT Repair Flow FEC information too big for unsigned int (32 bits)\n");
+				atts++;
+
+				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for mbstr!\n");
+					fflush(stdout);
+					return;
+				}
+
+				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+
+				if (!(lct->fecOTI = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for Repair Flow FEC Parameters FEC OTI!\n");
+					fflush(stdout);
+					return;
+				}
+
+				memcpy(lct->fecOTI, mbstr, strlen(mbstr));
+				free(mbstr);
+
+			}
+			else if (!strcmp(*atts, "percentRepair")) {
+				//printf("found FECParameters percentRepair\n");
+				//fflush(stdout);
+
+#ifdef _MSC_VER     
+				lct->percentRepair = atoi(*(++atts));
+
+				if (lct->percentRepair > (unsigned short)0xFFFF) {
+					printf("LCT Repair Flow Percent Repair too big for unsigned short (16 bits)\n");
 					fflush(stdout);
 					return;
 				}
 #else               
-				lct->fecOTI = strtoul(*(++atts), &ep, 10);
+				//lct->percentRepair = strtouint16(*(++atts), &ep, 10);
+				lct->percentRepair = strtoul(*(++atts), &ep, 10);
 
 				if (*(atts) == '\0' || *ep != '\0') {
-					printf("LCT Repair Flow FEC information not a number\n");
+					printf("LCT Repair Flow percent Repair not a number\n");
 					fflush(stdout);
 					return;
 				}
 
-				if (errno == ERANGE && lct->fecOTI == 0xFFFFFFFF) {
-					printf("LCT Repair Flow FEC information too big for unsigned int (32 bits)\n");
+				if (errno == ERANGE && lct->percentRepair == 0xFFFF) {
+					printf("LCT Repair Flow Percent Repair too big for unsigned short (16 bits)\n");
 					fflush(stdout);
 					return;
 				}
 #endif
+			}
+			else if (!strcmp(*atts, "checksumList")) {
+				//printf("found FECParameters checksumList\n");
+				//fflush(stdout);
+
+				atts++;
+
+				if (!(mbstr = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for mbstr!\n");
+					fflush(stdout);
+					return;
+				}
+
+				x_utf8s_to_iso_8859_1s(mbstr, *atts, strlen(*atts));
+
+				if (!(lct->checksumList = (char*)calloc((size_t)(strlen(mbstr) + 1), sizeof(char)))) {
+					printf("Could not alloc memory for Repair Flow FEC Parameters checksum List!\n");
+					fflush(stdout);
+					return;
+				}
+
+				memcpy(lct->checksumList, mbstr, strlen(mbstr));
+				free(mbstr);
 			}
 			else {
 				atts++;

@@ -60,6 +60,8 @@
 #include "fdt.h"
 #include "efdt.h"
 #include "mime-parser.h"
+#include "../nanorq-stable/include/nanorq.h"
+
 
 /**
  * This is a private function which checks if all wanted files are received.
@@ -209,7 +211,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
 
 #ifdef _MSC_VER
     if((fd = open((const char*)tmp_filename,
-		  _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE)) < 0) {
+		  _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
     if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
@@ -312,7 +314,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
 
 #ifdef _MSC_VER
       if((fd = open((const char*)tmp_filename,
-		    _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE)) < 0) {
+		    _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
 		 if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
@@ -814,7 +816,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 
 #ifdef _MSC_VER
       if((fd = open((const char*)tmp_filename,
-                    _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE)) < 0) {
+                    _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
       if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
@@ -1057,7 +1059,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		fflush(stdout);
 		}
 	}
-    
+
 	if(receiver->verbosity > 0) {
 #ifdef _MSC_VER
 		printf("File received: %s (TOI=%I64u)\n", file->location, toi);
@@ -1089,7 +1091,6 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		memcpy((fullpath + strlen(fullpath) - 4), "", 1);
 
 	}
-
 	free_uri(uri);		
 	free(tmp);
 	free(filepath);
@@ -1104,8 +1105,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	//START
 
 	//S_IRWXU |S_IRWXG|S_IRWXO is used to set read, write, execute permissions for all users
-// Luke Fay 	if (chmod(fullpath,S_IRWXU |S_IRWXG|S_IRWXO ) == 0 )
-
+// Luke Fay 	if (chmod(fullpath,S_IRWXU |S_IRWXG|S_IRWXO ) == 0 )	
 	//Processing time starts when all bytes are received but not yet used to generate segment and store it in the directory
 	//End of File processing. Segment is now available for DASH Reference Client
 	gettimeofday(&processing_time, NULL);
@@ -1597,12 +1597,11 @@ void* fdt_thread(void *s) {
 			printf("Expired EFDT Instance received, discarding\n");
 			fflush(stdout);
 		  }
-	  
-		  free(buf);
-		  FreeFDT(fdt_instance);
 		  FreeEFDT(efdt_instance);
+		  free(buf);
+		  //FreeFDT(fdt_instance);
 
-		  continue;
+		  //continue;
 		}
 		else {
 		  if(receiver->verbosity == 4) {
@@ -1628,9 +1627,14 @@ void* fdt_thread(void *s) {
 	  fdt_instance->max_nb_of_es=         efdt_instance->max_nb_of_es;
 	  fdt_instance->complete =			  efdt_instance->complete = TRUE;
 
+	  //lock_fdt();
 	  receiver->fdt = fdt_instance;
+	  //unlock_fdt();
+
+	  //lock_efdt();
 	  receiver->efdt = efdt_instance;
-      
+	  //unlock_efdt();
+
 	  if(receiver->verbosity == 4) {
 		printf("FDT Instance received (ID=%i)\n", fdt_instance_id);
 		printf("FDT updated, new %d file description(s) added\n", fdt_instance->nb_of_files);
@@ -1743,14 +1747,36 @@ void* fdt_thread(void *s) {
 
 	  //printf("FDT Instance parsed\n\n");
 	  //fflush(stdout);
-	}
-	else { /* Receive new FDT Instance when it comes */
+	}	
+	else { // Receive new FDT Instance when it comes
       updated = 0;
 
 	  if (receiver->verbosity == 4) {
 		  printf("Wait for another SLS if Segment Timeline\n\n");
 		  fflush(stdout);
 	  }
+
+	  // If Segment Timeline, SLS TOI's increment...so catch the next one.
+	  if (receiver->rx_automatic) {
+
+		  retval = set_wanted_object(receiver->s_id, file->toi+1, file->transfer_len,
+			  file->es_len,
+			  file->max_sb_len,
+			  file->fec_inst_id,
+			  file->fec_enc_id,
+			  file->max_nb_of_es, content_enc_algo,
+			  file->finite_field, file->nb_of_es_per_group
+		  );
+
+		  if (retval < 0) {
+			  /* Memory error */
+		  }
+		  else {
+			  file->status = 1;
+		  }
+	  }
+	  set_fdt_instance_parsed(receiver->s_id);
+
 
 	  // FLUTE OPERATION BELOW, ROUTE Operation uses S-TSID above
       buf = fdt_recv(receiver->s_id, &buflen, &retval, &fdt_content_enc_algo, &fdt_instance_id);
@@ -1822,7 +1848,7 @@ void* fdt_thread(void *s) {
       }
       
       //updated = update_efdt(receiver->efdt, efdt_instance);
-      /*Copy efdt to fdt accordingly*/
+      //Copy efdt to fdt accordingly
 	  fdt_instance= calloc(1, sizeof(fdt_t));
 	  fdt_instance->expires=              efdt_instance->expires;
 	  fdt_instance->file_list=            efdt_instance->file_list;
@@ -1909,7 +1935,7 @@ void* fdt_thread(void *s) {
 					 );
 	      
 				if(retval < 0) {
-					/* Memory error */
+					// Memory error 
 				}
 				else {
 					file->status = 1;
@@ -1927,7 +1953,7 @@ void* fdt_thread(void *s) {
 					   );
 
 					if(retval < 0) {
-						/* Memory error */
+						// Memory error 
 					}
 					else {
 						file->status = 1;
@@ -1954,7 +1980,7 @@ void* fdt_thread(void *s) {
 					     );
 		  
 						if(retval < 0) {
-							/* Memory error */
+							// Memory error 
 						}
 						else {
 							file->status = 1;
@@ -1967,7 +1993,7 @@ void* fdt_thread(void *s) {
 		  next_file = file->next;
 		}
 	  }
-
+	
 	  set_fdt_instance_parsed(receiver->s_id);
 
       FreeFDT(fdt_instance);
@@ -2181,6 +2207,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			if (tmp_file_name == NULL) {
 				printf("alc_recv3 returned %d\n", retcode); fflush(stdout);
 				//return retcode;
+				break;
 			}
 			else {
 				if (s->verbosity == 4) {
@@ -2205,6 +2232,13 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 				next_file = file->next;
 			}
+
+			if (s->verbosity == 4) {
+				//printf("Session write file type: %s\n", file->type);
+				printf("Session write file: %s\t TOI %llu\n", file->location, file->toi);
+				fflush(stdout);
+			}
+
 		}
 		else { // Memory_mode == 0, the highest
 
@@ -2217,6 +2251,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			if (buf == NULL) {
 				printf("alc_recv2 returned %d\n", retcode); fflush(stdout);
 				//return retcode;
+				break;
 			}
 
 			if (s->verbosity == 4) {
@@ -2267,7 +2302,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 #ifdef _MSC_VER
 			if ((fd = open((const char*)tmp_filename,
-				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IWRITE)) < 0) {
+				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IWRITE | _S_IREAD)) < 0) {
 #else
 			if ((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
 #endif
@@ -2297,7 +2332,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		//Malek El Khatib 06.05.2014
 		//Start
 		//Processing time starts when all bytes are received but not yet used to generate segment and store it in the directory
-		//Start of File Processing
+		//Start of File Processing (uses FDT File information)
 		gettimeofday(&processing_time, NULL);
 		timeInUsec = (unsigned long long)processing_time.tv_sec * 1000000 + (unsigned long long)processing_time.tv_usec;
 		fprintf(logFilePtr, "%s processing start time %llu\n", file->location, timeInUsec);
@@ -2704,6 +2739,229 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			ShellExecute(NULL, "Open", fullpath, NULL, NULL, SW_SHOWNORMAL);
 		}
 #endif    
+		// START RAPTOR-Q REPAIR if available
+		char oti_common[16];
+		char oti_scheme[8];
+		char* endptr;
+
+		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
+			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
+			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
+			uint64_t oti_commonx = strtoull(oti_common, &endptr, 16);
+			uint32_t oti_schemex = strtoul(oti_scheme, &endptr, 16);
+
+			//printf("fecOTI: %s\n", s->ls->fecOTI);
+			//printf("oti common %llx\toti scheme %lx\n", oti_commonx, oti_schemex);
+			//fflush(stdout);
+
+			nanorq* rq = nanorq_decoder_new(oti_commonx, oti_schemex);
+			if (rq == NULL) {
+				printf("Could not initialize decoder.\n");
+				fflush(stdout);
+			}
+
+			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
+			int num_sbn = nanorq_blocks(rq);
+			uint32_t tag;
+			size_t packet_size = nanorq_symbol_size(rq);
+
+			printf("Repairable file: %s\t TOI %llu\n", file->location, file->toi);
+			printf("NRT File # SourceBlocks: %d\n", num_sbn);
+			//printf("Repair TSI %d\n", s->ls->tsi);
+			fflush(stdout);
+
+			// NOTE: stay away from using strcat, using sprintf instead.
+			char rpr[MAX_PATH_LENGTH];
+			memset(rpr, 0, MAX_PATH_LENGTH);
+			sprintf(rpr, "%s/%s", s->base_dir, "repair.rq");
+			char rprfile[MAX_PATH_LENGTH];
+			memset(rprfile, 0, MAX_PATH_LENGTH);
+			sprintf(rprfile, "%s/%s", s->base_dir, "data.rq");
+			char datafile[MAX_PATH_LENGTH];
+			memset(datafile, 0, MAX_PATH_LENGTH);
+			sprintf(datafile, "%s/%s", s->base_dir, file->location);
+
+			
+			// Concatenate Repair Symbols after each Source Block.
+			
+#ifdef _MSC_VER
+			int fd3 = open((const char*)rpr,
+				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC);
+				//_O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
+#else
+			int fd3 = open64((const char*)rpr, 
+				_O_WRONLY | _O_CREAT | _O_TRUNC, _S_IRWXU);
+				//_O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
+#endif
+			if (fd3 < 0) {
+				printf("failed to open / create file %s for writing\n", rpr);
+				fflush(stdout);
+
+				continue;
+			}
+			//FILE* fd3 = fopen(rpr, "wb+");
+			
+			// Insert Repair symbols to each Source Block in the received file.
+			//char c[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 24];
+			char c[1500];
+
+			for (int sbn = 0; sbn < num_sbn; sbn++) {
+				// First get # of symbols in current source block
+				UINT sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
+				uint32_t label;
+
+				// Add data for current Source Block
+#ifdef _MSC_VER
+				//int fd1 = open((const char*)datafile, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
+				int fd1 = open((const char*)datafile, 
+					_O_RDONLY | _O_BINARY);
+				//int fd1 = open((const char*)datafile, _O_RDONLY | _O_BINARY);
+#else
+				//int fd1 = open64((const char*)datafile, _O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
+				//int fd1 = open64((const char*)datafile, _O_RDWR | _O_CREAT | _O_APPEND, _S_IRWXU);
+				int fd1 = open64((const char*)datafile, _O_RDONLY | _O_BINARY, _S_IRWXU);
+#endif
+				if (fd1 < 0) {
+					printf("failed to open / create file %s for writing\n", datafile);
+					fflush(stdout);
+
+					continue;
+				}
+
+				// Add Repair (data.rq) to Source Blocks
+#ifdef _MSC_VER
+				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY);
+#else
+				int fd2 = open64((const char*)rprfile, _O_RDONLY | _O_BINARY);
+#endif
+				if (fd2 < 0) {
+					printf("failed to open / create file %s for reading\n", rprfile);
+					fflush(stdout);
+
+					continue;
+				}
+
+				//printf("Looping through Source Block %u.  ", sbn);
+				//printf("Reading Source Symbols...");
+				//fflush(stdout);
+				
+				while (read(fd1, &label, 4) == 4) {					// Read tag of SB#, ESI # of data
+					if (read(fd1, &c, packet_size) != packet_size)	// Read data symbol
+						break;
+					// If source block == current source block, write the data for this Source Block
+					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
+					//fflush(stdout);
+
+					if (((label >> 24) & 0xff) == sbn) {
+						//printf("Write data symbol %u\n", (label & 0x00ffffff));
+						//fflush(stdout);
+
+						if (write(fd3, &label, 4) != 4)					// Write tag
+							break;
+						if (write(fd3, &c, packet_size) != packet_size)	// Write data symbol
+							break;
+						
+						//fwrite(&label, 4, 1, fd3);
+						//fwrite(&c, packet_size, 1, fd3);
+					}
+					// Else continue reading across repair file to get next appropriate SB repair symbol
+					else continue;
+
+				}
+				close(fd1);
+
+				while (read(fd2, &label, 4) == 4) {						// Read tag of SB#, ESI # of repair
+					if (read(fd2, &c, packet_size) != packet_size)		// Read repair symbol
+						break;
+					// If source block == current source block, write the repair for this Source Block
+					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
+					//fflush(stdout);
+
+					if (((label >> 24) & 0xff) == sbn) {
+						//printf("Write repair symbol %u\n", (label & 0x00ffffff));
+						//fflush(stdout);
+						
+						if (write(fd3, &label, 4) != 4)					// Write tag
+							break;
+						if (write(fd3, &c, packet_size) != packet_size)	// Write repair symbol
+							break;
+						
+						//fwrite(&label, 4, 1, fd3);
+						//fwrite(&c, packet_size, 1, fd3);
+					}
+					// Else continue reading across repair file to get next appropriate SB repair symbol
+					else continue;
+
+				}
+				close(fd2);
+
+			}
+			//fclose(fd3);
+			close(fd3);
+
+			// Prepare repair operations
+			struct ioctx* myio = ioctx_from_file(datafile, 0);
+			if (!myio) {
+				fprintf(stdout, "couldn't access file %s\n", datafile);
+			}
+
+
+			// Concatenate Repair Symbols after each Source Block.
+#ifdef _MSC_VER
+			//int ih = open((const char*)rpr, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
+			int ih = open((const char*)rpr, _O_RDONLY | _O_BINARY);
+#else
+			//int ih = open64((const char*)rpr, _O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
+			int ih = open64((const char*)rpr, _O_RDONLY | _O_BINARY);
+#endif
+			if (ih < 0) {
+				printf("failed to open / create file %s for writing\n", rpr);
+				fflush(stdout);
+
+				continue;
+			}
+			//FILE* ih = fopen(rpr, "rb");
+
+			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
+#ifdef _MSC_VER
+			uint8_t packet[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 20]; // 1444
+#else
+			uint8_t packet[packet_size];
+#endif
+
+			// Add Intermediate symbols
+			//while (fread(&tag, 1, sizeof(tag), ih)) {
+				//fread(packet, packet_size, 1, ih);
+			while (read(ih, &tag, sizeof(tag)) == 4) {
+				read(ih, packet, packet_size);
+				if (NANORQ_SYM_ERR ==
+					nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
+					fprintf(stdout, "adding symbol %d failed.\n", tag);
+					abort();
+				}
+			}
+
+			// Run Raptor-Q Repair for each Source Block
+			for (int sbn = 0; sbn < num_sbn; sbn++) {
+				fprintf(stdout, "block %d is %d packets, lost %d, have %d repair\n", sbn,
+					(unsigned)nanorq_block_symbols(rq, sbn),
+					(unsigned)nanorq_num_missing(rq, sbn),
+					(unsigned)nanorq_num_repair(rq, sbn));
+				if (!nanorq_repair_block(rq, myio, sbn)) {
+					fprintf(stdout, "decode of sbn %d failed.\n", sbn);
+				}
+				nanorq_encoder_cleanup(rq, sbn);
+			}
+			//fclose(ih);
+			close(ih);
+
+			nanorq_free(rq);
+			myio->destroy(myio);
+
+			// Cleanup files
+			remove(rpr);
+			remove(rprfile);
+		}
 
 		//Malek El Khatib 06.05.2014
 		//START
@@ -2733,8 +2991,6 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		printf("FileModeSession End\n\n");
 		fflush(stdout);
 	}
-
-	//return 1;
 
 }
 

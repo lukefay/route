@@ -70,8 +70,8 @@ typedef struct stoi {
 	struct stoi *prev;			/**< previous item */
 	struct stoi *next;			/**< next item */
 
-	unsigned int x;				/**< constant x value for deriving TOI in super-object */
-	unsigned int y;				/**< constant y value for deriving TOI in super-object */
+	unsigned short x;				/**< constant x value for deriving TOI in super-object */
+	unsigned short y;				/**< constant y value for deriving TOI in super-object */
 } stoi_t;
 	
 /**
@@ -136,6 +136,8 @@ typedef struct lct_ch {
 	char* fileTemplate;			/**< File Template */
 	char* appContextIdList;		/**< Application ContextID list */
 	unsigned int filterCodes;	/**< Filter Codes */
+	unsigned int maxCacheMemory;/**< Maximum Cache Memory required for RaptorQ operation */
+	BOOL ext_order;				/**< ATSC defined extension flag if objects are in-order delivered */
 
 	// fdt:FILE
 	int status;					/**< status of the file (0 = not wanted, 1 = downloading, 2 = downloaded) */
@@ -172,7 +174,9 @@ typedef struct lct_ch {
 	unsigned int maximumDelay;	/**< delay between source packet in source flow vs. repair flow */
 	unsigned short overhead;	/**< Percentage of FEC overhead */
 	unsigned int fecMinBuffSize;/**< Repair flow minimum buffers size for transport super-object */
-	unsigned int fecOTI;		/**< FEC info */
+	char* fecOTI;				/**< FEC related info */
+	unsigned short percentRepair;/**< Maximum ratio of repair symbols to source symbols as percent 0-200 */
+	char* checksumList;			/**< List of CRC32 hexadecimal checksums for each Source Block in susecutive order */
 	protectobj_t* obj_list;		/**< list of source flows protected by this repair flow */
 	unsigned int nb_of_obj;		/**< number of protected objects in the source flow */
 
