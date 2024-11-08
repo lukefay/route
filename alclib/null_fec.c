@@ -160,7 +160,7 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
     //len = eslen*tr_block->k;
 
 	/* Allocate memory for buf */
-    if(!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {
+    if(!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {	// length +1 for NULL character
         printf("Could not alloc memory for buf!\n");
         return NULL;
     }
@@ -173,12 +173,13 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 
         tu = next_tu;
 
-		//if (tu->data == NULL) {
-		//	printf("SB: %i, esi: %i, len: %i\n", tr_block->sbn, tu->esi, tu->len);
-		//	fflush(stdout);
-		//}
+		if (tu->data == NULL) {
+			//printf("SB: %u, esi: %u, len: %u\n", tr_block->sbn, tu->esi, tu->len);
+			printf("Buffer Length: %llu, Unit Length: %u Build: %llu\n", eslen, tu->len, tmp);
+			fflush(stdout);
+		}
 
-        memcpy((buf+(unsigned int)tmp), tu->data, tu->len);
+        memcpy((buf+tmp), tu->data, tu->len);
 
 #ifndef USE_RETRIEVE_UNIT
         free(tu->data);
@@ -237,10 +238,15 @@ char *null_fec_decode_object(trans_obj_t *to, unsigned long long *data_len,
 		assert (position < to->len+1);
 		assert (len <= (to->len-position));
 
+		//printf("BLOCK LENGTH %lld, block: %s\n", len, block);
+		//fflush(stdout);
+
 		memcpy(object+(unsigned int)position, block, (unsigned int)len);
 		position += len;
 		to_data_left -= len;
 
+		//printf("object %s", object);
+		//fflush(stdout);
 		free(block);
 
 		//printf("INCREMENT BLOCK LIST %d\n", to->bs->N);

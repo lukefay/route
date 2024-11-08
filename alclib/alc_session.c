@@ -745,7 +745,8 @@ unsigned int get_fdt_instance_id(int s_id) {
 
 void set_fdt_instance_id(int s_id, unsigned int instance_id) {
   lock_session();
-  alc_session_list[s_id]->fdt_instance_id =  (instance_id & 0x00FFFFFF);
+  //alc_session_list[s_id]->fdt_instance_id =  (instance_id & 0x00FFFFFF);
+  alc_session_list[s_id]->fdt_instance_id = (instance_id & 0xFFFFFFFF);
   unlock_session();
 }
 
@@ -1059,50 +1060,49 @@ BOOL is_received_instance(alc_session_t *s, unsigned int fdt_instance_id) {
 
 int set_received_instance(alc_session_t *s, unsigned int fdt_instance_id) {
  
-        rx_fdt_instance_t *rx_fdt_instance;
-        rx_fdt_instance_t *list;
+    rx_fdt_instance_t *rx_fdt_instance;
+    rx_fdt_instance_t *list;
         
 	lock_session();
 
-        list = s->rx_fdt_instance_list;
-                                                                                                                                              
-        if(list == NULL) {
-                                                                                                                                              
-                if (!(rx_fdt_instance = (rx_fdt_instance_t*)calloc(1, sizeof(rx_fdt_instance_t)))) {
-                        printf("Could not alloc memory for rx_fdt_instance!\n");
+    list = s->rx_fdt_instance_list;
+
+    if(list == NULL) {
+        if (!(rx_fdt_instance = (rx_fdt_instance_t*)calloc(1, sizeof(rx_fdt_instance_t)))) {
+            printf("Could not alloc memory for rx_fdt_instance!\n");
 			unlock_session();
-                        return -1;
-                }
+            return -1;
+        }
 
-                rx_fdt_instance->fdt_instance_id = fdt_instance_id;
-                rx_fdt_instance->prev = NULL;
-                rx_fdt_instance->next = NULL;
+        rx_fdt_instance->fdt_instance_id = fdt_instance_id;
+        rx_fdt_instance->prev = NULL;
+        rx_fdt_instance->next = NULL;
         
-			s->rx_fdt_instance_list = rx_fdt_instance;
-        }
-        else {
-                for(;; list = list->next) {
-                        if(list->fdt_instance_id == fdt_instance_id) {
-                                break;
-                        }
-                        else if(list->next == NULL) {
+		s->rx_fdt_instance_list = rx_fdt_instance;
+    }
+    else {
+        for(;; list = list->next) {
+            if(list->fdt_instance_id == fdt_instance_id) {
+                    break;
+            }
+            else if(list->next == NULL) {
               
-							  if (!(rx_fdt_instance = (rx_fdt_instance_t*)calloc(1, sizeof(rx_fdt_instance_t)))) {
-								printf("Could not alloc memory for rx_fdt_instance!\n");
-								unlock_session();
-								return -1;
-							  }
+				if (!(rx_fdt_instance = (rx_fdt_instance_t*)calloc(1, sizeof(rx_fdt_instance_t)))) {
+				    printf("Could not alloc memory for rx_fdt_instance!\n");
+				    unlock_session();
+				return -1;
+				}
 			  
-							  rx_fdt_instance->fdt_instance_id = fdt_instance_id;
+				rx_fdt_instance->fdt_instance_id = fdt_instance_id;
 							  
-							  list->next = rx_fdt_instance;
-							  rx_fdt_instance->prev = list;
-							  rx_fdt_instance->next = NULL;
+				list->next = rx_fdt_instance;
+				rx_fdt_instance->prev = list;
+				rx_fdt_instance->next = NULL;
 
-							  break;
-                        }
-                }
+				break;
+            }
         }
+    }
 	
 	unlock_session();
         return 0;

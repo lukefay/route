@@ -102,6 +102,8 @@ void free_units(trans_block_t *tb) {
 
 #ifdef USE_RETRIEVE_UNIT
 
+//int FRV_counter = 0;
+
 trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
 	trans_unit_container_t *container = NULL;
@@ -127,6 +129,14 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 			{//END
 				//printf("# symbols varies per packet length %i\n", tmp->u.len); fflush(stdout);
 				if(tmp->u.len < es_len) {
+					//printf("[FRV]: tmp->u.len (%d) < es_len (%d)\n", tmp->u.len, es_len);
+					//fflush(stdout);
+					//FRV_counter++;
+					//if (FRV_counter == 40) {
+					//	int a = FRV_counter / 0;
+					//}
+					//continue;
+
 					break;
 					//continue;
 				}
@@ -166,7 +176,6 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
 		tmp = tmp->next;
 
-		continue;
 	}
 	//printf("save container\n"); fflush(stdout);
 
@@ -179,7 +188,8 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 	s->unit_pool = container;
 	container->u.used = 1;
 	s->last_given = s->unit_pool;
-	//printf("save data\n");
+	
+	//printf("allocate cache memory for %u transport unit data\n", es_len);
 	//fflush(stdout);
 
     if(!(container->u.data = (char*)calloc(es_len, sizeof(char)))) { 
