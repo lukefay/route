@@ -37,7 +37,7 @@ void fill_tabs(const gf field, gftbl *tabs) {
   }
 
   o = 1 << (field.exp - 1);
-  for (int i = (field.exp + 1); i < (field.len - 1); i++) {
+  for (uint32_t i = (field.exp + 1); i < (field.len - 1); i++) {
     if (tabs->EXP[i - 1] >= o)
       tabs->EXP[i] = tabs->EXP[field.exp] ^ ((tabs->EXP[i - 1]) << 1);
     else
@@ -47,13 +47,13 @@ void fill_tabs(const gf field, gftbl *tabs) {
 
   /* invert exp table */
   tabs->LOG[0] = field.len - 1;
-  for (int i = 0; i < (field.len - 1); i++)
+  for (uint32_t i = 0; i < (field.len - 1); i++)
     tabs->LOG[tabs->EXP[i]] = i;
 }
 
 void print_log_tab(FILE *stream, const gf field, gftbl *tabs) {
   fprintf(stream, "{\n");
-  for (int i = 0; i < field.len; i++) {
+  for (uint32_t i = 0; i < field.len; i++) {
     fprintf(stream, "%3d,", tabs->LOG[i]);
     if (i && (i % 16 == 15))
       fprintf(stream, "\n");
@@ -63,7 +63,7 @@ void print_log_tab(FILE *stream, const gf field, gftbl *tabs) {
 
 void print_exp_tab(FILE *stream, const gf field, gftbl *tabs) {
   fprintf(stream, "{\n");
-  for (int i = 0; i < 2 * (field.len - 1); i++) {
+  for (uint32_t i = 0; i < 2 * (field.len - 1); i++) {
     fprintf(stream, "%3d,", tabs->EXP[i % (field.len - 1)]);
     if (i && (i % 16 == 15))
       fprintf(stream, "\n");
@@ -73,7 +73,7 @@ void print_exp_tab(FILE *stream, const gf field, gftbl *tabs) {
 
 void print_inv_tab(FILE *stream, const gf field, gftbl *tabs) {
   fprintf(stream, "{\n");
-  for (int i = 0; i < field.len; i++) {
+  for (uint32_t i = 0; i < field.len; i++) {
     switch (i) {
     case 0:
       fprintf(stream, "%3d,", 0);
@@ -92,7 +92,7 @@ void print_inv_tab(FILE *stream, const gf field, gftbl *tabs) {
 
 void print_shuf_lo_tab(FILE *stream, const gf field, gftbl *tabs) {
   fprintf(stream, "{\n");
-  for (int i = 0; i < field.len; i++) {
+  for (uint32_t i = 0; i < field.len; i++) {
     fprintf(stream, "{");
     for (int j = 0; j < 16; j++) {
       if (i == 0 || j == 0) {
@@ -109,7 +109,7 @@ void print_shuf_lo_tab(FILE *stream, const gf field, gftbl *tabs) {
 
 void print_shuf_hi_tab(FILE *stream, const gf field, gftbl *tabs) {
   fprintf(stream, "{\n");
-  for (int i = 0; i < field.len; i++) {
+  for (uint32_t i = 0; i < field.len; i++) {
     fprintf(stream, "{");
     for (int j = 0; j < 16; j++) {
       if (i == 0 || j == 0) {

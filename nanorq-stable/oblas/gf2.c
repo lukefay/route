@@ -21,13 +21,13 @@ void gf2mat_free(gf2mat *gf2) {
 void gf2mat_print(gf2mat *gf2, FILE *stream) {
   fprintf(stream, "gf2 [%ux%u]\n", (unsigned)gf2->rows, (unsigned)gf2->cols);
   fprintf(stream, "|     ");
-  for (int j = 0; j < gf2->cols; j++) {
+  for (size_t j = 0; j < gf2->cols; j++) {
     fprintf(stream, "| %03d ", j);
   }
   fprintf(stream, "|\n");
-  for (int i = 0; i < gf2->rows; i++) {
+  for (size_t i = 0; i < gf2->rows; i++) {
     fprintf(stream, "| %03d | %3d ", i, gf2mat_get(gf2, i, 0));
-    for (int j = 1; j < gf2->cols; j++) {
+    for (size_t j = 1; j < gf2->cols; j++) {
       fprintf(stream, "| %3d ", gf2mat_get(gf2, i, j));
     }
     fprintf(stream, "|\n");
@@ -80,7 +80,7 @@ void gf2mat_fill(gf2mat *gf2, int i, uint8_t *dst) {
   }
 }
 
-int gf2mat_get(gf2mat *gf2, int i, int j) {
+int gf2mat_get(gf2mat *gf2, size_t i, size_t j) {
   if (i >= gf2->rows || j >= gf2->cols)
     return 0;
 
@@ -92,7 +92,7 @@ int gf2mat_get(gf2mat *gf2, int i, int j) {
   return !!(a[p.quot] & mask);
 }
 
-void gf2mat_set(gf2mat *gf2, int i, int j, uint8_t b) {
+void gf2mat_set(gf2mat *gf2, size_t i, size_t j, uint8_t b) {
   if (i >= gf2->rows || j >= gf2->cols)
     return;
 
@@ -121,7 +121,7 @@ void gf2mat_and(gf2mat *a, gf2mat *b, int i, int j) {
   }
 }
 
-int gf2mat_nnz(gf2mat *gf2, int i, int s, int e) {
+int gf2mat_nnz(gf2mat *gf2, size_t i, size_t s, size_t e) {
   if (i >= gf2->rows || s < 0 || s > e || e > gf2->cols)
     return 0;
   gf2word *a = gf2->bits + i * gf2->stride;
@@ -135,7 +135,7 @@ int gf2mat_nnz(gf2mat *gf2, int i, int s, int e) {
   for (; p < ed.quot; p++) {
     nnz += __builtin_popcount(a[p]);
   }
-  if (e > ed.quot) {
+  if ((int)e > ed.quot) {
     nnz += __builtin_popcount(a[p] & ((1 << ed.rem) - 1));
   }
 
