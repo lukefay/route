@@ -942,6 +942,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 	// Start ROUTE session from command line indicated LCT Channel (TSI)
 	*s_id = open_alc_session(&a->alc_a);
+	//printf("started ALC session at time: %llu\n", (unsigned long long)systime * 1000000 + (unsigned long long)systime);
+	//fflush(stdout);
 
 	if(*s_id < 0) {
 		printf("Error opening ALC session\n");
@@ -1530,22 +1532,22 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		fflush(stdout);
 	}
 
-	// Monitor FDT Thread for updates to files (SLS)
+	// Monitor FDT Thread for updates to files in S-TSID
 	while (get_session_state(receiver.s_id) == SActive) {
 
 		if (receiver.fdt->file_list != NULL) {
 			// Recover updated SLS
 			if (a->alc_a.verbosity == 4) {
-				printf("Updating files in SLS LCT Channel\n");
+				printf("Updating files in S-TSID\n");
 				fflush(stdout);
 			}
 			retval = receiver_in_fdt_based_mode(a, &receiver);
 
 		}
 		else {
-			// Exit SLS monitoring and write reports
+			// Exit S-TSID monitoring and write reports
 			if (a->alc_a.verbosity == 4) {
-				printf("No longer monitoring SLS LCT Channel\n");
+				printf("No longer monitoring S-TSID Channel\n");
 				fflush(stdout);
 			}
 
@@ -1561,7 +1563,6 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #endif
 		continue;
 	}
-
 	
 	if (a->alc_a.verbosity > 0) {
 		printf("Build Report\n");

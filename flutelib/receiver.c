@@ -842,7 +842,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       close(fd);
     }
 
-	printf("ALC RX returned\n"); fflush(stdout);
+	printf("ALC RX returned ");
 
 	//Malek El Khatib 06.05.2014
 	//Start
@@ -851,6 +851,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	gettimeofday(&processing_time, NULL);
 	timeInUsec = (unsigned long long)processing_time.tv_sec*1000000 + (unsigned long long)processing_time.tv_usec;
 	fprintf(logFilePtr,"%s processing start time %llu\n", file->location, timeInUsec);
+	printf("%s at time %llu\n", file->location, timeInUsec);
+	fflush(stdout);
 	//END Malek El Khatib
     
     if(file->encoding == NULL) {
@@ -1668,7 +1670,8 @@ void* fdt_thread(void *s) {
 			  fflush(stdout);
 			  file->status = 2;
 			  next_file = file->next;
-			  continue;
+			  //continue;
+			  break;
 			}
 		  }
 	  
@@ -1745,8 +1748,9 @@ void* fdt_thread(void *s) {
 
 	  set_fdt_instance_parsed(receiver->s_id);
 
-	  //printf("FDT Instance parsed\n\n");
+	  //printf("SLS FDT Instance parsed\n\n");
 	  //fflush(stdout);
+	  
 	}	
 	else { // Receive new FDT Instance when it comes
       updated = 0;
@@ -2606,7 +2610,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				printf("ENTITY Renaming\n"); fflush(stdout);
 			}
 			if (!noheader && (rename(tmp_filename, newpath) != 0)) {
-				if (errno == EEXIST) {
+					if (errno == EEXIST) {
 
 					retval = remove(newpath);
 
@@ -2740,17 +2744,20 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		}
 #endif    
 		// START RAPTOR-Q REPAIR if available
-		char oti_common[16];
-		char oti_scheme[8];
+		char oti_common[17];
+		char oti_scheme[9];
 		char* endptr;
 
 		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
 			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
 			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
+			oti_common[16] = '\0';
+			oti_scheme[8] = '\0';
 			uint64_t oti_commonx = strtoull(oti_common, &endptr, 16);
 			uint32_t oti_schemex = strtoul(oti_scheme, &endptr, 16);
 
 			//printf("fecOTI: %s\n", s->ls->fecOTI);
+			//printf("oti common %s\toti scheme %s\n", oti_common, oti_scheme);
 			//printf("oti common %llx\toti scheme %lx\n", oti_commonx, oti_schemex);
 			//fflush(stdout);
 
@@ -2759,6 +2766,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				printf("Could not initialize decoder.\n");
 				fflush(stdout);
 			}
+
+			//break;
 
 			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
 			int num_sbn = nanorq_blocks(rq);
@@ -2780,18 +2789,17 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			char datafile[MAX_PATH_LENGTH];
 			memset(datafile, 0, MAX_PATH_LENGTH);
 			sprintf(datafile, "%s/%s", s->base_dir, file->location);
-
 			
 			// Concatenate Repair Symbols after each Source Block.
 			
 #ifdef _MSC_VER
 			int fd3 = open((const char*)rpr,
-				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC);
+				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IREAD | _S_IWRITE);
 				//_O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
 #else
 			int fd3 = open64((const char*)rpr, 
-				_O_WRONLY | _O_CREAT | _O_TRUNC, _S_IRWXU);
-				//_O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
+				O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
+				//O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
 #endif
 			if (fd3 < 0) {
 				printf("failed to open / create file %s for writing\n", rpr);
@@ -2807,19 +2815,19 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			for (int sbn = 0; sbn < num_sbn; sbn++) {
 				// First get # of symbols in current source block
-				UINT sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
+				uint32_t sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
 				uint32_t label;
 
 				// Add data for current Source Block
 #ifdef _MSC_VER
 				//int fd1 = open((const char*)datafile, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
 				int fd1 = open((const char*)datafile, 
-					_O_RDONLY | _O_BINARY);
+					_O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
 				//int fd1 = open((const char*)datafile, _O_RDONLY | _O_BINARY);
 #else
-				//int fd1 = open64((const char*)datafile, _O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
-				//int fd1 = open64((const char*)datafile, _O_RDWR | _O_CREAT | _O_APPEND, _S_IRWXU);
-				int fd1 = open64((const char*)datafile, _O_RDONLY | _O_BINARY, _S_IRWXU);
+				//int fd1 = open64((const char*)datafile, O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
+				//int fd1 = open64((const char*)datafile, O_RDWR | O_CREAT | O_APPEND, S_IRWXU);
+				int fd1 = open64((const char*)datafile, O_RDONLY, S_IRWXU);
 #endif
 				if (fd1 < 0) {
 					printf("failed to open / create file %s for writing\n", datafile);
@@ -2830,9 +2838,9 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 				// Add Repair (data.rq) to Source Blocks
 #ifdef _MSC_VER
-				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY);
+				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
 #else
-				int fd2 = open64((const char*)rprfile, _O_RDONLY | _O_BINARY);
+				int fd2 = open64((const char*)rprfile, O_RDONLY);
 #endif
 				if (fd2 < 0) {
 					printf("failed to open / create file %s for reading\n", rprfile);
@@ -2899,6 +2907,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			//fclose(fd3);
 			close(fd3);
 
+			//break;
+
 			// Prepare repair operations
 			struct ioctx* myio = ioctx_from_file(datafile, 0);
 			if (!myio) {
@@ -2909,10 +2919,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			// Concatenate Repair Symbols after each Source Block.
 #ifdef _MSC_VER
 			//int ih = open((const char*)rpr, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
-			int ih = open((const char*)rpr, _O_RDONLY | _O_BINARY);
+			int ih = open((const char*)rpr, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
 #else
-			//int ih = open64((const char*)rpr, _O_WRONLY | _O_CREAT | _O_APPEND, _S_IRWXU);
-			int ih = open64((const char*)rpr, _O_RDONLY | _O_BINARY);
+			//int ih = open64((const char*)rpr, O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
+			int ih = open64((const char*)rpr, O_RDONLY);
 #endif
 			if (ih < 0) {
 				printf("failed to open / create file %s for writing\n", rpr);
@@ -2924,7 +2934,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
 #ifdef _MSC_VER
-			uint8_t packet[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 20]; // 1444
+			//uint8_t packet[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 20]; // 1444
+			uint8_t packet[1500];
 #else
 			uint8_t packet[packet_size];
 #endif
@@ -2955,12 +2966,13 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			//fclose(ih);
 			close(ih);
 
-			nanorq_free(rq);
-			myio->destroy(myio);
-
 			// Cleanup files
 			remove(rpr);
 			remove(rprfile);
+
+			nanorq_free(rq);
+			myio->destroy(myio);
+
 		}
 
 		//Malek El Khatib 06.05.2014
