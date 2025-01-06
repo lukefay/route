@@ -1,4 +1,4 @@
-all :	alclib sdplib flutelib flute multis_flute #flute_unittest
+all :	alclib sdplib flutelib nanorq-stable flute multis_flute #flute_unittest
 
 alclib ::
 	@echo "-------------------"
@@ -12,6 +12,13 @@ sdplib ::
 	@echo "*** SDP library ***"
 	@echo "-------------------"
 	mkdir lib; cd sdplib; make clean; make                   
+	@echo "done"
+
+nanorq-stable ::
+	@echo "-------------------"
+	@echo "*** NANORQ library ***"
+	@echo "-------------------"
+	mkdir lib; cd nanorq-stable; make clean; make                   
 	@echo "done"
 
 flutelib ::
@@ -51,6 +58,10 @@ clean :
 	@echo "*** Cleaning SDP library ***"
 	@echo "----------------------------"
 	cd sdplib; make clean
+	@echo "----------------------------"
+	@echo "*** Cleaning NANORQ library ***"
+	@echo "----------------------------"
+	cd nanorq-stable; make clean
 	@echo "------------------------------"
 	@echo "*** Cleaning FLUTE library ***"
 	@echo "------------------------------"
