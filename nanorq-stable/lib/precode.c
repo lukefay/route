@@ -21,13 +21,13 @@ static void precode_matrix_apply_op(octmat *D, schedule *S, int i) {
 }
 
 static void precode_matrix_apply_sched(octmat *D, schedule *S) {
-  for (int i = 0; i < S->marks[1]; i++)
+  for (uint32_t i = 0; i < S->marks[1]; i++)
     precode_matrix_apply_op(D, S, i);
   for (int i = S->marks[0]; i >= 0; i--)
     precode_matrix_apply_op(D, S, i);
-  for (int i = S->marks[1]; i < kv_size(S->ops); i++)
+  for (uint32_t i = S->marks[1]; i < kv_size(S->ops); i++)
     precode_matrix_apply_op(D, S, i);
-  for (int i = 0; i <= S->marks[0]; i++)
+  for (uint32_t i = 0; i <= S->marks[0]; i++)
     precode_matrix_apply_op(D, S, i);
 }
 
@@ -97,11 +97,11 @@ spmat *precode_matrix_gen(params *P, int overhead) {
 }
 
 static void precode_matrix_sort(params *P, spmat *A, schedule *S) {
-  for (int row = 0; row < A->rows; row++)
+  for (uint32_t row = 0; row < A->rows; row++)
     S->d[row] = (row + P->S + P->H) % A->rows; // move HDPC to bottom
-  for (int i = 0; i < A->rows; i++)
+  for (uint32_t i = 0; i < A->rows; i++)
     S->di[S->d[i]] = i;
-  for (int row = 0; row < A->rows; row++) {
+  for (uint32_t row = 0; row < A->rows; row++) {
     S->nz[S->d[row]] = spmat_nnz(A, S->d[row], 0, A->cols - P->P);
     if (S->nz[S->d[row]] == 0)
       S->nz[S->d[row]] = A->cols;

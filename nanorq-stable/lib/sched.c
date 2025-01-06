@@ -10,11 +10,11 @@ schedule *sched_new(unsigned rows, unsigned cols, unsigned estimated_ops) {
   S->di = calloc(rows, sizeof(int));
   S->nz = calloc(rows, sizeof(unsigned));
   // init permutation vectors
-  for (int j = 0; j < cols; j++) {
+  for (uint32_t j = 0; j < cols; j++) {
     S->c[j] = j;
     S->ci[j] = j;
   }
-  for (int i = 0; i < rows; i++) {
+  for (uint32_t i = 0; i < rows; i++) {
     S->d[i] = i;
     S->di[i] = i;
   }

@@ -8,7 +8,7 @@
 #define APPLYROW(D, w, a, k)                                                   \
   do {                                                                         \
     uint8_t *tmp = om_R(*D, w);                                                \
-    for (int i = 0; i < k; i++)                                                \
+    for (uint32_t i = 0; i < k; i++)                                           \
       a[i] ^= tmp[i];                                                          \
   } while (0);
 
@@ -151,7 +151,7 @@ static size_t transfer_esi(nanorq *rq, uint8_t sbn, uint32_t esi, uint16_t K,
   size_t transfer = 0;
   int col = 0, symbol_size = rq->common.T / rq->common.Al;
   struct source_block blk = get_source_block(rq, sbn, symbol_size);
-  for (int i = 0; i < symbol_size;) {
+  for (size_t i = 0; i < symbol_size;) {
     size_t offset = get_symbol_offset(&blk, i, K, esi) * rq->common.Al;
     size_t sublen = (i < blk.part_tot) ? blk.part.IL : blk.part.IS;
     size_t stride = sublen * rq->common.Al;
