@@ -182,6 +182,15 @@ trans_unit_t* create_units(unsigned int number);
 
 void free_units(trans_block_t *tb);
 
+/**
+ * This function frees transport unit containers from a session.
+ *
+ * @param s pointer to session
+ *
+ */
+
+void free_unit_container(alc_session_t* s);
+
 #ifdef USE_RETRIEVE_UNIT
 
 /**

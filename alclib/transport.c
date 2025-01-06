@@ -112,10 +112,12 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
 	if(s->last_given != NULL) {
 		start_search = s->last_given->next;
-		//printf("start search @ last given\n"); fflush(stdout);
+		//printf("start search @ last given\n");
+		//fflush(stdout);
 	} else {
 		start_search = s->unit_pool;
-		//printf("start search @ unit pool\n"); fflush(stdout);
+		//printf("start search @ unit pool\n");
+		//fflush(stdout);
 	}
 
 	tmp = start_search;
@@ -123,34 +125,38 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 	//fflush(stdout);
 	while(tmp != NULL ) { 
 		if(tmp->u.used == 0) {
-			//printf("start search is zero\n"); fflush(stdout);
+			printf("start search is zero\n");
+			fflush(stdout);
 			//Malek El Khatib 12.08.2014
 			if (numEncSymbPerPacket != 0)	//numEncSymbPerPacket = 0 means that it is varying with each packet
 			{//END
 				//printf("# symbols varies per packet length %i\n", tmp->u.len); fflush(stdout);
 				if(tmp->u.len < es_len) {
-					//printf("[FRV]: tmp->u.len (%d) < es_len (%d)\n", tmp->u.len, es_len);
-					//fflush(stdout);
+					printf("[FRV]: tmp->u.len (%d) < es_len (%d)\n", tmp->u.len, es_len);
+					fflush(stdout);
 					//FRV_counter++;
 					//if (FRV_counter == 40) {
 					//	int a = FRV_counter / 0;
 					//}
 					//continue;
 
-					break;
-					//continue;
+					//break;
+					continue;
 				}
 			}
-			//printf("# symbols consistent across packets %i\n", tmp->u.len); fflush(stdout);
+			printf("# symbols consistent across packets %i\n", tmp->u.len);
+			fflush(stdout);
 			tmp->u.used = 1;
 			s->last_given = tmp;
             assert(tmp->u.data != NULL);
 			return &(tmp->u);
 		}
-		//printf("start search is NULL\n"); fflush(stdout);
+		//printf("start search is NULL\n");
+		//fflush(stdout);
 		tmp = tmp->next;
 	}
-	//printf("continue search\n"); fflush(stdout);
+	//printf("continue search\n");
+	//fflush(stdout);
 
 	tmp = s->unit_pool;
 	while(tmp != start_search) {    
@@ -177,7 +183,8 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 		tmp = tmp->next;
 
 	}
-	//printf("save container\n"); fflush(stdout);
+	//printf("save container\n");
+	//fflush(stdout);
 
 	if(!(container = (trans_unit_container_t*)calloc(1, sizeof(trans_unit_container_t)))) {
 		printf("Could not alloc memory for a transport unit container!\n");
@@ -205,8 +212,8 @@ void free_units2(trans_block_t *tb) {
     trans_unit_t *tu = NULL;
     trans_unit_t *current_tu = NULL;
 
-	char *data = NULL;
-	unsigned short	data_buffer_len;
+	//char *data = NULL;
+	//unsigned short	data_buffer_len;
 
     current_tu = tb->unit_list;
 	
@@ -215,19 +222,41 @@ void free_units2(trans_block_t *tb) {
 
 		/* backup the data pointer */
 
-		data = tu->data;
-		data_buffer_len = tu->len;
+		//data = tu->data;
+		//data_buffer_len = tu->len;
+		free(tu->data);
+		tu->data = NULL;
 
 		current_tu = tu->next;
-
-		memset(tu, 0, sizeof(trans_unit_t));
+		// no calloc for other elements of trans_unit_t ... rather calloc for trans_unit_container_t !!
+		//memset(tu, 0, sizeof(trans_unit_t));
 
 		/* reinstall the backup */
-		tu->data = data;
-		tu->len = data_buffer_len;
+		//tu->data = data;
+		//tu->len = data_buffer_len;
+
     }
 
     tb->unit_list = NULL;
+}
+
+void free_unit_container(alc_session_t* s) {
+
+	trans_unit_container_t* tuc = NULL;
+	trans_unit_container_t* next_tuc = NULL;
+
+	next_tuc = s->unit_pool;
+
+	while (next_tuc != NULL) {
+		tuc = next_tuc;
+
+		next_tuc = tuc->next;
+		free(tuc);
+		tuc = NULL;
+
+	}
+
+	s->unit_pool = NULL;
 }
 
 #endif

@@ -190,7 +190,6 @@ typedef struct alc_session {
   char* file_uri_table[FILE_URI_TABLE_SIZE];    /**< file URIs for wanted files */
   char base_dir[MAX_PATH_LENGTH];			/**< Base directory for downloaded/sent files */
   char src_addr[40];						/**< source address for the session in the receiver */
-  char recvbuf[MAX_PACKET_LENGTH];			/**< Session packet buffer for analyze packet routine */
 
   unsigned int rx_objs;						/**< number of objects received in this session */
   struct trans_obj *obj_list;				/**< pointer to first object */

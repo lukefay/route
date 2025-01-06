@@ -95,3 +95,53 @@ blocking_struct_t* compute_blocking_structure(unsigned long long L,
   return bs;
 } 
 
+void update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
+    unsigned int B, unsigned int E) {
+
+    unsigned int T;
+    lldiv_t div_T;
+    div_t div_N;
+    div_t div_A;
+
+    /* (a) */
+
+    div_T = lldiv(L, E);
+
+    if (div_T.rem == 0) {
+        T = (unsigned int)div_T.quot;
+    }
+    else {
+        T = (unsigned int)div_T.quot + 1;
+    }
+
+    /* (b) */
+
+    div_N = div(T, B);
+
+    if (div_N.rem == 0) {
+        bs->N = div_N.quot;
+    }
+    else {
+        bs->N = div_N.quot + 1;
+    }
+
+    /* (c) */
+
+    div_A = div(T, bs->N);
+
+    if (div_A.rem == 0) {
+        bs->A_large = div_A.quot;
+    }
+    else {
+        bs->A_large = div_A.quot + 1;
+    }
+
+    /* (d) */
+
+    bs->A_small = div_A.quot;
+
+    /* (e) */
+
+    bs->I = div_A.rem;
+
+}

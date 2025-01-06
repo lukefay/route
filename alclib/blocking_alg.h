@@ -66,6 +66,20 @@ typedef struct blocking_struct {
 
 blocking_struct_t *compute_blocking_structure(unsigned long long L, unsigned int B, unsigned int E);
 
+/**
+ * This function updates blocking scheme parameters.
+ *
+ * @param L transport object length
+ * @param B source block length
+ * @param E encoding symbol length
+ *
+ * @return structure containing blocking scheme parameters, NULL in error situations
+ *
+ */
+
+void update_blocking_structure(blocking_struct_t* bs, unsigned long long L, unsigned int B, unsigned int E);
+
+
 #ifdef __cplusplus
 }; //extern "C"
 #endif

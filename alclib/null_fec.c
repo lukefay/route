@@ -177,9 +177,12 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 			//printf("SB: %u, esi: %u, len: %u\n", tr_block->sbn, tu->esi, tu->len);
 			printf("Buffer Length: %llu, Unit Length: %u Build: %llu\n", eslen, tu->len, tmp);
 			fflush(stdout);
-		}
 
-        memcpy((buf+tmp), tu->data, tu->len);
+			return NULL;
+		}
+		else {
+			memcpy((buf + tmp), tu->data, tu->len);
+		}
 
 #ifndef USE_RETRIEVE_UNIT
         free(tu->data);
