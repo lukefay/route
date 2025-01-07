@@ -2917,7 +2917,7 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 					}
 
 					// Update the number of units
-					//update_blocking_structure(trans_obj->bs, transfer_len, max_sb_len, es_len);
+					update_blocking_structure(trans_obj->bs, transfer_len, max_sb_len, es_len);
 
 					// Check blocking structure N count -- Luke Fay
 					if (trans_obj->bs->N != 1) {
