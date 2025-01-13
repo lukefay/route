@@ -2748,6 +2748,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		char oti_scheme[9];
 		char* endptr;
 
+		/*
 		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
 			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
 			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
@@ -2767,15 +2768,12 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				fflush(stdout);
 			}
 
-			//break;
-
 			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
 			int num_sbn = nanorq_blocks(rq);
 			uint32_t tag;
 			size_t packet_size = nanorq_symbol_size(rq);
 
-			printf("Repairable file: %s\t TOI %llu\n", file->location, file->toi);
-			printf("NRT File # SourceBlocks: %d\n", num_sbn);
+			printf("NRT Repairable file: %s\t TOI %llu with %u Source Blocks\n", file->location, file->toi, num_sbn);
 			//printf("Repair TSI %d\n", s->ls->tsi);
 			fflush(stdout);
 
@@ -2974,6 +2972,169 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			myio->destroy(myio);
 
 		}
+		*/
+
+		// NOTE: stay away from using strcat, using sprintf instead.
+		char rpr[MAX_PATH_LENGTH];
+		memset(rpr, 0, MAX_PATH_LENGTH);
+		sprintf(rpr, "%s/%s", s->base_dir, "repair.rq");
+		char rprfile[MAX_PATH_LENGTH];
+		memset(rprfile, 0, MAX_PATH_LENGTH);
+		sprintf(rprfile, "%s/%s", s->base_dir, "data.rq");
+		char datafile[MAX_PATH_LENGTH];
+		memset(datafile, 0, MAX_PATH_LENGTH);
+		sprintf(datafile, "%s/%s", s->base_dir, file->location);
+
+
+		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
+			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
+			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
+			oti_common[16] = '\0';
+			oti_scheme[8] = '\0';
+			uint64_t oti_commonx = strtoull(oti_common, &endptr, 16);
+			uint32_t oti_schemex = strtoul(oti_scheme, &endptr, 16);
+
+			//printf("fecOTI: %s\n", s->ls->fecOTI);
+			//printf("oti common %s\toti scheme %s\n", oti_common, oti_scheme);
+			//printf("oti common %llx\toti scheme %lx\n", oti_commonx, oti_schemex);
+			//fflush(stdout);
+
+			nanorq* rq = nanorq_decoder_new(oti_commonx, oti_schemex);
+			if (rq == NULL) {
+				printf("Could not initialize decoder.\n");
+				fflush(stdout);
+			}
+
+			// Now Repair file with nanorq_decode usage: <packet_size> <filename>
+			int num_sbn = nanorq_blocks(rq);
+			size_t packet_size = nanorq_symbol_size(rq);
+
+			printf("NRT Repairable file: %s\t TOI %llu with %u Source Blocks\n", file->location, file->toi, num_sbn);
+			//printf("Repair TSI %d\n", s->ls->tsi);
+			fflush(stdout);
+
+			// Prepare repair operations
+			struct ioctx* myio = ioctx_from_file(rpr, 0);
+			if (!myio) {
+				fprintf(stdout, "couldn't access file %s\n", rpr);
+			}
+
+
+			for (int sbn = 0; sbn < num_sbn; sbn++) {
+				// First get # of symbols in current source block
+				uint32_t sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
+				uint32_t tag;
+				// Now Repair file with nanorq_decode usage: <packet_size> <filename>
+#ifdef _MSC_VER
+				uint8_t packet[1500];
+#else
+				uint8_t packet[packet_size];
+#endif
+
+
+				// Read recovered payload data from current Source Block
+#ifdef _MSC_VER
+				int fd1 = open((const char*)datafile,
+					_O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+#else
+				int fd1 = open64((const char*)datafile, O_RDONLY, S_IRWXU);
+#endif
+				if (fd1 < 0) {
+					printf("failed to open / create file %s for writing\n", datafile);
+					fflush(stdout);
+
+					continue;
+				}
+
+				// Add Repair (data.rq) to those read Source Blocks
+#ifdef _MSC_VER
+				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+#else
+				int fd2 = open64((const char*)rprfile, O_RDONLY);
+#endif
+				if (fd2 < 0) {
+					printf("failed to open / create file %s for reading\n", rprfile);
+					fflush(stdout);
+
+					continue;
+				}
+
+				//printf("Looping through Source Block %u.  ", sbn);
+				//printf("Reading Source Symbols...");
+				//fflush(stdout);
+
+
+
+				while (read(fd1, &tag, 4) == 4) {					// Read tag of SB#, ESI # of data
+					if (read(fd1, &packet, packet_size) != packet_size)	// Read data symbol
+						break;
+					// If source block == current source block, write the data for this Source Block
+					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
+					//fflush(stdout);
+
+					//printf("Write data symbol %u\n", (tag & 0x00ffffff));
+					//fflush(stdout);
+
+					// Add Intermediate symbols
+					if (NANORQ_SYM_ERR ==
+						nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
+						fprintf(stdout, "adding symbol %d failed.\n", tag);
+						abort();
+					}
+
+				}
+				close(fd1);
+
+				while (read(fd2, &tag, 4) == 4) {						// Read tag of SB#, ESI # of repair
+					if (read(fd2, &packet, packet_size) != packet_size)		// Read repair symbol
+						break;
+					// If source block == current source block, write the repair for this Source Block
+					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
+					//fflush(stdout);
+
+					//printf("Write repair symbol %u\n", (tag & 0x00ffffff));
+					//fflush(stdout);
+
+					// Add Intermediate symbols
+					if (NANORQ_SYM_ERR ==
+						nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
+						fprintf(stdout, "adding symbol %d failed.\n", tag);
+						abort();
+					}
+
+				}
+				close(fd2);
+
+				// Run Raptor-Q Repair for each Source Block
+				fprintf(stdout, "block %d is %d packets, lost %d, have %d repair. ", sbn,
+					(unsigned)nanorq_block_symbols(rq, sbn),
+					(unsigned)nanorq_num_missing(rq, sbn),
+					(unsigned)nanorq_num_repair(rq, sbn));
+				if (!nanorq_repair_block(rq, myio, sbn)) {
+					fprintf(stdout, "decode of sbn %d failed.\n", sbn);
+					fflush(stdout);
+					continue;
+				}
+				nanorq_encoder_cleanup(rq, sbn);			
+				fprintf(stdout, "decode of sbn %d passed.\n", sbn);
+				fflush(stdout);
+			}
+			//close(fd3);
+			myio->destroy(myio);
+			
+			// Cleanup files
+			remove(rprfile);
+			remove(datafile);
+
+			nanorq_free(rq);
+
+			// Rename repaired file
+			if (rename(rpr, datafile) != 0) {
+				printf("Re-naming file failed.\n");
+				fflush(stdout);
+			}
+		}
+		
 
 		//Malek El Khatib 06.05.2014
 		//START
