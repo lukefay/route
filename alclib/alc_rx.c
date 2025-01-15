@@ -86,24 +86,24 @@ struct PacketBufferLinkedListType *packetBufferLinkedListRoot = NULL;
 struct PacketBufferLinkedListType *packetBufferLinkedHead = NULL;
 
 
-unsigned long readPtr = 0;
-unsigned long writePtr = 0;
-unsigned int lastReadESI = 0;
-unsigned long long lastReadTOI = 0;
+static unsigned long readPtr = 0;
+static unsigned long writePtr = 0;
+static unsigned int lastReadESI = 0;
+static unsigned long long lastReadTOI = 0;
 
-long fullness = 0;
+static long fullness = 0;
 
-unsigned int tunedIn = 0;
+static unsigned int tunedIn = 0;
 pthread_mutex_t bufferLock;
 
 extern unsigned int workingPort;
 
-int hdrlen = 0;			/* length of whole FLUTE/ALC/LCT header */
-unsigned long long cci = 0; /* CCI */
-unsigned long long tsi = 0; /* TSI */
-unsigned long long toi = 0; /* TOI */
-unsigned int sbn = 0;
-unsigned int esi = 0;
+static int hdrlen = 0;			/* length of whole FLUTE/ALC/LCT header */
+static unsigned long long cci = 0; /* CCI */
+static unsigned long long tsi = 0; /* TSI */
+static unsigned long long toi = 0; /* TOI */
+static unsigned int sbn = 0;
+static unsigned int esi = 0;
 
 /**
  * LCT Header variables semaphore
