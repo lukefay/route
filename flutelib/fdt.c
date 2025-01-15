@@ -49,10 +49,10 @@
 #include "fdt.h"
 #include "mad_utf8.h"
 	
-fdt_t *fdt;				/**< FDT */
-file_t *file;			/**< file */
-file_t *prev;			/**< previous parsed file */
-BOOL is_first_toi;		/**< is first TOI parsed or not? */
+static fdt_t *fdt;				/**< FDT */
+static file_t *file;			/**< file */
+static file_t *prev;			/**< previous parsed file */
+static BOOL is_first_toi;		/**< is first TOI parsed or not? */
 
 /**
  * Global variables semaphore

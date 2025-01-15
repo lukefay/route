@@ -21,10 +21,10 @@
 #include "efdt.h"
 #include "mad_utf8.h"
 	
-file_t *file;			/**< file */
-file_t *prev;			/**< previous parsed file */
-BOOL is_first_toi;		/**< is first TOI parsed or not? */
-efdt_t *efdt;			/**< EFDT */
+static file_t *file;			/**< file */
+static file_t *prev;			/**< previous parsed file */
+static BOOL is_first_toi;		/**< is first TOI parsed or not? */
+static efdt_t *efdt;			/**< EFDT */
 
 /**
  * Global variables semaphore

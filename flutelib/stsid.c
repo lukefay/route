@@ -23,47 +23,35 @@
   * Global variable used in parsing
   */
 
-route_t* rs;			/**< ROUTE Session */
-route_t* prev_rs;		/**< previous parsed LCT channel */
-BOOL is_first_addr;		/**< is first address parsed or not? */
-stsid_t* stsid;			/**< S-TSID */
+static route_t* rs;			/**< ROUTE Session */
+static route_t* prev_rs;		/**< previous parsed LCT channel */
+static BOOL is_first_addr;		/**< is first address parsed or not? */
+static stsid_t* stsid;			/**< S-TSID */
 
-lct_ch_t *lct;			/**< LCT channel */
-lct_ch_t* prev_ls;		/**< previous parsed LCT channel */
-BOOL is_first_tsi;		/**< is first TSI parsed or not? */
+static lct_ch_t *lct;			/**< LCT channel */
+static lct_ch_t* prev_ls;		/**< previous parsed LCT channel */
+static BOOL is_first_tsi;		/**< is first TSI parsed or not? */
 
-//srcflow_t* src;			/**< Source Flow */
+static rating_t* ratings;		/**< ratings */
+static rating_t* prev_rating;	/**< previous ratings file */
+static BOOL is_first_rating;	/**< is first rating parsed or not? */
 
-//file_t* file;			/**< file */
-//file_t* prev_file;		/**< previous parsed file */
-//BOOL is_first_toi;		/**< is first TOI parsed or not? */
-//fdt_t* fdtinst;			/**< FDT-Instance */
-//afdt_t* afdt;			/**< ATSC FDT Instance */
+static aeaid_t* aeamessage;	/**< AEA messaage */
+static aeaid_t* prev_aea;		/**< previous aea file */
+static BOOL is_first_aea;		/**< is first aea parsed or not? */
+static aea_t* aeamedia;		/**< AEA Media */
 
-rating_t* ratings;		/**< ratings */
-rating_t* prev_rating;	/**< previous ratings file */
-BOOL is_first_rating;	/**< is first rating parsed or not? */
-//mediainfo_t* mediainfo;	/**< MediaInfo */
+static payload_t* pay;			/**< OPTIONAL payload element */
+static payload_t* prev_pay;	/**< previous payload element */
+static BOOL is_first_pay;		/**< is first aea parsed or not? */
 
-aeaid_t* aeamessage;	/**< AEA messaage */
-aeaid_t* prev_aea;		/**< previous aea file */
-BOOL is_first_aea;		/**< is first aea parsed or not? */
-aea_t* aeamedia;		/**< AEA Media */
+static protectobj_t* obj;		/**< Protected Object */
+static protectobj_t* prev_obj;	/**< previous protected object */
+static BOOL is_first_obj;		/**< is first protected object parsed or not? */
 
-payload_t* pay;			/**< OPTIONAL payload element */
-payload_t* prev_pay;	/**< previous payload element */
-BOOL is_first_pay;		/**< is first aea parsed or not? */
-
-protectobj_t* obj;		/**< Protected Object */
-protectobj_t* prev_obj;	/**< previous protected object */
-BOOL is_first_obj;		/**< is first protected object parsed or not? */
-//fecparam_t* fec;		/**< Repair FEC */
-
-//repairflow_t* rpr;		/**< Repair Flow */
-
-stoi_t* srctoi;			/**< Repair Source TOI */
-stoi_t* prev_toi;		/**< previous repair source TOI object */
-BOOL is_first_srctoi;	/**< is first repair source TOI parsed or not? */
+static stoi_t* srctoi;			/**< Repair Source TOI */
+static stoi_t* prev_toi;		/**< previous repair source TOI object */
+static BOOL is_first_srctoi;	/**< is first repair source TOI parsed or not? */
 
 
 /**
