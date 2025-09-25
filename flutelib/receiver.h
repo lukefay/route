@@ -45,6 +45,15 @@
 extern	FILE* logFilePtr;
 //END
 
+
+/**
+ * This function creates new transport object structure.
+ *
+ * @return pointer to created transport object in success, NULL otherwise
+ *
+ */
+
+
 /**
  * This function is flute receiver's FDT based receiving function.
  *
@@ -100,6 +109,6 @@ void* fdt_thread(void *s);
  *
  */
 
-void* channel_file_mode_thread(c);
+void* channel_in_file_mode(void *c);
 
 #endif

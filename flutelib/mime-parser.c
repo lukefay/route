@@ -1012,12 +1012,15 @@ message_cb(void* opaque, rfc822parse_event_t event, rfc822parse_t msg)
                 else if (!strcmp(s1, "multipart"))
                 {
                     if (!strcmp(s2, "signed")) {
-                        printf("Start Mime Unsigning\n");
-                        //mime_signed_begin(info, msg, ctx);
+                        //printf("Start Mime Unsigning\n");
+                        ////mime_signed_begin(info, msg, ctx);
                     }
                     else if (!strcmp(s2, "encrypted")) {
-                        printf("Start Mime Decrypting\n");
-                        //mime_encrypted_begin(info, msg, ctx);
+                        //printf("Start Mime Decrypting\n");
+                        ////mime_encrypted_begin(info, msg, ctx);
+                    }
+                    else if (!strcmp(s2, "related")) {
+                        //printf("Start Mime Package Parsing\n");
                     }
                 }
                 else if (!strcmp(s1, "application") && (!strcmp(s2, "pkcs7-mime") || !strcmp(s2, "x-pkcs7-mime"))) {

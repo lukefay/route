@@ -62,7 +62,6 @@
 #include "mime-parser.h"
 #include "../nanorq-stable/include/nanorq.h"
 
-
 /**
  * This is a private function which checks if all wanted files are received.
  *
@@ -195,7 +194,6 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
   }
 
   if(toi == FDT_TOI) {
-
 			
     buf = fdt_recv(s_id, &recvbytes, &retcode, &fdt_cont_enc_algo, &fdt_instance_id);
 
@@ -213,7 +211,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
     if((fd = open((const char*)tmp_filename,
 		  _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
-    if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
+    if((fd = open((const char*)tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
       printf("Rx Error: unable to open file %s\n", tmp_filename);
       fflush(stdout);
@@ -316,7 +314,7 @@ int recvfile(int s_id, char *filepath, unsigned long long toi,
       if((fd = open((const char*)tmp_filename,
 		    _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
-		 if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
+		 if((fd = open((const char*)tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
 		printf("Rx Error: unable to open file %s\n", tmp_filename);
 		fflush(stdout);
@@ -692,13 +690,13 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
     }
 
     if(receiver->rx_automatic || receiver->wildcard_token != NULL) { 
-	  if (receiver->verbosity > 0) {
+	  if (receiver->verbosity > 2) {
 			printf("FDTbasedRx for TOI: %lli\n", file->toi);
 			fflush(stdout);
 	  }
       if(is_all_files_received) {
 
-		 if (receiver->verbosity > 0) {
+		 if (receiver->verbosity > 2) {
 			printf("ALL files received, waiting for new files\n");
 			fflush(stdout);
 		 }
@@ -706,13 +704,13 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		if(receiver->fdt->complete) {
 
 		  if(any_files_received) {
-			if(receiver->verbosity > 0) {
+			if(receiver->verbosity > 2) {
 			  printf("All files received\n");
 			  fflush(stdout);
 			}
 		  }
 		  else {
-			if(receiver->verbosity > 0) {
+			if(receiver->verbosity > 2) {
 			  printf("No wanted files in the session\n");
 			  fflush(stdout);
 			}
@@ -724,7 +722,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	
 		  if(((!is_printed) && (any_files_received))) {
 
-			if(receiver->verbosity > 0) {
+			if(receiver->verbosity > 2) {
 				printf("ANY files received, waiting for new files\n");
 				fflush(stdout);
 			}
@@ -734,9 +732,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		  }
 
 #ifdef _MSC_VER
-		  //Sleep(5);
+		  Sleep(5);
 #else
-		  //usleep(5000);
+		  usleep(5000);
 #endif
 		  continue;
 		}
@@ -744,7 +742,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
     }
 
 	if (rx_memory_mode == 1 || rx_memory_mode == 2) {
-		if (receiver->verbosity > 0) {
+		if (receiver->verbosity > 1) {
 			printf("Memory Mode is Medium(1) or Low(2), alc_recv3 for channel %i, TOI: %lli\tfile: %s\n", receiver->s_id, file->toi, file->location);
 			fflush(stdout);
 		}
@@ -818,7 +816,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       if((fd = open((const char*)tmp_filename,
                     _O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC , _S_IWRITE | _S_IREAD)) < 0) {
 #else
-      if((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
+      if((fd = open((const char*)tmp_filename, O_WRONLY | O_CREAT | O_TRUNC , S_IRWXU)) < 0) {
 #endif
         printf("FDT Rx Error: unable to open file %s\n", tmp_filename);
         fflush(stdout);
@@ -842,8 +840,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       close(fd);
     }
 
-	printf("ALC RX returned ");
-
+	if (receiver->verbosity > 1) {
+		printf("ALC RX returned ");
+	}
 	//Malek El Khatib 06.05.2014
 	//Start
 	//Processing time starts when all bytes are received but not yet used to generate segment and store it in the directory
@@ -851,8 +850,10 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	gettimeofday(&processing_time, NULL);
 	timeInUsec = (unsigned long long)processing_time.tv_sec*1000000 + (unsigned long long)processing_time.tv_usec;
 	fprintf(logFilePtr,"%s processing start time %llu\n", file->location, timeInUsec);
-	printf("%s at time %llu\n", file->location, timeInUsec);
-	fflush(stdout);
+	if (receiver->verbosity > 1) {
+		printf("%s at time %llu\n", file->location, timeInUsec);
+		fflush(stdout);
+	}
 	//END Malek El Khatib
     
     if(file->encoding == NULL) {
@@ -1082,9 +1083,10 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	
 	// MIME Parse the SLS
 	if ((strcmp(file->location, "SLS") == 0) || (strcmp(file->location, "sls") == 0)) {
-		printf("Parse the SLS at %s\n", fullpath);
-		fflush(stdout);
-
+		if (receiver->verbosity > 1) {
+			printf("Parse the SLS at %s\n", fullpath);
+			fflush(stdout);
+		}
 		FILE* fp = fopen(fullpath, "rb");
 		parse_message(fp, session_basedir);
 		fclose(fp);
@@ -1118,11 +1120,13 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 #ifdef _MSC_VER
 	//Sleep(1);
 #else
-	//usleep(100);
+	//usleep(1000);
 #endif
 
-	printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
-	fflush(stdout);
+	if (receiver->verbosity > 1) {
+		printf("FDTbasedRx End, complete: %d\n\n", receiver->fdt->complete);
+		fflush(stdout);
+	}
 
   }
 
@@ -1140,23 +1144,23 @@ int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 	}
 
 	if (a->rx_automatic) {
-		if (a->alc_a.verbosity > 0) {
+		if (a->alc_a.verbosity > 1) {
 			printf("FLUTE Receiver in automatic mode\n");
 		}
 	}
 	else if (strchr(a->file_path, '*') != NULL) {
-		if (a->alc_a.verbosity > 0) {
+		if (a->alc_a.verbosity > 1) {
 			printf("FLUTE Receiver in wild card mode\n");
 		}
 	}
 	else {
-		if (a->alc_a.verbosity > 0) {
+		if (a->alc_a.verbosity > 1) {
 			printf("FLUTE Receiver in fileURI list mode\n");
 		}
 	}
 
 	if (cont_desc != NULL) {
-		if (a->alc_a.verbosity > 0) {
+		if (a->alc_a.verbosity > 1) {
 			printf("Session content information available at:\n");
 			printf("%s\n", cont_desc);
 		}
@@ -1176,7 +1180,7 @@ int receiver_in_fdt_based_mode(arguments_t* a, flute_receiver_t* receiver) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(100);
+		//usleep(1000);
 #endif
 		continue;
 
@@ -1518,7 +1522,7 @@ void* fdt_thread(void *s) {
   
   unsigned long long buflen = 0;
   
-  int updated;
+  int updated = 0;
   
   fdt_t *fdt_instance;
   efdt_t *efdt_instance;
@@ -1549,7 +1553,7 @@ void* fdt_thread(void *s) {
     curr_time = systime + 2208988800U;
 
     /* Get initial fdt */
-    if(receiver->fdt == NULL) { 
+	if (receiver->fdt == NULL) {
 		printf("get first FDT at TSI:0, TOI:0\n");
 		fflush(stdout);
 
@@ -1588,6 +1592,7 @@ void* fdt_thread(void *s) {
       
       if(efdt_instance == NULL) {
 		free(buf);
+		FreeEFDT(efdt_instance);
 		continue;
       }
       
@@ -1601,7 +1606,6 @@ void* fdt_thread(void *s) {
 		  }
 		  FreeEFDT(efdt_instance);
 		  free(buf);
-		  //FreeFDT(fdt_instance);
 
 		  //continue;
 		}
@@ -1627,6 +1631,7 @@ void* fdt_thread(void *s) {
 	  fdt_instance->max_sb_len=           efdt_instance->max_sb_len;
 	  fdt_instance->es_len=               efdt_instance->es_len;
 	  fdt_instance->max_nb_of_es=         efdt_instance->max_nb_of_es;
+	  //fdt_instance->complete = efdt_instance->complete;
 	  fdt_instance->complete =			  efdt_instance->complete = TRUE;
 
 	  //lock_fdt();
@@ -1638,8 +1643,8 @@ void* fdt_thread(void *s) {
 	  //unlock_efdt();
 
 	  if(receiver->verbosity == 4) {
-		printf("FDT Instance received (ID=%i)\n", fdt_instance_id);
-		printf("FDT updated, new %d file description(s) added\n", fdt_instance->nb_of_files);
+		printf("EFDT Instance received (ID=%i)\n", fdt_instance_id);
+		printf("EFDT updated, new %d file description(s) added\n", fdt_instance->nb_of_files);
 		fflush(stdout);
 		PrintFDT(fdt_instance, receiver->s_id);
       }
@@ -1670,8 +1675,8 @@ void* fdt_thread(void *s) {
 			  fflush(stdout);
 			  file->status = 2;
 			  next_file = file->next;
-			  //continue;
-			  break;
+			  continue;
+			  //break;
 			}
 		  }
 	  
@@ -1755,11 +1760,11 @@ void* fdt_thread(void *s) {
 	else { // Receive new FDT Instance when it comes
       updated = 0;
 
-	  if (receiver->verbosity == 4) {
+	  if (receiver->verbosity > 1) {
 		  printf("Wait for another SLS if Segment Timeline\n\n");
 		  fflush(stdout);
 	  }
-
+	  /*
 	  // If Segment Timeline, SLS TOI's increment...so catch the next one.
 	  if (receiver->rx_automatic) {
 
@@ -1773,14 +1778,14 @@ void* fdt_thread(void *s) {
 		  );
 
 		  if (retval < 0) {
-			  /* Memory error */
+			  // Memory error
 		  }
 		  else {
 			  file->status = 1;
 		  }
 	  }
 	  set_fdt_instance_parsed(receiver->s_id);
-
+	  */
 
 	  // FLUTE OPERATION BELOW, ROUTE Operation uses S-TSID above
       buf = fdt_recv(receiver->s_id, &buflen, &retval, &fdt_content_enc_algo, &fdt_instance_id);
@@ -1818,6 +1823,7 @@ void* fdt_thread(void *s) {
        
       if(efdt_instance == NULL) {
 		free(buf);
+		FreeEFDT(efdt_instance);
 		continue;
       }
       
@@ -1840,7 +1846,7 @@ void* fdt_thread(void *s) {
 		}
       }
       
-      if(receiver->verbosity == 4) {
+      if(receiver->verbosity > 0) {
 		printf("FDT Instance received (ID=%i)\n", fdt_instance_id);
 		fflush(stdout);
       }
@@ -1883,10 +1889,11 @@ void* fdt_thread(void *s) {
 	  }
 
 	  if(updated < 0) {
-		  printf("FDT not updated, error...\n");
-		  fflush(stdout);
+		  //printf("FDT not updated...\n");
+		  //fflush(stdout);
 		  //remove_wanted_object(receiver->s_id, receiver->fdt->file_list->toi);
 		  //continue;
+		  break;
       }
       else if(updated == 1) {
 		if(receiver->verbosity == 4) {
@@ -2015,7 +2022,7 @@ void* fdt_thread(void *s) {
   return NULL;
 }
 
-void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
+int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 	file_t* file = NULL;
 	file_t* next_file = NULL;
 	time_t systime;
@@ -2068,20 +2075,24 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 	session_basedir = get_session_basedir(s->s_id);
 
-	while(get_session_state(s->s_id) == SActive) {
+	while (get_session_state(s->s_id) == SActive) {
 
 		if (get_session_state(s->s_id) == SExiting) {
 			printf("SESSION EXITING\n");
 			fflush(stdout);
-			//return -2;
+
+			//set_session_state(s->s_id, SExiting);
+			return -2;
+			//break;
 		}
 		else if (get_session_state(s->s_id) == STxStopped) {
 			printf("SESSION STOPPED\n");
 			fflush(stdout);
-			//return -3;
-		}
 
-		//is_all_files_received = TRUE;
+			//set_session_state(s->s_id, SExiting);
+			return -3;
+			//break;
+		}
 
 		time(&systime);
 		curr_time = systime + 2208988800U;
@@ -2094,11 +2105,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			file = next_file;
 			//i = 0;
-			//is_all_files_received = all_files_received(s->file_uri_table);
-			if (s->verbosity == 4) {
-				printf("working on session %d file %s\n", s->s_id, s->ls->location);
-				fflush(stdout);
-			}
+			is_all_files_received = all_files_received(s->file_uri_table);
 
 			if (((file->expires < curr_time) && (!s->accept_expired_fdt_inst))) {
 
@@ -2147,6 +2154,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			next_file = file->next;
 		}
+		if (s->verbosity == 4) {
+			printf("working on session %d file %s\n", s->s_id, file->location);
+			fflush(stdout);
+		}
 
 		i = 0;
 		retcode = 0;
@@ -2156,7 +2167,7 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			transfer_len = 0;
 		}
 
-		if (s->verbosity > 0) {
+		if (s->verbosity > 2) {
 			printf("FDTbasedSession for TOI: %lli with FDT %d\n", file->toi, s->fdt_instance_id);
 			fflush(stdout);
 		}
@@ -2165,26 +2176,27 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			if (s->ls->fdt->complete) {  // FDT from current channel
 
 				if (any_files_received) {
-					if (s->verbosity > 0) {
+					if (s->verbosity > 2) {
 						printf("Session All files received\n");
 						fflush(stdout);
 					}
 				}
 				else {
-					if (s->verbosity > 0) {
+					if (s->verbosity > 2) {
 						printf("No wanted files in the session\n");
 						fflush(stdout);
 					}
 				}
 
-				break;
+				continue;
+				//break;
 
 			}
 			else {
 
 				if (((!is_printed) && (any_files_received))) {
 
-					if (s->verbosity > 0) {
+					if (s->verbosity > 2) {
 						printf("Session All files received, waiting for new files\n");
 						fflush(stdout);
 					}
@@ -2193,29 +2205,33 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 #ifdef _MSC_VER
-				//Sleep(5);
+				Sleep(2);
 #else
-				//usleep(5000);
+				usleep(2000);
 #endif
 				continue;
 			}
 		}
 
 		if (rx_memory_mode == 1 || rx_memory_mode == 2) {
-			if (s->verbosity > 0) {
+			if (s->verbosity > 1) {
 				printf("Memory Mode is Medium(1) or Low(2), alc_recv3 for TOI: %lli\tfile: %s\n", file->toi, file->location);
 				fflush(stdout);
 			}
 			tmp_file_name = alc_recv3(s->s_id, &toi, &retcode);
 
 			if (tmp_file_name == NULL) {
-				printf("alc_recv3 returned %d\n", retcode); fflush(stdout);
+				printf("alc_recv3 returned %d\n", retcode);
+				fflush(stdout);
+
+				//set_session_state(s->s_id, SExiting);
 				//return retcode;
 				break;
 			}
 			else {
 				if (s->verbosity == 4) {
-					printf("alc_recv3 recovered %s\n", tmp_file_name); fflush(stdout);
+					printf("alc_recv3 recovered %s\n", tmp_file_name);
+					fflush(stdout);
 				}
 			}
 
@@ -2225,18 +2241,20 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			next_file = s->ls->fdt->file_list;
 
-			/* Find correct file structure, to get the file->location for file creation purpose */
-
+			// Find correct file structure, to get the file->location for file creation purpose
+			
 			while (next_file != NULL) {
 				file = next_file;
+				//printf("file %s status %d\n", file->location, file->status);
+				//fflush(stdout);
 				if (file->toi == toi) {
-					file->status = 2;
+					//file->status = 2;
 					break;
 				}
 
 				next_file = file->next;
 			}
-
+			
 			if (s->verbosity == 4) {
 				//printf("Session write file type: %s\n", file->type);
 				printf("Session write file: %s\t TOI %llu\n", file->location, file->toi);
@@ -2253,9 +2271,12 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			buf = alc_recv2(s->s_id, &toi, &transfer_len, &retcode);
 
 			if (buf == NULL) {
-				printf("alc_recv2 returned %d\n", retcode); fflush(stdout);
-				//return retcode;
-				break;
+				printf("alc_recv2 returned %d\n", retcode);
+				fflush(stdout);
+
+				//set_session_state(s->s_id, SExiting);
+				return retcode;
+				//break;
 			}
 
 			if (s->verbosity == 4) {
@@ -2308,13 +2329,15 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			if ((fd = open((const char*)tmp_filename,
 				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IWRITE | _S_IREAD)) < 0) {
 #else
-			if ((fd = open(tmp_filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
+			if ((fd = open((const char*)tmp_filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU)) < 0) {
 #endif
 				printf("Session Error: unable to open file %s\n", tmp_filename);
 				fflush(stdout);
 				free(buf);
-				//return MEM_ERROR;
-				set_session_state(s->s_id, SExiting);
+
+				return MEM_ERROR;
+				//set_session_state(s->s_id, SExiting);
+				//break;
 			}
 
 			if (write(fd, buf, (unsigned int)transfer_len) == -1) {
@@ -2326,13 +2349,19 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				fflush(stdout);
 				free(buf);
 				close(fd);
-				//return MEM_ERROR;
+
+				return MEM_ERROR;
+				//set_session_state(s->s_id, SExiting);
+				//break;
 			}
 
 			free(buf);
 			close(fd);
 		}
 
+		if (s->verbosity > 1) {
+			printf("ALC RX returned ");
+		}
 		//Malek El Khatib 06.05.2014
 		//Start
 		//Processing time starts when all bytes are received but not yet used to generate segment and store it in the directory
@@ -2340,6 +2369,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		gettimeofday(&processing_time, NULL);
 		timeInUsec = (unsigned long long)processing_time.tv_sec * 1000000 + (unsigned long long)processing_time.tv_usec;
 		fprintf(logFilePtr, "%s processing start time %llu\n", file->location, timeInUsec);
+		if (s->verbosity > 1) {
+			printf("%s at time %llu\n", file->location, timeInUsec);
+			fflush(stdout);
+		}
 		//END Malek El Khatib
 
 		if (file->encoding == NULL) {
@@ -2416,7 +2449,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 				if (retcode == -1) {
 					free(tmp_filename);
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 
 				*(tmp_filename + (strlen(tmp_filename) - PAD_SUFFIX_LEN)) = '\0';
@@ -2424,7 +2460,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				if (stat(tmp_filename, &file_stats) == -1) {
 					printf("Error: %s is not valid file name\n", tmp_filename);
 					fflush(stdout);
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 
 				if (file_stats.st_size != file->content_len) {
@@ -2432,7 +2471,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					printf("Error: padding decoding failed, file size not ok.\n");
 					fflush(stdout);
 					remove(tmp_filename);
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 			}
 #ifdef USE_ZLIB
@@ -2441,7 +2483,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				retcode = file_gzip_uncompress(tmp_filename);
 
 				if (retcode == -1) {
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 
 				*(tmp_filename + (strlen(tmp_filename) - GZ_SUFFIX_LEN)) = '\0';
@@ -2449,14 +2494,20 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				if (stat(tmp_filename, &file_stats) == -1) {
 					printf("Error: %s is not valid file name\n", tmp_filename);
 					fflush(stdout);
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 
 				if (file_stats.st_size != file->content_len) {
 					printf("Error: uncompression failed, file-size not ok.\n");
 					fflush(stdout);
 					remove(tmp_filename);
-					//return -1;
+
+					//set_session_state(s->s_id, SExiting);
+					return -1;
+					//break;
 				}
 			}
 #endif
@@ -2477,7 +2528,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			free(filepath);
 			free_uri(uri);
-			//return -1;
+
+			//set_session_state(s->s_id, SExiting);
+			return -1;
+			//break;
 		}
 
 		memcpy(tmp, filepath, strlen(filepath));
@@ -2513,7 +2567,10 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 						free(tmp);
 						free(filepath);
 						free_uri(uri);
-						//return -1;
+
+						//set_session_state(s->s_id, SExiting);
+						return -1;
+						//break;
 					}
 				}
 
@@ -2528,13 +2585,29 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 		}
 
+		// NRT FILE MODE PROCESSING
+		if (s->codepoint == NRT_FILE_MODE || s->ls->codePoint == NRT_FILE_MODE) {
+			if (s->verbosity > 2) {
+				printf("NRT FILE Found %s with ID %llu\n", tmp_filename, toi);
+				fflush(stdout);
+			}			
+		}
+
+		// PACKAGE MODE PROCESSING
+		if (s->codepoint == NRT_UNSGN_PKG_MODE || s->ls->codePoint == NRT_UNSGN_PKG_MODE
+			|| s->codepoint == NRT_SGN_PKG_MODE || s->ls->codePoint == NRT_SGN_PKG_MODE) {
+			if (s->verbosity > 2) {
+				printf("PACKAGE FILE found\n");
+				fflush(stdout);
+			}
+		}
+
 		// ENTITY MODE PROCESSING
 		if ((s->codepoint == NRT_ENTITY_MODE || s->codepoint == MEDIA_SEG_ENTITY) // This looks at LCT Header Codepoint
 		|| (s->ls->codePoint == NRT_ENTITY_MODE || s->ls->codePoint == MEDIA_SEG_ENTITY)) {	// This looks at OPTIONAL Payload element
 		//if(!s->ls->codePoint == NRT_ENTITY_MODE || !s->ls->codePoint == MEDIA_SEG_ENTITY) {	// This looks at OPTIONAL Payload element
 			//printf("ENTITY MODE processing\n"); fflush(stdout);
-			FILE* fp = fopen(tmp_filename, "r");
-			char newpath[MAX_PATH_LENGTH];
+			FILE* fp = fopen((const char*)tmp_filename, "r");
 			char line[255];
 			int llen = 0;
 			char cdel[4] = ": ";  // Delimiter for parsing string into tokens
@@ -2544,12 +2617,18 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			BOOL noheader = FALSE;
 
 			while (fgets(line, sizeof(line), fp)) {
+				// Remove newline character if present and replace with NULL terminator
 				llen += strlen(line);
-				//printf("ENTITY READLINE\n"); fflush(stdout);
-				if (line[0] == '\n') {
-					llen += strlen(line) + 1;	// '\n' is CR LF...2 bytes
+				line[strcspn(line, "\n")] = '\0';
+				//printf("ENTITY READLINE\n");
+				//fflush(stdout);
+				if (line[0] == '\n' || strlen(line) < 4) {
+#ifdef _MSC_VER
+					llen += strlen(line) + 2;	// '\n' is CR LF...2 bytes
+#endif
 					if (s->verbosity == 4) {
-						printf("\n Entity Header end with %d bytes\n", llen); fflush(stdout);
+						printf("\nEntity Header end with %d bytes\n", llen);
+						fflush(stdout);
 					}
 
 					break;
@@ -2557,12 +2636,12 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				else {
 					// get first token
 					params = strtok(line, cdel);
-					if (params == NULL) {
+					if (params == NULL || params == '\0') {
 						if (s->verbosity == 4) {
-							printf("NO ENTITY HEADER FOUND, despite LCT Header signaling\n");  fflush(stdout);
+							printf("NO ENTITY HEADER FOUND, despite LCT Header signaling\n");
+							fflush(stdout);
 						}
 						noheader = TRUE;
-						fclose(fp);
 
 						break;
 					}
@@ -2571,15 +2650,16 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 						if (s->verbosity == 4) {
 							printf("ENTITY name %s", params);
 						}
-						memset(newpath, 0, MAX_PATH_LENGTH);
-						memcpy(newpath, session_basedir, strlen(session_basedir));
-						memcpy((newpath + strlen(newpath)), "/", 1);
-						memcpy((newpath + strlen(newpath)), params, strlen(params)-1);	
+						memset(fullpath, 0, MAX_PATH_LENGTH);
+						memcpy(fullpath, session_basedir, strlen(session_basedir));
+						memcpy((fullpath + strlen(fullpath)), "/", 1);
+						memcpy((fullpath + strlen(fullpath)), params, strlen(params)-1);	
 					}
 					else if (strcmp(params, "Content-Length") == 0) {
 						params = strtok(NULL, cdel);
 						if (s->verbosity == 4) {
-							printf("ENTITY length %s", params); fflush(stdout);
+							printf("ENTITY length %s", params);
+							fflush(stdout);
 						}
 						/* find nth position back from end of file */
 						clen = atoi(params);
@@ -2587,18 +2667,24 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					else {
 						// There is no Content-Length or Content-Location attribute
 						if (s->verbosity == 4) {
-							printf("No used ENTITY ATTRIBUTES FOUND\t"); fflush(stdout);
+							printf("No used ENTITY ATTRIBUTES FOUND\n");
+							printf("Just %s\n", params);
+							fflush(stdout);
 						}
 						noheader = TRUE;
-						fclose(fp);
 
 						break;
 					}
-					//// walk through other tokens
-					//while (params != NULL) {
-					//	printf("%s\n", params); fflush(stdout);
-					//	params = strtok(NULL, cdel);
-					//}
+					// walk through other tokens
+					while (params != NULL) {
+						if (s->verbosity == 4) {
+							printf("ENTITY other token %s\n", params);
+							fflush(stdout);
+						}
+						params = strtok(NULL, cdel);
+					
+						//break;
+					}
 				}
 
 			}
@@ -2607,34 +2693,37 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 
 			// rename old file with new name in ENTITY MODE
 			if (s->verbosity == 4) {
-				printf("ENTITY Renaming\n"); fflush(stdout);
+				printf("ENTITY file %s\n", tmp_filename); fflush(stdout);
+				printf("ENTITY Renaming %s\n", fullpath); fflush(stdout);
+				printf("ENTITY No Header %d\n", noheader); fflush(stdout);
 			}
-			if (!noheader && (rename(tmp_filename, newpath) != 0)) {
-					if (errno == EEXIST) {
+			if (!noheader && (file->status == 1) && (rename(tmp_filename, fullpath) != 0)) {
+				
+				if (errno == EEXIST) {
 
-					retval = remove(newpath);
+					retval = remove(fullpath);
 
 					if (retval == -1) {
-						printf("errno: %i\n", errno);
+						printf("ENTITY Remove fullpath errno: %i\n", errno);
+						fflush(stdout);
+					}
+					else {
+						printf("ENTITY rename(fullpath) error1: %s\n", tmp_filename);
 						fflush(stdout);
 					}
 
-					if (rename(tmp_filename, newpath) < 0) {
-						printf("rename() error1: %s\n", tmp_filename);
-						fflush(stdout);
-					}
 				}
 				else {
 					printf("ENTITY rename() error2: %s\n", tmp_filename);
-					printf("fullpath: %s\n", newpath);
+					printf("fullpath: %s\n", fullpath);
 					printf("errno: %i\n", errno);
 					fflush(stdout);
 				}
-
+				
 			}
 			else if (!noheader) {
 				// Also remove ENTITY HEADER from file
-				FILE* src = fopen(newpath, "rb");
+				FILE* src = fopen(fullpath, "rb");
 				FILE* dst = fopen(tmp_filename, "wb");
 				int start = ftell(src);
 				long pos;
@@ -2648,13 +2737,14 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					fseek(src, start, SEEK_SET);
 					//rewind(fp);
 					clen -= llen;
-					//printf(" length %d\n", clen); fflush(stdout);
-					
+					//printf("ENTITY File length %d\n", clen);
+					//fflush(stdout);
 				}
 
 				// find nth position back from end of file
 				if (s->verbosity == 4) {
-					printf("ENTITY file resize: %d\n", clen); fflush(stdout);
+					printf("ENTITY file resize: %d\n", clen);
+					fflush(stdout);
 				}
 				if ((pos = fseek(src, -clen, SEEK_END)) != 0) 
 					retval = -1;
@@ -2666,26 +2756,26 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				fclose(src);
 				fclose(dst);
 
-				/* delete old file & rename new one to same name as old one */
-				remove(newpath);
-				if (rename(tmp_filename, newpath) != 0) {
+				// delete old file & rename new one to same name as old one 
+				remove(fullpath);
+				if (rename(tmp_filename, fullpath) != 0) {
 					if (errno == EEXIST) {
 
-						retval = remove(newpath);
+						retval = remove(fullpath);
 
 						if (retval == -1) {
-							printf("errno: %i\n", errno);
+							printf("ENTITY MODE errno: %i\n", errno);
+							fflush(stdout);
+						}
+						else {
+							printf("ENTITY MODE rename() error1: %s\n", tmp_filename);
 							fflush(stdout);
 						}
 
-						if (rename(tmp_filename, newpath) < 0) {
-							printf("rename() error1: %s\n", tmp_filename);
-							fflush(stdout);
-						}
 					}
 					else {
 						printf("ENTITY rename() error2: %s\n", tmp_filename);
-						printf("fullpath: %s\n", newpath);
+						printf("fullpath: %s\n", fullpath);
 						printf("errno: %i\n", errno);
 						fflush(stdout);
 					}
@@ -2693,34 +2783,43 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				// Cleanup
 				remove(tmp_filename);
 			}
-
+			file->status = 2;
 		}
-
+		
 		// FILE MODE PROCESSING
-		if (rename(tmp_filename, fullpath) != 0) {
-			if (errno == EEXIST) {
+		//else if ((file->status == 1) && (rename(tmp_filename, fullpath) != 0)) {
+		else if (file->status == 1) {
 
-				retval = remove(fullpath);
+			retval = rename(tmp_filename, fullpath);
 
-				if (retval == -1) {
-					printf("errno: %i\n", errno);
-					fflush(stdout);
-				}
-
-				if (rename(tmp_filename, fullpath) < 0) {
-					printf("rename() error1: %s\n", tmp_filename);
-					fflush(stdout);
-				}
-			}
-			//else {
-			//	printf("FILE rename() error2: %s\n", tmp_filename);
-			//	printf("fullpath: %s\n", fullpath);
-			//	printf("errno: %i\n", errno);
-			//	fflush(stdout);
+			//if (errno == EEXIST) {
+			//
+			//	retval = remove(fullpath);
+			//
+			//	if (retval == -1) {
+			//		printf("FILE MODE errno: %i\n", errno);
+			//		fflush(stdout);
+			//	}
+			//	else {
+			//		printf("FILE MODE rename() error1: %s\n", fullpath);
+			//		fflush(stdout);
+			//	}
 			//}
+			//else {
+			if (retval != 0) {
+				//printf("FILE rename() %s error2\n", tmp_filename);
+				//printf("fullpath: %s\n", fullpath);
+				//printf("errno: %i\n", errno);
+				//fflush(stdout);
+
+				remove(tmp_filename);
+			}
 		}
 
-		if (s->verbosity == 4) {
+		// Now set file status to received.
+		file->status = 2;
+
+		if (s->verbosity > 0) {
 #ifdef _MSC_VER
 			printf("Session File received: %s (TOI=%I64u)\n", file->location, toi);
 #else
@@ -2728,9 +2827,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #endif
 			fflush(stdout);
 		}
-		
 
-		set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
+		//set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
 
 		free_uri(uri);
 		free(tmp);
@@ -2744,38 +2842,11 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		}
 #endif    
 		// START RAPTOR-Q REPAIR if available
-		char oti_common[17];
-		char oti_scheme[9];
-		char* endptr;
-
-		/*
 		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
-			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
-			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
-			oti_common[16] = '\0';
-			oti_scheme[8] = '\0';
-			uint64_t oti_commonx = strtoull(oti_common, &endptr, 16);
-			uint32_t oti_schemex = strtoul(oti_scheme, &endptr, 16);
 
-			//printf("fecOTI: %s\n", s->ls->fecOTI);
-			//printf("oti common %s\toti scheme %s\n", oti_common, oti_scheme);
-			//printf("oti common %llx\toti scheme %lx\n", oti_commonx, oti_schemex);
-			//fflush(stdout);
-
-			nanorq* rq = nanorq_decoder_new(oti_commonx, oti_schemex);
-			if (rq == NULL) {
-				printf("Could not initialize decoder.\n");
-				fflush(stdout);
-			}
-
-			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
-			int num_sbn = nanorq_blocks(rq);
-			uint32_t tag;
-			size_t packet_size = nanorq_symbol_size(rq);
-
-			printf("NRT Repairable file: %s\t TOI %llu with %u Source Blocks\n", file->location, file->toi, num_sbn);
-			//printf("Repair TSI %d\n", s->ls->tsi);
-			fflush(stdout);
+			char oti_common[17];
+			char oti_scheme[9];
+			char* endptr;
 
 			// NOTE: stay away from using strcat, using sprintf instead.
 			char rpr[MAX_PATH_LENGTH];
@@ -2787,206 +2858,8 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			char datafile[MAX_PATH_LENGTH];
 			memset(datafile, 0, MAX_PATH_LENGTH);
 			sprintf(datafile, "%s/%s", s->base_dir, file->location);
-			
-			// Concatenate Repair Symbols after each Source Block.
-			
-#ifdef _MSC_VER
-			int fd3 = open((const char*)rpr,
-				_O_WRONLY | _O_CREAT | _O_BINARY | _O_TRUNC, _S_IREAD | _S_IWRITE);
-				//_O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
-#else
-			int fd3 = open64((const char*)rpr, 
-				O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU);
-				//O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
-#endif
-			if (fd3 < 0) {
-				printf("failed to open / create file %s for writing\n", rpr);
-				fflush(stdout);
-
-				continue;
-			}
-			//FILE* fd3 = fopen(rpr, "wb+");
-			
-			// Insert Repair symbols to each Source Block in the received file.
-			//char c[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 24];
-			char c[1500];
-
-			for (int sbn = 0; sbn < num_sbn; sbn++) {
-				// First get # of symbols in current source block
-				uint32_t sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
-				uint32_t label;
-
-				// Add data for current Source Block
-#ifdef _MSC_VER
-				//int fd1 = open((const char*)datafile, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
-				int fd1 = open((const char*)datafile, 
-					_O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
-				//int fd1 = open((const char*)datafile, _O_RDONLY | _O_BINARY);
-#else
-				//int fd1 = open64((const char*)datafile, O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
-				//int fd1 = open64((const char*)datafile, O_RDWR | O_CREAT | O_APPEND, S_IRWXU);
-				int fd1 = open64((const char*)datafile, O_RDONLY, S_IRWXU);
-#endif
-				if (fd1 < 0) {
-					printf("failed to open / create file %s for writing\n", datafile);
-					fflush(stdout);
-
-					continue;
-				}
-
-				// Add Repair (data.rq) to Source Blocks
-#ifdef _MSC_VER
-				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
-#else
-				int fd2 = open64((const char*)rprfile, O_RDONLY);
-#endif
-				if (fd2 < 0) {
-					printf("failed to open / create file %s for reading\n", rprfile);
-					fflush(stdout);
-
-					continue;
-				}
-
-				//printf("Looping through Source Block %u.  ", sbn);
-				//printf("Reading Source Symbols...");
-				//fflush(stdout);
-				
-				while (read(fd1, &label, 4) == 4) {					// Read tag of SB#, ESI # of data
-					if (read(fd1, &c, packet_size) != packet_size)	// Read data symbol
-						break;
-					// If source block == current source block, write the data for this Source Block
-					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
-					//fflush(stdout);
-
-					if (((label >> 24) & 0xff) == sbn) {
-						//printf("Write data symbol %u\n", (label & 0x00ffffff));
-						//fflush(stdout);
-
-						if (write(fd3, &label, 4) != 4)					// Write tag
-							break;
-						if (write(fd3, &c, packet_size) != packet_size)	// Write data symbol
-							break;
-						
-						//fwrite(&label, 4, 1, fd3);
-						//fwrite(&c, packet_size, 1, fd3);
-					}
-					// Else continue reading across repair file to get next appropriate SB repair symbol
-					else continue;
-
-				}
-				close(fd1);
-
-				while (read(fd2, &label, 4) == 4) {						// Read tag of SB#, ESI # of repair
-					if (read(fd2, &c, packet_size) != packet_size)		// Read repair symbol
-						break;
-					// If source block == current source block, write the repair for this Source Block
-					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
-					//fflush(stdout);
-
-					if (((label >> 24) & 0xff) == sbn) {
-						//printf("Write repair symbol %u\n", (label & 0x00ffffff));
-						//fflush(stdout);
-						
-						if (write(fd3, &label, 4) != 4)					// Write tag
-							break;
-						if (write(fd3, &c, packet_size) != packet_size)	// Write repair symbol
-							break;
-						
-						//fwrite(&label, 4, 1, fd3);
-						//fwrite(&c, packet_size, 1, fd3);
-					}
-					// Else continue reading across repair file to get next appropriate SB repair symbol
-					else continue;
-
-				}
-				close(fd2);
-
-			}
-			//fclose(fd3);
-			close(fd3);
-
-			//break;
-
-			// Prepare repair operations
-			struct ioctx* myio = ioctx_from_file(datafile, 0);
-			if (!myio) {
-				fprintf(stdout, "couldn't access file %s\n", datafile);
-			}
 
 
-			// Concatenate Repair Symbols after each Source Block.
-#ifdef _MSC_VER
-			//int ih = open((const char*)rpr, _O_WRONLY | _O_CREAT | _O_BINARY | _O_APPEND, _S_IREAD | _S_IWRITE);
-			int ih = open((const char*)rpr, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
-#else
-			//int ih = open64((const char*)rpr, O_WRONLY | O_CREAT | O_APPEND, S_IRWXU);
-			int ih = open64((const char*)rpr, O_RDONLY);
-#endif
-			if (ih < 0) {
-				printf("failed to open / create file %s for writing\n", rpr);
-				fflush(stdout);
-
-				continue;
-			}
-			//FILE* ih = fopen(rpr, "rb");
-
-			// Now Repair file with nanorq_decode usage: <packet_size> <filename> 
-#ifdef _MSC_VER
-			//uint8_t packet[MAX_SYMB_LENGTH_IPv4_FEC_ID_2_128_129 + 20]; // 1444
-			uint8_t packet[1500];
-#else
-			uint8_t packet[packet_size];
-#endif
-
-			// Add Intermediate symbols
-			//while (fread(&tag, 1, sizeof(tag), ih)) {
-				//fread(packet, packet_size, 1, ih);
-			while (read(ih, &tag, sizeof(tag)) == 4) {
-				read(ih, packet, packet_size);
-				if (NANORQ_SYM_ERR ==
-					nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
-					fprintf(stdout, "adding symbol %d failed.\n", tag);
-					abort();
-				}
-			}
-
-			// Run Raptor-Q Repair for each Source Block
-			for (int sbn = 0; sbn < num_sbn; sbn++) {
-				fprintf(stdout, "block %d is %d packets, lost %d, have %d repair\n", sbn,
-					(unsigned)nanorq_block_symbols(rq, sbn),
-					(unsigned)nanorq_num_missing(rq, sbn),
-					(unsigned)nanorq_num_repair(rq, sbn));
-				if (!nanorq_repair_block(rq, myio, sbn)) {
-					fprintf(stdout, "decode of sbn %d failed.\n", sbn);
-				}
-				nanorq_encoder_cleanup(rq, sbn);
-			}
-			//fclose(ih);
-			close(ih);
-
-			// Cleanup files
-			remove(rpr);
-			remove(rprfile);
-
-			nanorq_free(rq);
-			myio->destroy(myio);
-
-		}
-		*/
-
-		// NOTE: stay away from using strcat, using sprintf instead.
-		char rpr[MAX_PATH_LENGTH];
-		memset(rpr, 0, MAX_PATH_LENGTH);
-		sprintf(rpr, "%s/%s", s->base_dir, "repair.rq");
-		char rprfile[MAX_PATH_LENGTH];
-		memset(rprfile, 0, MAX_PATH_LENGTH);
-		sprintf(rprfile, "%s/%s", s->base_dir, "data.rq");
-		char datafile[MAX_PATH_LENGTH];
-		memset(datafile, 0, MAX_PATH_LENGTH);
-		sprintf(datafile, "%s/%s", s->base_dir, file->location);
-
-
-		if (s->ls->fecOTI != NULL) {	// If RaptorQ FEC OTI is available, use it
 			strncpy(oti_common, s->ls->fecOTI, 16);		// Read first 16 characters = upper 64 bits
 			strncpy(oti_scheme, s->ls->fecOTI + 16, 8);	// Read last 8 characters = lower 32 bits
 			oti_common[16] = '\0';
@@ -3008,10 +2881,43 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			// Now Repair file with nanorq_decode usage: <packet_size> <filename>
 			int num_sbn = nanorq_blocks(rq);
 			size_t packet_size = nanorq_symbol_size(rq);
+			// Now Repair file with nanorq_decode usage: <packet_size> <filename>
+#ifdef _MSC_VER
+			uint8_t packet[1500];
+#else
+			uint8_t packet[packet_size];
+#endif
 
 			printf("NRT Repairable file: %s\t TOI %llu with %u Source Blocks\n", file->location, file->toi, num_sbn);
 			//printf("Repair TSI %d\n", s->ls->tsi);
 			fflush(stdout);
+
+			// Read recovered payload data from current Source Block
+#ifdef _MSC_VER
+			int fd1 = open((const char*)datafile,
+				_O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+#else
+			int fd1 = open64((const char*)datafile, O_RDONLY, S_IRWXU);
+#endif
+			if (fd1 < 0) {
+				printf("failed to open / create file %s for writing\n", datafile);
+				fflush(stdout);
+
+				continue;
+			}
+
+			// Add Repair (data.rq) to those read Source Blocks
+#ifdef _MSC_VER
+			int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+#else
+			int fd2 = open64((const char*)rprfile, O_RDONLY);
+#endif
+			if (fd2 < 0) {
+				printf("failed to open / create file %s for reading\n", rprfile);
+				fflush(stdout);
+
+				continue;
+			}
 
 			// Prepare repair operations
 			struct ioctx* myio = ioctx_from_file(rpr, 0);
@@ -3019,107 +2925,96 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				fprintf(stdout, "couldn't access file %s\n", rpr);
 			}
 
-
+			// Loop through file data / repair and fix on source block basis
 			for (int sbn = 0; sbn < num_sbn; sbn++) {
 				// First get # of symbols in current source block
 				uint32_t sb_sym = (unsigned)nanorq_block_symbols(rq, sbn);
 				uint32_t tag;
-				// Now Repair file with nanorq_decode usage: <packet_size> <filename>
-#ifdef _MSC_VER
-				uint8_t packet[1500];
-#else
-				uint8_t packet[packet_size];
-#endif
 
-
-				// Read recovered payload data from current Source Block
-#ifdef _MSC_VER
-				int fd1 = open((const char*)datafile,
-					_O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
-#else
-				int fd1 = open64((const char*)datafile, O_RDONLY, S_IRWXU);
-#endif
-				if (fd1 < 0) {
-					printf("failed to open / create file %s for writing\n", datafile);
-					fflush(stdout);
-
-					continue;
-				}
-
-				// Add Repair (data.rq) to those read Source Blocks
-#ifdef _MSC_VER
-				int fd2 = open((const char*)rprfile, _O_RDONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
-#else
-				int fd2 = open64((const char*)rprfile, O_RDONLY);
-#endif
-				if (fd2 < 0) {
-					printf("failed to open / create file %s for reading\n", rprfile);
-					fflush(stdout);
-
-					continue;
-				}
-
+				printf("Block %u Symbol Count %u with packet size %u\n", sbn, sb_sym, packet_size);
+				fflush(stdout);
+				
 				//printf("Looping through Source Block %u.  ", sbn);
-				//printf("Reading Source Symbols...");
-				//fflush(stdout);
-
-
+				printf("Reading Source Symbols...\n");
+				fflush(stdout);
 
 				while (read(fd1, &tag, 4) == 4) {					// Read tag of SB#, ESI # of data
-					if (read(fd1, &packet, packet_size) != packet_size)	// Read data symbol
+					if (read(fd1, &packet, packet_size) != packet_size) { // Read data symbol
+						//printf("Packet %u != packet_size\n", tag & 0xffffff);
+						//fflush(stdout);
 						break;
-					// If source block == current source block, write the data for this Source Block
-					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
-					//fflush(stdout);
-
-					//printf("Write data symbol %u\n", (tag & 0x00ffffff));
-					//fflush(stdout);
-
+					}
+					
 					// Add Intermediate symbols
-					if (NANORQ_SYM_ERR ==
-						nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
-						fprintf(stdout, "adding symbol %d failed.\n", tag);
-						abort();
+					if (((tag >> 24) & 0xff) == sbn) {
+						// If source block == current source block, write the data for this Source Block
+						//if (sbn == 0) {
+						//	printf("SB: %u\tsymbol: %u\n", (tag >> 24) & 0xff, tag & 0xffffff);
+						//	fflush(stdout);
+						//}
+
+						//printf("Write data symbol %u\n", (tag & 0x00ffffff));
+						//fflush(stdout);
+
+						if (NANORQ_SYM_ERR ==
+							nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
+							fprintf(stdout, "adding symbol %u failed.\n", tag);
+							fflush(stdout);
+							//abort();
+						}
 					}
 
 				}
-				close(fd1);
+
+				printf("Reading Repair Symbols...\n");
+				fflush(stdout);
 
 				while (read(fd2, &tag, 4) == 4) {						// Read tag of SB#, ESI # of repair
-					if (read(fd2, &packet, packet_size) != packet_size)		// Read repair symbol
+					if (read(fd2, &packet, packet_size) != packet_size) {	// Read repair symbol
+						//printf("Packet %u != packet_size\n", tag & 0xffffff);
+						//fflush(stdout);
 						break;
-					// If source block == current source block, write the repair for this Source Block
-					//printf("SB: %u\tsymbol: %u\n", (label >> 24) & 0xff, label & 0xffffff);
-					//fflush(stdout);
-
-					//printf("Write repair symbol %u\n", (tag & 0x00ffffff));
-					//fflush(stdout);
+					}
 
 					// Add Intermediate symbols
-					if (NANORQ_SYM_ERR ==
-						nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
-						fprintf(stdout, "adding symbol %d failed.\n", tag);
-						abort();
+					if (((tag >> 24) & 0xff) == sbn) {
+						// If source block == current source block, write the repair for this Source Block
+						//printf("SB: %u\tsymbol: %u\n", (tag >> 24) & 0xff, tag & 0xffffff);
+						//fflush(stdout);
+
+						//printf("Write repair symbol %u\n", (tag & 0x00ffffff));
+						//fflush(stdout);
+
+						if (NANORQ_SYM_ERR ==
+							nanorq_decoder_add_symbol(rq, (void*)packet, tag, myio)) {
+							fprintf(stdout, "adding symbol %u failed.\n", tag);
+							fflush(stdout);
+							//abort();
+						}
 					}
 
 				}
-				close(fd2);
 
 				// Run Raptor-Q Repair for each Source Block
-				fprintf(stdout, "block %d is %d packets, lost %d, have %d repair. ", sbn,
+				fprintf(stdout, "block %u is %u packets, lost %u, have %u repair. ", sbn,
 					(unsigned)nanorq_block_symbols(rq, sbn),
 					(unsigned)nanorq_num_missing(rq, sbn),
 					(unsigned)nanorq_num_repair(rq, sbn));
 				if (!nanorq_repair_block(rq, myio, sbn)) {
-					fprintf(stdout, "decode of sbn %d failed.\n", sbn);
+					fprintf(stdout, "decode of sbn %u failed.\n", sbn);
 					fflush(stdout);
-					continue;
 				}
-				nanorq_encoder_cleanup(rq, sbn);			
-				fprintf(stdout, "decode of sbn %d passed.\n", sbn);
-				fflush(stdout);
+				else {
+					fprintf(stdout, "decode of sbn %u passed.\n", sbn);
+					fflush(stdout);
+				}
+				lseek(fd1, 0, SEEK_SET);	// Point to beginning of data file to re-read next source block
+				lseek(fd2, 0, SEEK_SET);	// Point to beginning of repair file to re-read next source block
+				nanorq_encoder_cleanup(rq, sbn);		
+
 			}
-			//close(fd3);
+			close(fd1);
+			close(fd2);
 			myio->destroy(myio);
 			
 			// Cleanup files
@@ -3152,12 +3047,11 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(100);
+		//usleep(1000);
 #endif
 		//printf("Session processing time\n");
 		//fflush(stdout);
 
-		
 	}
 
 	if (s->verbosity == 4) {
@@ -3165,15 +3059,19 @@ void filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		fflush(stdout);
 	}
 
+	return retcode;
+
 }
 
-void* channel_file_mode_thread(c) {
+void* channel_in_file_mode(void *c) {
 
+	int retval = 0;
 	alc_channel_t* ch;
 	ch = (alc_channel_t*)c;
 	alc_session_t* s;
 
-	s = ch->s;
+	//s = ch->s;
+	s = get_alc_session(ch->s->s_id);
 
 	//srand((unsigned)time(NULL));
 	//Malek El Khatib.....JUST A COMMENT: THIS NEEDS TO BE MODIFIED TO ALLOW RECEPTION BEFORE FDT
@@ -3194,7 +3092,7 @@ void* channel_file_mode_thread(c) {
 #ifdef _MSC_VER
 		//Sleep(1);
 #else
-		//usleep(100);
+		//usleep(1000);
 #endif
 		continue;
 
@@ -3205,7 +3103,7 @@ void* channel_file_mode_thread(c) {
 		fflush(stdout);
 	}
 
-	filemodesession(s->rx_memory_mode,
+	retval = filemodesession(s->rx_memory_mode,
 #ifdef _MSC_VER
 		FALSE,
 #else 
@@ -3217,6 +3115,24 @@ void* channel_file_mode_thread(c) {
 		printf("Exit File Mode Channel\n");
 		fflush(stdout);
 	}
+	if (retval == -1) {
+		printf("Error: alc_recv3() failed\n");
+		fflush(stdout);
+	}
+	else if (retval == -2) {
+		printf("alc_recv3() SExiting\n");
+		fflush(stdout);
+	}
+	else if (retval == -3) {
+		printf("alc_recv3() STxStopped\n");
+		fflush(stdout);
+	}
+
+#ifdef _MSC_VER
+	_endthread();
+#else
+	pthread_exit(0);
+#endif
 
 	return NULL;
 }

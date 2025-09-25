@@ -53,43 +53,6 @@ static stoi_t* srctoi;			/**< Repair Source TOI */
 static stoi_t* prev_toi;		/**< previous repair source TOI object */
 static BOOL is_first_srctoi;	/**< is first repair source TOI parsed or not? */
 
-
-/**
- * Global variables semaphore
- */
-
-#ifdef _MSC_VER
-RTL_CRITICAL_SECTION stsid_variables_semaphore;
-#else
-pthread_mutex_t stsid_variables_semaphore = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
-/**
- * This is a private function, which locks the stsid.
- *
- */
-
-void lock_stsid(void) {
-#ifdef _MSC_VER
-	EnterCriticalSection(&stsid_variables_semaphore);
-#else
-	pthread_mutex_lock(&stsid_variables_semaphore);
-#endif
-}
-
-/**
- * This is a private function, which unlocks the stsid.
- *
- */
-
-void unlock_stsid(void) {
-#ifdef _MSC_VER
-	LeaveCriticalSection(&stsid_variables_semaphore);
-#else
-	pthread_mutex_unlock(&stsid_variables_semaphore);
-#endif
-}
-
 /**
  * This is a private function which is used in S-TSID parsing.
  *
@@ -520,6 +483,40 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			atts++;
 
 		}
+		else if (!strcmp(name, "EFDT")) {
+			if (!strcmp(*atts, "version")) {
+				//printf("found EFDT version\n");
+				//fflush(stdout);
+
+#ifdef _MSC_VER     
+				lct->efdtVersion = atoi(*(++atts));
+
+				if (lct->efdtVersion > (unsigned int)0xFFFFFFFF) {
+					printf("EFDT Version too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#else               
+				lct->efdtVersion = strtoul(*(++atts), &ep, 10);
+
+				if (*(atts) == '\0' || *ep != '\0') {
+					printf("EFDT Version not a number\n");
+					fflush(stdout);
+					return;
+				}
+
+				if (errno == ERANGE && lct->efdtVersion == 0xFFFFFFFF) {
+					printf("EFDT Version too big for unsigned int (32 bits)\n");
+					fflush(stdout);
+					return;
+				}
+#endif
+			}
+			else {
+				atts++;
+			}
+			atts++;
+		}
 		else if (!strcmp(name, "FDT-Instance")) {
 			//printf("found FDT-Instance\n");
 			//fflush(stdout);
@@ -822,6 +819,19 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 			atts++;
 
 
+		}
+		else if (!strcmp(name, "FileTemplate")) {
+			//printf("found FileTemplate\n");
+			//fflush(stdout);
+
+			atts++;
+
+			if (!(lct->fileTemplate = (char*)calloc((strlen(*atts) + 1), sizeof(char)))) {
+				printf("Could not alloc memory for FileTemplate!\n");
+				return;
+			}
+
+			memcpy(lct->fileTemplate, *atts, strlen(*atts));
 		}
 		else if (!strcmp(name, "fdt:File")) {
 			//printf("found fdt:File\n");
@@ -2005,26 +2015,10 @@ static void startElement_stsid(void *userData, const char *name, const char **at
 
 }
 
-void initialize_stsid_parser(void) {
-#ifdef _MSC_VER
-  InitializeCriticalSection(&stsid_variables_semaphore);
-#else
-#endif
-}
-
-void release_stsid_parser(void) {
-#ifdef _MSC_VER
-  DeleteCriticalSection(&stsid_variables_semaphore);
-#else
-#endif
-}
-
 stsid_t* decode_stsid_payload(char *stsid_payload) {
 
 	XML_Parser parser;
 	size_t len;
-
-	lock_stsid();
 
 	parser = XML_ParserCreate(NULL);
 	/* parser = XML_ParserCreate("iso-8859-1"); */
@@ -2035,7 +2029,7 @@ stsid_t* decode_stsid_payload(char *stsid_payload) {
 	if(!(stsid = (stsid_t*)calloc(1, sizeof(stsid_t)))) {
 		printf("Could not alloc memory for stsid!\n");
 		XML_ParserFree(parser);
-		unlock_stsid();
+
 		return NULL;
 	}
 
@@ -2079,12 +2073,12 @@ stsid_t* decode_stsid_payload(char *stsid_payload) {
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);
-		unlock_stsid();
+
 		return NULL;
 	}
 
 	XML_ParserFree(parser);
-	unlock_stsid();
+
 	return stsid;
 }
 
@@ -2092,8 +2086,6 @@ void FreeSTSID(stsid_t *stsid) {
 
 	route_t *next_file;
 	route_t* route;
-
-	lock_stsid();
 
 	/**** Free stsid struct ****/
 
@@ -2119,7 +2111,6 @@ void FreeSTSID(stsid_t *stsid) {
 	}
 
 	free(stsid);
-	unlock_stsid();
 }
 
 void Printstsid(stsid_t *stsid) {
@@ -2127,8 +2118,6 @@ void Printstsid(stsid_t *stsid) {
 	lct_ch_t *next_ls;
 	lct_ch_t *ls;
 	//file_t* file;
-
-	lock_stsid();
 
 	next_ls = stsid->rs_list->lct_list;
 	//file = stsid->rs_list->lct_list->src->FDTinst->file_list;
@@ -2151,5 +2140,4 @@ void Printstsid(stsid_t *stsid) {
 
 		next_ls = ls->next;
 	}
-	unlock_stsid();
 }

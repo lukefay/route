@@ -214,19 +214,6 @@ typedef struct stsid {
 	unsigned int nb_of_rs;		/**< number of ROUTE Sessions in the S-TSID */
 } stsid_t;
 
-/**
-* This function initializes S-TSID parser.
-*
-*/
-
-void initialize_stsid_parser(void);
-
-/**
-* This function releases S-TSID parser.
-*
-*/
-
-void release_stsid_parser(void);
 
 /**
  * This function decodes S-TSID XML document to the stsid structure using Expat XML library.

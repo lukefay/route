@@ -36,20 +36,6 @@ typedef struct env {
 } env_t;
 
 /**
-* This function initializes env parser.
-*
-*/
-
-void initialize_env_parser(void);
-
-/**
-* This function releases env parser.
-*
-*/
-
-void release_env_parser(void);
-
-/**
  * This function decodes env XML document to the env structure using Expat XML library.
  *
  * @param env_payload pointer to buffer containing env XML document

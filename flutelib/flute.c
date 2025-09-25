@@ -56,6 +56,7 @@
 #include "../alclib/alc_session.h"
 #include "../alclib/alc_tx.h"
 #include "../alclib/alc_rx.h"
+#include "../alclib/null_fec.h"
 
 #include "flute.h"
 #include "fdt_gen.h"
@@ -771,15 +772,15 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #ifdef _MSC_VER
 	HANDLE handle_fdt_thread;
 	unsigned int fdt_thread_id;
-	//HANDLE handle_receiver_file_table_output_thread;
-	//unsigned int receiver_file_table_output_thread_id;
+	HANDLE handle_receiver_file_table_output_thread;
+	unsigned int receiver_file_table_output_thread_id;
 	//HANDLE handle_lct_thread;
 	//unsigned int lct_thread_id;
 	int addr_size;
 #else
 	pthread_t fdt_thread_id;
 	pthread_t receiver_file_table_output_thread_id;
-	pthread_t lct_thread_id;
+	//pthread_t lct_thread_id;
 	int join_retval;
 #endif
 	char* session_basedir = NULL;
@@ -942,8 +943,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 	// Start ROUTE session from command line indicated LCT Channel (TSI)
 	*s_id = open_alc_session(&a->alc_a);
-	//printf("started ALC session at time: %llu\n", (unsigned long long)systime * 1000000 + (unsigned long long)systime);
-	//fflush(stdout);
+	printf("started ALC session at time: %llu\n", (unsigned long long)systime * 1000000 + (unsigned long long)systime);
+	fflush(stdout);
 
 	if(*s_id < 0) {
 		printf("Error opening ALC session\n");
@@ -1086,7 +1087,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #endif
 
 		/* Create Display thread */
-		/*
+		
 		if (a->alc_a.verbosity > 0) {
 			printf("Creating Display thread\n");
 			fflush(stdout);
@@ -1112,7 +1113,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			}
 #endif
 		}
-		*/
+		
 		//MALEK EL KHATIB 08.05.2014...JUST A COMMENT: IT COMES HERE TO START RECEIVING files
 		if (a->alc_a.verbosity > 0) {
 			printf("Start Receiving Files ");
@@ -1220,7 +1221,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		while (next_item != NULL) {  // Go through list of SLS files
 			item = next_item;
 
-			if (!strcmp(item->contentType, "application/route-s-tsid+xml")) {
+			if (!strcmp(item->contentType, "application/route-s-tsid+xml") || !strcmp(item->contentType, "application/s-tsid")) {
 				sprintf(tmp_filename, "%s/%s", session_basedir, item->metadataURI);
 				//sprintf(tmp_filename, "%s/%s", session_basedir, "S-TSID-Example-20220708.xml");
 			}
@@ -1318,27 +1319,28 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 	int updated;
 	char* buf = NULL;
 	unsigned int rs_cnt = 0;
-	
+	unsigned int ls_cnt = 0;
+
 	// Point to first items of structures
 	next_stsid_rs = stsid->rs_list;
 	next_stsid_lct = stsid->rs_list->lct_list;
 	
 	// SAVE this code for backup: Multi-ALC-SESSION (with THREADs)
-	while (next_stsid_rs != NULL) {
+	for (rs_cnt = 0; rs_cnt < stsid->nb_of_rs; rs_cnt++) {
 		stsid_rs = next_stsid_rs;
 
 		printf("RS dIpAddr: %s\tdPort: %s\tLCT channels: %d\n", stsid_rs->dIpAddr, stsid_rs->dPort, stsid_rs->nb_of_ls); fflush(stdout);
-		for(rs_cnt = 0; rs_cnt < stsid_rs->nb_of_ls; rs_cnt++) {	// Start LCT Channels listed per ROUTE SESSION
+		for(ls_cnt = 0; ls_cnt < stsid_rs->nb_of_ls; ls_cnt++) {	// Start LCT Channels listed per ROUTE SESSION
 			stsid_lct = next_stsid_lct;
 
-			// OPEN LCT channel with TSI from TSID
+			// OPEN LCT channel with TSI from TSID --> READ FROM CONTAINER
 			*s_id = read_alc_session(&a->alc_a, stsid_lct->tsi);
 			s = get_alc_session(*s_id);
 			//printf("session id: %d\n", *s_id);
 			//fflush(stdout);
 			s->max_channel = MAX_CHANNELS_IN_SESSION - 1;
 
-			// Add LCT Channel to ROUTE Session
+			// Add LCT Channel to ROUTE Session --> WRITE TO CONTAINER
 			if (stsid_rs->dIpAddr != NULL) retval = add_alc_channel(s->s_id, stsid_lct->tsi, stsid_rs->dPort, stsid_rs->dIpAddr, a->alc_a.intface, a->alc_a.intface_name);
 			else retval = add_alc_channel(s->s_id, stsid_lct->tsi, ports[0], addrs[0], a->alc_a.intface, a->alc_a.intface_name);
 			//printf("added ALC channel: %d\n", retval);
@@ -1358,7 +1360,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			s->ls = stsid_lct;  // Tie each session's channel to S-TSID channel listing
 			s->ls->fdt = (fdt_t*)calloc(1, sizeof(fdt_t));	// Create memory for this channel FDT
 			s->ls->fdt->file_list = (file_t*)calloc(1, sizeof(file_t));
-			
+
 			// Add another FDT for new found file
 			set_fdt_instance_id(ch->s->s_id, (long)stsid_lct->toi);
 
@@ -1476,9 +1478,13 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 
 						if (retval < 0) {
 							// Memory error
+							printf("ERROR: Wanted Object %llu not set\n", lct_file->toi);
+							fflush(stdout);
 						}
 						else {
 							lct_file->status = 1;
+							printf("OBJECT: Wanted Object %llu set\n", lct_file->toi);
+							fflush(stdout);
 						}
 					}
 
@@ -1493,11 +1499,11 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			//FreeFDT(lct_fdt);
 			// For ATSC 3.0, FDT's are not sent for each file, rather an S-TSID is used for all files in a Source Flow.
 			// FDT's are used for SLS and NRT files.  Need to keep this FDT for SLS monitoring (Segment Timeline) below.
-
+			
 			// Create LCT Channel receiving threads
 	#ifdef _MSC_VER
 			s->handle_lct_thread =
-				(HANDLE)_beginthreadex(NULL, 0, (void*)channel_file_mode_thread, ch, 0, &s->lct_thread_id);
+				(HANDLE)_beginthreadex(NULL, 0, (void*)channel_in_file_mode, ch, 0, &s->lct_thread_id);
 			if (s->handle_lct_thread == NULL) {
 				printf("Error: flute_session: LCT Thread, _beginthread\n");
 				fflush(stdout);
@@ -1505,17 +1511,16 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 				return -1;
 			}
 	#else
-			//MALEK EL KHATIB 07.05.2014...JUST A COMMENT: IT COMES HERE TO START RECEIVING FDT INSTANCES
-			if (pthread_create(&lct_thread_id, NULL, channel_file_mode_thread, ch) != 0) {
+			if (pthread_create(&s->lct_thread_id, NULL, channel_in_file_mode, ch) != 0) {
 				printf("Error: flute_receiver, pthread_create\n");
 					fflush(stdout);
 					close_alc_session(s->s_id);
 					return -1;
 			}
-			//pthread_join
 	#endif
+			
 			if (a->alc_a.verbosity == 4) {
-				printf("Creating File based ALC receiving thread %d to receive incoming packets\n", s->lct_thread_id);
+				printf("Creating File based ALC receiving thread %lu to receive incoming packets\n", s->lct_thread_id);
 					fflush(stdout);
 			}
 
@@ -1526,31 +1531,24 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		next_stsid_rs = stsid_rs->next;
 	}
 
-	s = get_alc_session(receiver.s_id);
 	if (s->verbosity == 4) {
 		printf("ADDED ALL CHANNELS\n");
 		fflush(stdout);
 	}
 
-	// Monitor FDT Thread for updates to files in S-TSID
+	// Keep Rx Thread going for all channels in S-TSID
 	while (get_session_state(receiver.s_id) == SActive) {
-
 		if (receiver.fdt->file_list != NULL) {
 			// Recover updated SLS
-			if (a->alc_a.verbosity == 4) {
-				printf("Updating files in S-TSID\n");
-				fflush(stdout);
-			}
 			retval = receiver_in_fdt_based_mode(a, &receiver);
 
+			//printf("SLS retval %d\n", retval);
+			//fflush(stdout);
 		}
 		else {
 			// Exit S-TSID monitoring and write reports
-			if (a->alc_a.verbosity == 4) {
-				printf("No longer monitoring S-TSID Channel\n");
-				fflush(stdout);
-			}
-
+			printf("No more files in Receiver FDT\n");
+			fflush(stdout);
 			FreeFDT(receiver.fdt);
 
 			break;
@@ -1563,7 +1561,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #endif
 		continue;
 	}
-	
+
 	if (a->alc_a.verbosity > 0) {
 		printf("Build Report\n");
 		fflush(stdout);
@@ -2138,12 +2136,11 @@ int start_up_flute(void) {
 
 #endif
 
-	initialize_stsid_parser();
-	initialize_env_parser();
 	initialize_fdt_parser();
 	initialize_efdt_parser();
 	initialize_session_handler();
 	initialize_lct_header();
+	initialize_fec();
 
 	return 0;
 }
@@ -2157,10 +2154,8 @@ void shut_down_flute(arguments_t *anArguments) {
 	release_session_handler();
 	release_fdt_parser();
 	release_efdt_parser();
-	release_env_parser();
-	release_stsid_parser();
 	release_lct_header();
-
+	release_fec();
 
 	if(anArguments == NULL) {
 		return;
@@ -2186,8 +2181,7 @@ void shut_down_flute2(void) {
 	release_session_handler();
 	release_fdt_parser();
 	release_efdt_parser();
-	release_env_parser();
-	release_stsid_parser();
 	release_lct_header();
+	release_fec();
 
 }

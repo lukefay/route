@@ -27,41 +27,6 @@ item_t *prev;			/**< previous parsed item */
 bool is_first_item;		/**< is first item parsed or not? */
 env_t *env;				/**< Envelope */
 
-/**
- * Global variables semaphore
- */
-
-#ifdef _MSC_VER
-RTL_CRITICAL_SECTION envelope_variables_semaphore;
-#else
-pthread_mutex_t envelope_variables_semaphore = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
-/**
- * This is a private function, which locks the env.
- *
- */
-
-void lock_env(void) {
-#ifdef _MSC_VER
-	EnterCriticalSection(&envelope_variables_semaphore);
-#else
-	pthread_mutex_lock(&envelope_variables_semaphore);
-#endif
-}
-
-/**
- * This is a private function, which unlocks the env.
- *
- */
-
-void unlock_env(void) {
-#ifdef _MSC_VER
-	LeaveCriticalSection(&envelope_variables_semaphore);
-#else
-	pthread_mutex_unlock(&envelope_variables_semaphore);
-#endif
-}
 
 /**
  * This is a private function which copies file description from source to destination. 
@@ -230,26 +195,10 @@ static void startElement_env(void *userData, const char *name, const char **atts
 	item = NULL;
 }
 
-void initialize_env_parser(void) {
-#ifdef _MSC_VER
-	InitializeCriticalSection(&envelope_variables_semaphore);
-#else
-#endif
-}
-
-void release_env_parser(void) {
-#ifdef _MSC_VER
-  DeleteCriticalSection(&envelope_variables_semaphore);
-#else
-#endif
-}
-
 env_t* decode_env_payload(char *env_payload) {
 
 	XML_Parser parser = XML_ParserCreate(NULL);
 	size_t len;
-
-	lock_env();
 
 	len = strlen(env_payload);
 	env = NULL;
@@ -257,7 +206,7 @@ env_t* decode_env_payload(char *env_payload) {
 	if(!(env = (env_t*)calloc(1, sizeof(env_t)))) {
 		printf("Could not alloc memory for env!\n");
 		XML_ParserFree(parser);
-		unlock_env();
+
 		return NULL;
 	}
 
@@ -277,15 +226,15 @@ env_t* decode_env_payload(char *env_payload) {
 			XML_ErrorString(XML_GetErrorCode(parser)),
 			XML_GetCurrentLineNumber(parser));
 		XML_ParserFree(parser);
-		unlock_env();
+
 		return NULL;
 	}
 
-	printf("parsed envelope XML parameters with %d item(s) and length %d\n", env->nb_of_items, len);
-	fflush(stdout);
+	//printf("parsed envelope XML parameters with %d item(s) and length %u\n", env->nb_of_items, len);
+	//fflush(stdout);
 
 	XML_ParserFree(parser);
-	unlock_env();
+
 	return env;
 }
 
@@ -293,8 +242,6 @@ void Freeenv(env_t *env) {
 
 	item_t *next_item;
 	item_t *item;
-
-	lock_env();
 
 	/**** Free env struct ****/
 
@@ -316,7 +263,6 @@ void Freeenv(env_t *env) {
 	}
 
 	free(env);
-	unlock_env();
 }
 
 int update_env(env_t *env_db, env_t *instance) {
@@ -329,8 +275,6 @@ int update_env(env_t *env_db, env_t *instance) {
 
 	assert (env_db != NULL);
 	assert (instance != NULL);
-
-	lock_env();
 
 	tmp_item = instance->item_list;
 
@@ -345,7 +289,6 @@ int update_env(env_t *env_db, env_t *instance) {
 				retval = copy_item_info(tmp_item, env_item);
 
 				if(retval < 0) {
-					unlock_env();
 					return -1;
 				}
 				else if(((retval == 1)&&(updated != 2))) {
@@ -361,7 +304,7 @@ int update_env(env_t *env_db, env_t *instance) {
 
 				if(!(new_item = (item_t*)calloc(1, sizeof(item_t)))) {
 					printf("Could not alloc memory for mad_fdt file!\n");
-					unlock_env();
+
 					return -1;
 				}
 
@@ -370,7 +313,6 @@ int update_env(env_t *env_db, env_t *instance) {
 				retval = copy_item_info(tmp_item, new_item);
 
 				if(retval < 0) {
-					unlock_env();
 					return -1;
 				}
 				else if(retval == 1) {
@@ -387,7 +329,7 @@ int update_env(env_t *env_db, env_t *instance) {
 
 		tmp_item = tmp_item->next;
 	}
-	unlock_env();
+
 	return updated;
 }
 
@@ -395,8 +337,6 @@ void Printenv(env_t *env) {
 
 	item_t *next_item;
 	item_t *item;
-
-	lock_env();
 
 	next_item = env->item_list;
 
@@ -413,12 +353,9 @@ void Printenv(env_t *env) {
 		next_item = item->next;
 	}
 
-	unlock_env();
 }
 
 void free_item(item_t *item) {
-
-	lock_env();
 
 	if (item->metadataURI != NULL) {
 		free(item->metadataURI);
@@ -429,5 +366,4 @@ void free_item(item_t *item) {
 	}
 
 	free(item);
-	unlock_env();
 }
