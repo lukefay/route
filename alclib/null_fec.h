@@ -42,6 +42,20 @@ extern "C" {
 #endif
 
 /**
+* This function initializes FEC lock.
+*
+*/
+
+void initialize_fec(void);
+
+/**
+* This function releases FEC lock.
+*
+*/
+
+void release_fec(void);
+
+/**
  * This function encodes source block data to transport block using Null-FEC.
  *
  * @param data pointer to data string to be segmented

@@ -42,6 +42,7 @@
 #include <process.h>
 #else
 #include <pthread.h>
+#include <errno.h>
 #endif
 
 #include <sys/timeb.h>
@@ -156,6 +157,12 @@ int open_alc_session(alc_arguments_t *a) {
   s->loss_ratio1 = a->loss_ratio1;
   s->loss_ratio2 = a->loss_ratio2;
   
+#ifdef USE_RETRIEVE_UNIT
+  // Initialize tranport unit
+  s->unit_pool = NULL;
+  s->last_given = NULL;
+#endif
+
   if(s->mode == SENDER) {
 
     ftime(&timeb_current_time);
@@ -901,7 +908,6 @@ int set_wanted_object(int s_id, unsigned long long toi,
   tmp = s->wanted_obj_list;
 
   if(tmp == NULL) {
-    
     if (!(wanted_obj = (wanted_obj_t*)calloc(1, sizeof(wanted_obj_t)))) {
       printf("Could not alloc memory for wanted object!\n");
       unlock_session();

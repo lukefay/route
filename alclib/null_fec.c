@@ -39,6 +39,57 @@
 
 #include "null_fec.h"
 
+ /**
+  * FEC variables semaphore
+  */
+
+#ifdef _MSC_VER
+RTL_CRITICAL_SECTION fec_variables_semaphore;
+#else
+pthread_mutex_t fec_variables_semaphore = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+/**
+ * This is a private function, which locks the FEC core functions.
+ *
+ */
+
+void lock_fec(void) {
+#ifdef _MSC_VER
+	EnterCriticalSection(&fec_variables_semaphore);
+#else
+	pthread_mutex_lock(&fec_variables_semaphore);
+#endif
+}
+
+/**
+ * This is a private function, which unlocks the FEC core functions.
+ *
+ */
+
+void unlock_fec(void) {
+#ifdef _MSC_VER
+	LeaveCriticalSection(&fec_variables_semaphore);
+#else
+	pthread_mutex_unlock(&fec_variables_semaphore);
+#endif
+}
+
+void initialize_fec(void) {
+#ifdef _MSC_VER
+	InitializeCriticalSection(&fec_variables_semaphore);
+#else
+#endif
+}
+
+void release_fec(void) {
+#ifdef _MSC_VER
+	DeleteCriticalSection(&fec_variables_semaphore);
+#else
+#endif
+}
+
+
 trans_block_t* null_fec_encode_src_block(char *data, unsigned long long len,
 										 unsigned int sbn, unsigned short es_len) {
 	
@@ -48,6 +99,8 @@ trans_block_t* null_fec_encode_src_block(char *data, unsigned long long len,
 	unsigned int i;					/* loop variables */
 	unsigned long long data_left;
 	char *ptr;						/* pointer to left data */
+
+	lock_fec();
 
 	data_left = len;
 
@@ -63,6 +116,7 @@ trans_block_t* null_fec_encode_src_block(char *data, unsigned long long len,
 
 	if(tr_unit == NULL) {
 		free(tr_block);
+		unlock_fec();
 		return NULL;
 	}
 
@@ -107,6 +161,7 @@ trans_block_t* null_fec_encode_src_block(char *data, unsigned long long len,
 	
 			free(tr_block->unit_list);
 			free(tr_block);
+			unlock_fec();
 			return NULL;
 		}
 
@@ -137,12 +192,14 @@ trans_block_t* null_fec_encode_src_block(char *data, unsigned long long len,
 
 			free(tr_block->unit_list);
 			free(tr_block);
+			unlock_fec();
 			return NULL;
 		}
 		memcpy(tr_unit->data, ptr, tr_unit->len);
 	}
 	//End
 
+	unlock_fec();
 	return tr_block;
 }
 
@@ -157,27 +214,36 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 	//unsigned long long len;
 	unsigned long long tmp;
 
+	lock_fec();
     //len = eslen*tr_block->k;
 
 	/* Allocate memory for buf */
     if(!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {	// length +1 for NULL character
         printf("Could not alloc memory for buf!\n");
+
+		unlock_fec();
         return NULL;
     }
 
     tmp = 0;
 	
 	next_tu = tr_block->unit_list;
+	//printf("FEC #units: %u, #symbols: %u\n", tr_block->nb_of_rx_units, tr_block->nb_of_rx_symbols);
+	//fflush(stdout);
 
-	while(next_tu != NULL) {
+	while (next_tu != NULL) {
 
         tu = next_tu;
+
+		//printf("FEC eslen %llu, tu->len %u\n", eslen, tu->len);
+		//fflush(stdout);
 
 		if (tu->data == NULL) {
 			//printf("SB: %u, esi: %u, len: %u\n", tr_block->sbn, tu->esi, tu->len);
 			printf("Buffer Length: %llu, Unit Length: %u Build: %llu\n", eslen, tu->len, tmp);
 			fflush(stdout);
 
+			unlock_fec();
 			return NULL;
 		}
 		else {
@@ -198,6 +264,7 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 	//printf("NULL FEC SRC Block return length %llu\n", eslen);
 	//fflush(stdout);
 
+	unlock_fec();
 	return buf;
 }
 
@@ -214,25 +281,31 @@ char *null_fec_decode_object(trans_obj_t *to, unsigned long long *data_len,
 	unsigned long long block_len;
 	unsigned long long position;
 	unsigned int i;
-	
-	//printf("FEC DECODE Object length %llu\n", to->len);
+
+	//lock_fec();
+	//printf("FEC DECODE Symbol Length %u, Object length %llu\n", to->es_len, to->len);
 	//fflush(stdout);
 
 	/* Allocate memory for buf */
 	if(!(object = (char*)calloc((unsigned int)(to->len+1), sizeof(char)))) {
-		printf("Could not alloc memory for buf!\n");
+		printf("Could not alloc memory for object!\n");
 		*data_len = 0;
+
+		//unlock_fec();
 		return NULL;
 	}
 	
 	to_data_left = to->len;
 
 	tb = to->block_list;
+	//tb = s->fdt_list->block_list;
+
 	position = 0;
-	
+	//printf("FEC Object %llu Decode of length %u...or %u\n", to->toi, to->block_list->unit_list->len, s->fdt_list->block_list->unit_list->len);
+	//fflush(stdout);
 	for(i = 0; i < to->bs->N; i++) {
-		//block = null_fec_decode_src_block(tb, &block_len, (unsigned short)to->es_len);
-		block = null_fec_decode_src_block(tb, &block_len, to->len);
+		//block = null_fec_decode_src_block(tb, &block_len, (unsigned short)to->es_len);	// FLUTE operation
+		block = null_fec_decode_src_block(tb, &block_len, to->len);							// ROUTE operation
 
 		/* the last packet of the last source block might be padded with zeros */
 		len = to_data_left < block_len ? to_data_left : block_len;
@@ -255,11 +328,13 @@ char *null_fec_decode_object(trans_obj_t *to, unsigned long long *data_len,
 		//printf("INCREMENT BLOCK LIST %d\n", to->bs->N);
 		//fflush(stdout);
 
-		tb = to->block_list+(i+1);
+		//tb = s->fdt_list->block_list+(i+1);
+		tb = to->block_list + (i + 1);
 		//tb++;
 	}
 
 	*data_len = to->len;
 
+	//unlock_fec();
 	return object;
 }

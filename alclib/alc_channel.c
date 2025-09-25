@@ -43,6 +43,7 @@
 #else
 #include <sys/socket.h>
 #include <netdb.h>
+#include <errno.h>
 #endif
 
 #include "alc_channel.h"
@@ -158,65 +159,6 @@ int open_alc_channel(alc_channel_t *ch, alc_session_t *s, const char *port,
 
   return ch->ch_id;
 }
-
-
-
-
-
-int read_alc_channel(alc_channel_t* ch, alc_session_t* s) {
-
-
-    if (!(ch = (alc_channel_t*)calloc(1, sizeof(alc_channel_t)))) {
-        printf("Could not alloc memory for  alc channel!\n");
-        return -1;
-    }
-
-    ch->s = s;
-    //ch->ch_id = s->nb_channel; /* channel ID for channel # */
-    ch->ch_id = (unsigned int)s->tsi; /* session level identifier for channel */
-    // That is the confusing part of A/331 (LCT Channels are identified with a SESSION ID (TSI)
-    // So this software has to start another session for each channel...
-
-
-    assert(s->mode == RECEIVER);		// Only used in receivers
-    assert(s->ch_list[s->nb_channel] == NULL); // Assure starting a new channel
-    assert(ch->receiving_list == 0);	// Start reading a new channel
-
-    ch->receiving_list = build_list();
-
-	/* Create receiving socket thread */
-#ifdef _MSC_VER
-	ch->handle_rx_socket_thread = (HANDLE)_beginthreadex(NULL, 0, (void*)rx_socket_thread,
-		(void*)ch, 0, &ch->rx_socket_thread_id);
-
-	if (ch->handle_rx_socket_thread == NULL) {
-		perror("open_alc_channel: _beginthread");
-		return -1;
-	}
-#else
-	if (pthread_create(&ch->rx_socket_thread_id, NULL, rx_socket_thread, (void*)ch) != 0) {
-		perror("open_alc_channel: pthread_create");
-		return -1;
-	}
-#endif
-
-
-
-    s->ch_list[s->nb_channel] = ch;
-    //s->ch_list[s->tsi] = ch;
-    s->nb_channel++;
-    s->max_channel++;
-
-    return ch->ch_id;
-
-}
-
-
-
-
-
-
-
 
 int close_alc_channel(alc_channel_t *ch, alc_session_t *s) {
 	

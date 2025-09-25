@@ -128,14 +128,6 @@ typedef struct alc_channel {
 int open_alc_channel(alc_channel_t *ch, alc_session_t *s, const char *port,
 					 const char *addr, const char *intface, const char *intface_name, int tx_rate); 
 
-
-/*
-* This function starts reading channels listed in S-TSID 
-*/
-
-int read_alc_channel(alc_channel_t* ch, alc_session_t* s);
-
-
 /**
  * This function closes existing channel.
  *

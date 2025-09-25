@@ -98,6 +98,7 @@ void free_units(trans_block_t *tb) {
   }
   
   tb->unit_list = NULL;
+
 }
 
 #ifdef USE_RETRIEVE_UNIT
@@ -106,7 +107,7 @@ void free_units(trans_block_t *tb) {
 
 trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
-	trans_unit_container_t *container = NULL;
+	trans_unit_container_t *container;
 	trans_unit_container_t *tmp;
 	trans_unit_container_t *start_search;
 
@@ -124,6 +125,9 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 	//printf("start search retrieve unit\n");
 	//fflush(stdout);
 	while(tmp != NULL ) { 
+		if (tmp->u.len == 0) {
+			break;
+		}
 		if(tmp->u.used == 0) {
 			printf("start search is zero\n");
 			fflush(stdout);
@@ -149,6 +153,7 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 			tmp->u.used = 1;
 			s->last_given = tmp;
             assert(tmp->u.data != NULL);
+
 			return &(tmp->u);
 		}
 		//printf("start search is NULL\n");
@@ -159,9 +164,13 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 	//fflush(stdout);
 
 	tmp = s->unit_pool;
-	while(tmp != start_search) {    
-		if(tmp->u.used == 0) {
+	while(tmp != start_search) { 
+		if (tmp == NULL) {
+			break;
+		}
+		if (tmp->u.used == 0) {
 			printf("used is zero,");
+			fflush(stdout);
 
 			//Malek El Khatib 12.08.2014
 			if (numEncSymbPerPacket != 0)
@@ -177,6 +186,7 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 			tmp->u.used = 1;
 			s->last_given = tmp;
             assert(tmp->u.data != NULL);
+
 			return &(tmp->u);
 		}
 
@@ -188,6 +198,7 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
 
 	if(!(container = (trans_unit_container_t*)calloc(1, sizeof(trans_unit_container_t)))) {
 		printf("Could not alloc memory for a transport unit container!\n");
+
 		return NULL;
 	}
 
@@ -202,6 +213,7 @@ trans_unit_t* retrieve_unit(alc_session_t *s, unsigned short es_len) {
     if(!(container->u.data = (char*)calloc(es_len, sizeof(char)))) { 
         printf("Could not alloc memory for transport unit's data!\n");
 		free(container);
+
         return NULL;
     }
 
@@ -238,6 +250,7 @@ void free_units2(trans_block_t *tb) {
     }
 
     tb->unit_list = NULL;
+
 }
 
 void free_unit_container(alc_session_t* s) {
@@ -257,6 +270,7 @@ void free_unit_container(alc_session_t* s) {
 	}
 
 	s->unit_pool = NULL;
+
 }
 
 #endif
@@ -345,6 +359,7 @@ void insert_object(trans_obj_t *to, alc_session_t *s, int type) {
         else {
             s->obj_list = to;
         }
+
         return;
     }
 
@@ -388,6 +403,7 @@ void insert_object(trans_obj_t *to, alc_session_t *s, int type) {
 
         tmp = tmp->next;
     }
+
 }
 
 /*
@@ -501,10 +517,13 @@ int insert_unit(trans_unit_t *tu, trans_block_t *tb, trans_obj_t *to) {
         tb->nb_of_rx_units++;
 
         tb->unit_list = tu;
+
         return retval;
     }
 
     for(;;) {	// Loop over units in a source block...assumes in-order packet delivery
+		// A characteristic of a linked list is that it is slower to locate a particular node by position.
+		// This linked list loop will consume large CPU % when large files are received.
 		//printf("Unit symbol count: %u/%u\n", tmp->esi, tu->esi); fflush(stdout);
 		
         if(tu->esi < tmp->esi) {	// total unit count < current unit count
@@ -635,5 +654,6 @@ void free_object(trans_obj_t *to, alc_session_t *s, int type) {
   }
   
   free(to);
+
 }
 

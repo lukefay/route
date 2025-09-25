@@ -140,8 +140,7 @@ extern "C" {
 #define MAX_PORT_LENGTH				10		/**< Maximum length for string that contains port number */
 #define MAX_TX_QUEUE_SIZE			1000	/**< Maximum transmission queue size in packets */
 
-#define REPAIR			7	/**< REPAIR bits signaled outside Source Flow */
-#define NEW_TOI			6	/**< New FDT instance found */
+#define REPAIR			6	/**< REPAIR bits signaled outside Source Flow */
 #define WAITING_FDT		5	/**< FDT instance is in parsing state */
 #define OK				4	/**< Correct packet received */
 #define EMPTY_PACKET	3	/**< Empty packet received */
