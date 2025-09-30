@@ -772,14 +772,14 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #ifdef _MSC_VER
 	HANDLE handle_fdt_thread;
 	unsigned int fdt_thread_id;
-	HANDLE handle_receiver_file_table_output_thread;
-	unsigned int receiver_file_table_output_thread_id;
+	//HANDLE handle_receiver_file_table_output_thread;
+	//unsigned int receiver_file_table_output_thread_id;
 	//HANDLE handle_lct_thread;
 	//unsigned int lct_thread_id;
 	int addr_size;
 #else
 	pthread_t fdt_thread_id;
-	pthread_t receiver_file_table_output_thread_id;
+	//pthread_t receiver_file_table_output_thread_id;
 	//pthread_t lct_thread_id;
 	int join_retval;
 #endif
@@ -1087,7 +1087,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 #endif
 
 		/* Create Display thread */
-		
+		/*
 		if (a->alc_a.verbosity > 0) {
 			printf("Creating Display thread\n");
 			fflush(stdout);
@@ -1113,7 +1113,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			}
 #endif
 		}
-		
+		*/
 		//MALEK EL KHATIB 08.05.2014...JUST A COMMENT: IT COMES HERE TO START RECEIVING files
 		if (a->alc_a.verbosity > 0) {
 			printf("Start Receiving Files ");
@@ -1555,9 +1555,9 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 #ifdef _MSC_VER
-		Sleep(1);	// Sleep for 1msec to check next SLS
+		Sleep(50);	// Sleep for 50msec to check next SLS
 #else
-		usleep(1000);
+		usleep(50000);
 #endif
 		continue;
 	}

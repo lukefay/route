@@ -1758,7 +1758,7 @@ void* fdt_thread(void *s) {
 	  
 	}	
 	else { // Receive new FDT Instance when it comes
-      updated = 0;
+      //updated = 0;
 
 	  if (receiver->verbosity > 1) {
 		  printf("Wait for another SLS if Segment Timeline\n\n");
@@ -1847,7 +1847,7 @@ void* fdt_thread(void *s) {
       }
       
       if(receiver->verbosity > 0) {
-		printf("FDT Instance received (ID=%i)\n", fdt_instance_id);
+		printf("FDT Instance received (TOI=%llu)\n", efdt_instance->file_list->toi);
 		fflush(stdout);
       }
 
@@ -1889,9 +1889,9 @@ void* fdt_thread(void *s) {
 	  }
 
 	  if(updated < 0) {
-		  //printf("FDT not updated...\n");
-		  //fflush(stdout);
-		  //remove_wanted_object(receiver->s_id, receiver->fdt->file_list->toi);
+		  printf("FDT not updated...\n");
+		  fflush(stdout);
+		  remove_wanted_object(receiver->s_id, receiver->fdt->file_list->toi);
 		  //continue;
 		  break;
       }
@@ -2188,8 +2188,8 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 					}
 				}
 
-				continue;
-				//break;
+				//continue;
+				break;
 
 			}
 			else {
@@ -2205,9 +2205,9 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				}
 
 #ifdef _MSC_VER
-				Sleep(2);
+				//Sleep(2);
 #else
-				usleep(2000);
+				//usleep(2000);
 #endif
 				continue;
 			}
@@ -2257,7 +2257,7 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			
 			if (s->verbosity == 4) {
 				//printf("Session write file type: %s\n", file->type);
-				printf("Session write file: %s\t TOI %llu\n", file->location, file->toi);
+				printf("Session write file: %s\t (TOI=%llu)\n", file->location, file->toi);
 				fflush(stdout);
 			}
 
@@ -2807,17 +2807,18 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			//}
 			//else {
 			if (retval != 0) {
-				//printf("FILE rename() %s error2\n", tmp_filename);
+				printf("FILE rename() %s error2\n", tmp_filename);
 				//printf("fullpath: %s\n", fullpath);
 				//printf("errno: %i\n", errno);
-				//fflush(stdout);
+				fflush(stdout);
 
 				remove(tmp_filename);
 			}
+			else {
+				// Now set file status to received.
+				file->status = 2;
+			}
 		}
-
-		// Now set file status to received.
-		file->status = 2;
 
 		if (s->verbosity > 0) {
 #ifdef _MSC_VER
