@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AEAT xmlns="tag:atsc.org,2016:XMLSchemas/ATSC3/Delivery/AEAT/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<AEA aeaId="23505e2e-b2ab-4bbb-9532-1a01ae4df190_ea987204-65e2-4a15-a349" aeaType="alert" audience="public" issuer="nextgenbroadcast.com" priority="0" wakeup="false">          <Header effective="2022-01-20T21:06:22+00:00" expires="2022-01-20T22:06:22+00:00">            <EventCode type="SAME">RWT</EventCode>            <EventDesc xml:lang="en">REQUIRED WEEKLY TEST</EventDesc>            <Location type="FIPS">032003</Location>
+        <Location type="FIPS">032017</Location>
+        <Location type="FIPS">032023</Location>          </Header>          <AEAText xml:lang="en">REQUIRED WEEKLY TEST</AEAText>                  </AEA>
+<AEA aeaId="4c2746fa-c112-4900-99b5-70023303a8a9_8f2efb57-4649-4003-822f" aeaType="alert" audience="public" issuer="nextgenbroadcast.com" priority="0" wakeup="false">          <Header effective="2022-01-20T21:27:40+00:00" expires="2022-01-20T22:27:40+00:00">            <EventCode type="SAME">RWT</EventCode>            <EventDesc xml:lang="en">REQUIRED WEEKLY TEST</EventDesc>            <Location type="FIPS">032003</Location>
+        <Location type="FIPS">032017</Location>
+        <Location type="FIPS">032023</Location>          </Header>          <AEAText xml:lang="en">REQUIRED WEEKLY TEST</AEAText>                  </AEA>
+</AEAT>

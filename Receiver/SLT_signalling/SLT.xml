@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SLT bsid="372" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="tag:atsc.org,2016:XMLSchemas/ATSC3/Delivery/SLT/1.0/ SLT-1.0-20211209.xsd">
+    <Service serviceCategory="4" serviceId="1372" shortServiceName="ESG" sltSvcSeqNum="0">
+        <BroadcastSvcSignaling slsDestinationIpAddress="239.101.0.255" slsDestinationUdpPort="8000" slsMajorProtocolVersion="0" slsMinorProtocolVersion="0" slsProtocol="1" slsSourceIpAddress="172.16.200.1"/>
+    </Service>
+    <Service globalServiceID="https://doi.org/10.5239/52EB-1A7A" majorChannelNo="51" minorChannelNo="1" serviceCategory="1" serviceId="1373" shortServiceName="KUSI" sltSvcSeqNum="0">
+        <BroadcastSvcSignaling slsDestinationIpAddress="239.101.51.1" slsDestinationUdpPort="8000" slsMajorProtocolVersion="0" slsMinorProtocolVersion="0" slsProtocol="1" slsSourceIpAddress="172.16.200.1"/>
+    </Service>
+    <Service globalServiceID="2497" hidden="true" majorChannelNo="101" minorChannelNo="250" serviceCategory="3" serviceId="1374" shortServiceName="GSdata5" sltSvcSeqNum="1">
+        <BroadcastSvcSignaling slsDestinationIpAddress="239.101.101.250" slsDestinationUdpPort="8000" slsProtocol="1" slsSourceIpAddress="172.16.200.1"/>
+    </Service>
+    <Service globalServiceID="2499" hidden="true" majorChannelNo="240" minorChannelNo="2" serviceCategory="3" serviceId="1375" shortServiceName="eGPS" sltSvcSeqNum="1">
+        <BroadcastSvcSignaling slsDestinationIpAddress="239.101.240.2" slsDestinationUdpPort="8000" slsProtocol="1" slsSourceIpAddress="172.16.200.1"/>
+    </Service>
+    <Service globalServiceID="https://doi.org/10.5239/7B97-84F9" majorChannelNo="69" minorChannelNo="1" serviceCategory="1" serviceId="5001" shortServiceName="KSWB" sltSvcSeqNum="1">
+        <BroadcastSvcSignaling slsDestinationIpAddress="239.101.69.1" slsDestinationUdpPort="8000" slsProtocol="1" slsSourceIpAddress="172.16.200.1"/>
+    </Service>
+</SLT>
