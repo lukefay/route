@@ -150,7 +150,6 @@ void release_lct_header(void) {
 #endif
 }
 
-
 /**
 * This is a private function which search and replaces strings.
 *
@@ -3482,19 +3481,21 @@ int recv_packet(alc_session_t* s) {
 				}
 			}
 
+			lock_lct_header();
 #ifdef _MSC_VER
-			//Sleep(0);	// While waiting for a new packet, sleep to save CPU usage.
-			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// No timeout
-			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
+
+			//Sleep(1);	// While waiting for a new packet, sleep to save CPU usage.
+			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// No timeout
+			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
+
 #else
 			//usleep(1000);
-			lock_lct_header();
 			if (!packet_ready) {
 				pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 			}
 			else packet_ready = FALSE;
-			unlock_lct_header();
 #endif
+			unlock_lct_header();
 
 			if (s->state == SAFlagReceived) {
 				set_session_state(ch->s->s_id, STxStopped);
@@ -3595,8 +3596,8 @@ int recv_packet(alc_session_t* s) {
 
 				break;
 			case DUP_PACKET:
-				//printf("Duplicate FDT packet seen\n");
-				//fflush(stdout);
+				printf("Duplicate FDT packet seen\n");
+				fflush(stdout);
 				//ch->previous_lost = FALSE;
 				//continue;	// Continue looking for applicable packet
 				return 0;
@@ -3619,8 +3620,8 @@ int recv_packet(alc_session_t* s) {
 			case EMPTY_PACKET:
 				//printf("Packet is to a different LCT channel\n");
 				//fflush(stdout);
-				continue;	// Continue looking for applicable packet
-				//return 0;
+				//continue;	// Continue looking for applicable packet
+				return 0;
 
 				break;
 			case OK:
@@ -3654,6 +3655,14 @@ int recv_packet(alc_session_t* s) {
 		//printf("channel Rx list is empty\n"); fflush(stdout);
 
 	}
+
+#ifdef _MSC_VER
+	//WakeConditionVariable(&packet_ready);
+#else
+	//packet_ready = TRUE;
+	//pthread_cond_signal(&cond);	// Signal that packets are available
+#endif
+
 
 	return 0;
 	//return recv_pkts;
@@ -3905,7 +3914,7 @@ void* rx_thread(void *s) {
 	while(session->state == SActive || session->state == SAFlagReceived) {
 
 #ifdef _MSC_VER
-		Sleep(0);
+		//Sleep(0);
 #else
 		usleep(1000);
 #endif
@@ -3975,7 +3984,8 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 
 
 #ifdef _MSC_VER
-			Sleep(1);
+			//Sleep(1);
+			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
 #else
 			usleep(1000);
 #endif
@@ -4065,7 +4075,8 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 		//fflush(stdout);
 
 #ifdef _MSC_VER
-		Sleep(1);	// This sleep helps reduce CPU usage
+		//Sleep(1);	// This sleep helps reduce CPU usage
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
 #else
 		usleep(1000);
 #endif
@@ -4171,7 +4182,7 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 	while (!obj_completed) {
 
-		to = s->obj_list;
+		//to = s->obj_list;
 
 		//printf("Processing session %d\n", s_id);
 		//fflush(stdout);
@@ -4201,14 +4212,16 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		//printf("Number of received objects: %d\n", s->rx_objs);
 		//fflush(stdout);
 
+		lock_lct_header();
+
 #ifdef _MSC_VER
-		if (to == NULL) {
-			Sleep(1);
-			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
-		}
+		//Sleep(0);
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
 #else
-			usleep(1000);
+		usleep(1000);
 #endif
+
+		to = s->obj_list;
 
 		while(to != NULL) {
 
@@ -4221,6 +4234,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 			to = to->next;
 		}
+
+		unlock_lct_header();
 
 	}
 	if (s->verbosity == 4) {
@@ -4259,7 +4274,6 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 	s = get_alc_session(s_id);
 
 	while(s->state == SActive) {
-		to = s->fdt_list;
 
 		if(s->state == SExiting) {
 			printf("fdt_recv() SExiting\n");
@@ -4283,11 +4297,13 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			return NULL;	
 		}
 
+		to = s->fdt_list;
+
 		if(to == NULL) {
 
 #ifdef _MSC_VER
-			//Sleep(1);	// This sleep helps reduce CPU usage
-			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
+			Sleep(1);	// This sleep helps reduce CPU usage
+			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// Timeout of 1 msec
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
 #else
@@ -4370,20 +4386,10 @@ BOOL object_completed(trans_obj_t *to) {
 	BOOL ready = FALSE;
 	//printf("Object completed # Ready blocks %i N: %i\n", to->nb_of_ready_blocks, to->bs->N);
 	//fflush(stdout);
-
-#ifdef _MSC_VER
-#else
-	lock_lct_header();
-#endif
 	
 	if(to->nb_of_ready_blocks == to->bs->N) {
 		ready = TRUE;
 	}
-
-#ifdef _MSC_VER
-#else
-	unlock_lct_header();
-#endif
 
 	return ready;
 }
