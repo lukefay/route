@@ -3442,10 +3442,11 @@ void cachePacket(unsigned long long toi, unsigned long long tsi, unsigned int sb
 
 int recv_packet(alc_session_t* s) {
 
+	char recvbuf[MAX_PACKET_LENGTH];
 	int recvlen;
 	int i=0;
 	int retval = 0;
-	//int recv_pkts = 0;
+	int recv_pkts = 0;
 	alc_channel_t* ch;
 	lct_ch_t* ls;
 
@@ -3458,57 +3459,100 @@ int recv_packet(alc_session_t* s) {
 	time_t systime;
 	unsigned long long curr_time;
 
+	memset(recvbuf, 0, MAX_PACKET_LENGTH);
+
 	for (i = 0; i < s->nb_channel; i++) {
 		ch = s->ch_list[i];
 
 		if (ch->receiving_list != NULL) {
 			if (!is_empty(ch->receiving_list)) {
 				++my_list_not_empty;
-				//break;
+				break;
+			}
+		}
+	}
+
+	if (my_list_not_empty == 0) {
+		if (s->stoptime != 0) {
+			time(&systime);
+			curr_time = systime + 2208988800U;
+
+			if (curr_time >= s->stoptime) {
+				set_session_state(s->s_id, SExiting);
+				//s->state = SExiting;
+
+				return -2;
 			}
 		}
 
-		if (my_list_not_empty == 0) {
-			if (s->stoptime != 0) {
-				time(&systime);
-				curr_time = systime + 2208988800U;
+		if (s->state == SAFlagReceived) {
+			set_session_state(s->s_id, STxStopped);
+			//s->state = STxStopped;
+		}
 
-				if (curr_time >= s->stoptime) {
-					set_session_state(ch->s->s_id, SExiting);
-					//s->state = SExiting;
-
-					return -2;
-				}
-			}
-
-			lock_lct_header();
+		lock_lct_header();
 #ifdef _MSC_VER
-
-			//Sleep(1);	// While waiting for a new packet, sleep to save CPU usage.
-			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// No timeout
-			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
-
+		//Sleep(1);	// While waiting for a new packet, sleep to save CPU usage.
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// No timeout
+		//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
+		//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 0);
 #else
-			//usleep(1000);
-			if (!packet_ready) {
-				pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
-			}
-			else packet_ready = FALSE;
+		//usleep(1000);
+		if (!packet_ready) {
+			pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
+		}
+		else packet_ready = FALSE;
 #endif
-			unlock_lct_header();
+		unlock_lct_header();
 
-			if (s->state == SAFlagReceived) {
-				set_session_state(ch->s->s_id, STxStopped);
-				//s->state = STxStopped;
+		return 0;
+	}
+
+	ls = s->ls;
+	ch = s->ch_list[0];
+	//printf("channel: %u (%u) of %u\n", i, ch->ch_id, s->nb_channel);
+	//fflush(stdout);
+
+
+	if (!is_empty(ch->receiving_list)) {
+		assert(ch->rx_socket_thread_id != 0);
+
+		//printf("Pop front current channel %d in session %d\tTSI: %lld\trecvlen: %d\n", ch->ch_id, s->s_id, ch->s->tsi, container->recvlen);
+		//fflush(stdout);
+
+		container = (alc_rcv_container_t*)pop_front(ch->receiving_list);  // Pull out of container each datagram for analysis
+		//package_cnt++;
+		//container = (alc_rcv_container_t*)ch->receiving_list->first_elem->next->data;
+
+		assert(container != NULL); // Ensure it is not empty while we look at the packet
+
+		recvlen = container->recvlen;	// Typically 1472 bytes
+		//from = container->from;
+		//fromlen = container->fromlen;
+
+		memcpy(recvbuf, container->recvbuf, MAX_PACKET_LENGTH);
+
+		if (recvlen < 0) {
+
+			free(container);
+			container = NULL;
+
+			if (s->state == SExiting) {
+				printf("recv_packet() SExiting\n");
+				fflush(stdout);
+				return -2;
 			}
-
-			//return 0;
-			continue;
+			else if (s->state == SClosed) {
+				printf("recv_packet() SClosed\n");
+				fflush(stdout);
+				return 0;
+			}
+			else {
+				printf("recvfrom failed: %d\n", errno);
+				return -1;
+			}
 		}
 
-		ls = s->ls;
-		//printf("channel: %u (%u) of %u\n", i, ch->ch_id, s->nb_channel);
-		//fflush(stdout);
 		loss_prob = 0;
 
 		if (ch->s->simul_losses) {
@@ -3520,60 +3564,18 @@ int recv_packet(alc_session_t* s) {
 			}
 		}
 
-		assert(ch->rx_socket_thread_id != 0);
-
-		container = (alc_rcv_container_t*)pop_front(ch->receiving_list);  // Pull out of container each datagram for analysis
-		//container = (alc_rcv_container_t*)ch->receiving_list->first_elem->next->data;
-
-		//printf("Pop front current channel %d in session %d\tTSI: %lld\trecvlen: %d\n", ch->ch_id, s->s_id, ch->s->tsi, container->recvlen);
-		//fflush(stdout);
-
-		assert(container != NULL); // Ensure it is not empty while we look at the packet
-
-		recvlen = container->recvlen;	// Typically 1472 bytes
-		//from = container->from;
-		//fromlen = container->fromlen;
-
-		if (recvlen <= 0) {
-
-			free(container);
-			container = NULL;
-
-			if (s->state == SExiting) {
-				printf("recv_packet() SExiting\n");
-				fflush(stdout);
-
-				unlock_lct_header();
-				return -2;
-			}
-			else if (s->state == SClosed) {
-				printf("recv_packet() SClosed\n");
-				fflush(stdout);
-
-				unlock_lct_header();
-				return 0;
-			}
-			else {
-				printf("recvfrom failed: %d\n", errno);
-				fflush(stdout);
-
-				unlock_lct_header();
-				return -1;
-			}
-		}
-		else {
+		if (!randomloss(loss_prob)) {
 			unsigned long long toi;
 
-			retval = analyze_packet(container->recvbuf, recvlen, &toi, ch);
+			//retval = analyze_packet(container->recvbuf, recvlen, &toi, ch);
+			retval = analyze_packet(recvbuf, recvlen, &toi, ch);
 			//printf("analyze packet returns: %d\n", retval);
 			//fflush(stdout);
-			free(container);
-			container = NULL;
 
 			if (ch->s->cc_id == RLC) {
-				
+
 				if (((ch->s->rlc->drop_highest_layer) && (ch->s->nb_channel != 1))) {
-				
+
 					ch->s->rlc->drop_highest_layer = FALSE;
 					close_alc_channel(ch->s->ch_list[ch->s->nb_channel - 1], ch->s);
 				}
@@ -3587,23 +3589,26 @@ int recv_packet(alc_session_t* s) {
 				//printf("DOES WAITING_FDT EVER HAPPPEN?\n");
 				//fflush(stdout);
 				//if (sendFDTAfterObj)
-				//	push_back(ch->receiving_list, (void*)container);
+					push_back(ch->receiving_list, (void*)container);
 				//else //END
 				//	push_front(ch->receiving_list, (void*)container);
 				//ch->previous_lost = FALSE;
-				continue;
-				// return 0;
+				//return 0;
 
 				break;
 			case DUP_PACKET:
+				free(container);
+				container = NULL;
 				printf("Duplicate FDT packet seen\n");
 				fflush(stdout);
-				//ch->previous_lost = FALSE;
-				//continue;	// Continue looking for applicable packet
+				recv_pkts++;
+				ch->previous_lost = FALSE;
 				return 0;
 
 				break;
 			case MEM_ERROR:
+				free(container);
+				container = NULL;
 				printf("Memory Error\n");
 				fflush(stdout);
 
@@ -3611,6 +3616,8 @@ int recv_packet(alc_session_t* s) {
 
 				break;
 			case HDR_ERROR:
+				free(container);
+				container = NULL;
 				printf("LCT Header Error\n");
 				fflush(stdout);
 
@@ -3618,54 +3625,50 @@ int recv_packet(alc_session_t* s) {
 
 				break;
 			case EMPTY_PACKET:
+				free(container);
+				container = NULL;
 				//printf("Packet is to a different LCT channel\n");
 				//fflush(stdout);
-				//continue;	// Continue looking for applicable packet
-				return 0;
+				//return 0;
 
 				break;
 			case OK:
+				free(container);
+				container = NULL;
 				// Packet to current LCT channel
-				//recv_pkts++;
-				//ch->previous_lost = FALSE;
-				// continue;
+				recv_pkts++;
+				ch->previous_lost = FALSE;
 
 				break;
 			case REPAIR:
+				free(container);
+				container = NULL;
 				//printf("REPAIR filename: %s\n", ls->location);
 				//fflush(stdout);
-				continue;
 				//return 0;
 
 				break;
 			default:
+				free(container);
+				container = NULL;
 				break;
 			}
 
 		}
-		//else {
-		//	printf("DOES IT EVER GET HERE TO SIMULATE LOSSES?\n");
-		//	ch->previous_lost = TRUE;
-		//
-		//	free(container);
-		//	container = NULL;
-		//}
-
-		// If receiving list is empty, continue to the next TSI
-		//printf("channel Rx list is empty\n"); fflush(stdout);
-
+	}
+	else {
+		printf("DOES IT EVER GET HERE TO SIMULATE LOSSES?\n");
+		ch->previous_lost = TRUE;
+	
+		//free(container);
+		//container = NULL;
 	}
 
-#ifdef _MSC_VER
-	//WakeConditionVariable(&packet_ready);
-#else
-	//packet_ready = TRUE;
-	//pthread_cond_signal(&cond);	// Signal that packets are available
-#endif
+	// If receiving list is empty, continue to the next TSI
+	//printf("channel Rx list is empty\n"); fflush(stdout);
 
-
-	return 0;
 	//return recv_pkts;
+	return 0;
 
 }
 
@@ -3912,24 +3915,24 @@ void* rx_thread(void *s) {
 	session = (alc_session_t *)s;
 
 	while(session->state == SActive || session->state == SAFlagReceived) {
-
-#ifdef _MSC_VER
-		//Sleep(0);
-#else
-		usleep(1000);
-#endif
 		
 		if(session->nb_channel != 0) {
 			retval = recv_packet(session);
 
-			if (retval != 0) {
-			//if (retval == -1) {
+			if (retval == -1) {
 				printf("RX SESSION THREAD returns: %d\n", retval);
 				fflush(stdout);
 
 				set_session_state(session->s_id, SExiting);
 			}
 		}
+		//else {
+#ifdef _MSC_VER
+			//Sleep(1);
+#else
+			usleep(1000);
+#endif
+		//}
 	}
 	if (session->verbosity == 4) {
 		printf("Session %d is no longer active.  Recv_packet stopped, exit thread\n", session->s_id);
@@ -3985,7 +3988,6 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 
 #ifdef _MSC_VER
 			//Sleep(1);
-			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
 #else
 			usleep(1000);
 #endif
@@ -4050,8 +4052,6 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 
 	while(!obj_completed) {
 
-		to = s->obj_list;
-
 		if(s->state == SExiting) {
 			printf("alc_recv2() SExiting\n");
 			fflush(stdout);
@@ -4064,7 +4064,7 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 			*retval = 0;
 			return NULL;	
 		}
-		else if(((s->state == STxStopped) && (to == NULL))) {
+		else if(s->state == STxStopped) {
 			printf("alc_recv2() STxStopped\n");
 			fflush(stdout);
 			*retval = -3;
@@ -4076,10 +4076,11 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
 #else
 		usleep(1000);
 #endif
+
+		to = s->obj_list;
 
 		while(to != NULL) {
 
@@ -4181,9 +4182,6 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 	}
 
 	while (!obj_completed) {
-
-		//to = s->obj_list;
-
 		//printf("Processing session %d\n", s_id);
 		//fflush(stdout);
 
@@ -4201,8 +4199,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 			return NULL;	
 		}
-		else if(((s->state == STxStopped) && (to == NULL))) {
-			printf("alc_recv3() STxStopped, to == NULL\n");
+		else if(s->state == STxStopped) {
+			printf("alc_recv3() STxStopped\n");
 			fflush(stdout);
 			*retval = -3;
 
@@ -4212,11 +4210,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		//printf("Number of received objects: %d\n", s->rx_objs);
 		//fflush(stdout);
 
-		lock_lct_header();
-
 #ifdef _MSC_VER
-		//Sleep(0);
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	// Timeout of 1 msec
+		Sleep(0);
 #else
 		usleep(1000);
 #endif
@@ -4233,9 +4228,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 			}
 
 			to = to->next;
-		}
 
-		unlock_lct_header();
+		}
 
 	}
 	if (s->verbosity == 4) {
@@ -4303,7 +4297,6 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 
 #ifdef _MSC_VER
 			Sleep(1);	// This sleep helps reduce CPU usage
-			//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	// Timeout of 1 msec
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
 #else
@@ -4311,9 +4304,9 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 			//printf("Waiting for FDT in session %d\n", s_id);
 			//fflush(stdout);
 #endif
-			continue;
+			//continue;
 		}
-
+		else
 		do {
 
 			if(object_completed(to)) {
@@ -4387,9 +4380,19 @@ BOOL object_completed(trans_obj_t *to) {
 	//printf("Object completed # Ready blocks %i N: %i\n", to->nb_of_ready_blocks, to->bs->N);
 	//fflush(stdout);
 	
+#ifdef _MSC_VER
+#else
+	lock_lct_header();
+#endif
+
 	if(to->nb_of_ready_blocks == to->bs->N) {
 		ready = TRUE;
 	}
+
+#ifdef _MSC_VER
+#else
+	unlock_lct_header();
+#endif
 
 	return ready;
 }
