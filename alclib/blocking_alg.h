@@ -35,6 +35,12 @@
 #define _BLOCKING_ALG_H_
 
 #include "defines.h"
+#ifdef _MSC_VER
+#define _WINSOCKAPI_   /* Prevent inclusion of winsock.h in windows.h */
+#include <windows.h>
+#else
+#include <pthread.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,7 +83,7 @@ blocking_struct_t *compute_blocking_structure(unsigned long long L, unsigned int
  *
  */
 
-void update_blocking_structure(blocking_struct_t* bs, unsigned long long L, unsigned int B, unsigned int E);
+BOOL update_blocking_structure(blocking_struct_t* bs, unsigned long long L, unsigned int B, unsigned int E);
 
 
 #ifdef __cplusplus

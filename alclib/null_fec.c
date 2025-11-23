@@ -211,15 +211,22 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
     trans_unit_t *next_tu;
     trans_unit_t *tu;
 
-	//unsigned long long len;
+	unsigned long long len;
 	unsigned long long tmp;
 
 	lock_fec();
-    //len = eslen*tr_block->k;
+	len = eslen;
+	//len = eslen*tr_block->k;
+	//len = ceil(eslen / tr_block->k);
+	//len = min(tr_block->k * tr_block->unit_list->len, eslen);
+	//printf("xfer len %llu, #units %d, #eslen %u\n", eslen, tr_block->k, tr_block->unit_list->len);
+	//fflush(stdout);
 
 	/* Allocate memory for buf */
-    if(!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {	// length +1 for NULL character
-        printf("Could not alloc memory for buf!\n");
+	//if (!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {	// length +1 for NULL character
+	if (!(buf = (char*)calloc((unsigned int)(len + 1), sizeof(char)))) {	// Length +1 for the NULL character
+        printf("NULL FEC Could not alloc memory for buf!\n");
+		fflush(stdout);
 
 		unlock_fec();
         return NULL;
@@ -237,7 +244,7 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 
 		//printf("FEC eslen %llu, tu->len %u\n", eslen, tu->len);
 		//fflush(stdout);
-
+		
 		if (tu->data == NULL) {
 			//printf("SB: %u, esi: %u, len: %u\n", tr_block->sbn, tu->esi, tu->len);
 			printf("Buffer Length: %llu, Unit Length: %u Build: %llu\n", eslen, tu->len, tmp);
@@ -250,19 +257,20 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 			memcpy((buf + tmp), tu->data, tu->len);
 		}
 
-#ifndef USE_RETRIEVE_UNIT
-        free(tu->data);
-        tu->data = NULL;
-#endif
-
         tmp += tu->len;
 
         next_tu = tu->next;
 	}
 
-	*block_len = eslen;
-	//printf("NULL FEC SRC Block return length %llu\n", eslen);
+	//*block_len = eslen;
+	*block_len = tmp;
+	//printf("NULL FEC SRC Block return length %llu\n", tmp);
 	//fflush(stdout);
+
+#ifndef USE_RETRIEVE_UNIT
+	free(tu->data);
+	tu = NULL;
+#endif
 
 	unlock_fec();
 	return buf;
@@ -305,7 +313,8 @@ char *null_fec_decode_object(trans_obj_t *to, unsigned long long *data_len,
 	//fflush(stdout);
 	for(i = 0; i < to->bs->N; i++) {
 		//block = null_fec_decode_src_block(tb, &block_len, (unsigned short)to->es_len);	// FLUTE operation
-		block = null_fec_decode_src_block(tb, &block_len, to->len);							// ROUTE operation
+		block = null_fec_decode_src_block(tb, &block_len, to->len);					// ROUTE operation
+		//block = null_fec_decode_src_block(tb, &block_len, tb->unit_list->len);		// ROUTE operation
 
 		/* the last packet of the last source block might be padded with zeros */
 		len = to_data_left < block_len ? to_data_left : block_len;

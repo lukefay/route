@@ -90,18 +90,29 @@ blocking_struct_t* compute_blocking_structure(unsigned long long L,
   
   /* (e) */
   
-  bs->I = div_A.rem;	
-  
+  //bs->I = div_A.rem;	
+  bs->I = E;    // Keep current symbol length
+
   return bs;
 } 
 
-void update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
+BOOL update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
     unsigned int B, unsigned int E) {
 
     unsigned int T;
+    unsigned int e = E;
+    BOOL retval = FALSE;
     lldiv_t div_T;
     div_t div_N;
     div_t div_A;
+
+    if (E < bs->I) {    // If current symbol length < previous, short packet
+        //printf("end of file of length %llu\n", L);
+        //fflush(stdout);
+        //L = E;
+        E = bs->I;
+        retval = TRUE;
+    }
 
     /* (a) */
 
@@ -118,30 +129,48 @@ void update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
 
     div_N = div(T, B);
 
-    if (div_N.rem == 0) {
-        bs->N = div_N.quot;
-    }
-    else {
+    if (div_N.quot == 0) {
         bs->N = div_N.quot + 1;
     }
-
+    else {
+        bs->N = div_N.quot;
+    }
+    //printf("div_N %d.%d\n", div_N.quot, div_N.rem);
+    //fflush(stdout);
     /* (c) */
 
     div_A = div(T, bs->N);
-
-    if (div_A.rem == 0) {
-        bs->A_large = div_A.quot;
-    }
-    else {
-        bs->A_large = div_A.quot + 1;
+    
+    //if (E >= bs->I) {
+    if (E >= div_A.rem && !retval) {
+        if (div_A.quot == 0) {
+            bs->A_large = div_A.quot + 1;
+        }
+        else {
+            bs->A_large = div_A.quot;
+        }
     }
 
     /* (d) */
 
-    bs->A_small = div_A.quot;
+    //if (E >= bs->I) {
+    if (E >= div_A.rem) {
+        bs->A_small = div_A.quot;
+    }
 
     /* (e) */
 
-    bs->I = div_A.rem;
+    if ((div_N.quot > 0) && (div_N.rem > 0)) {
+        bs->N++;
+    }
 
+    //bs->I = div_A.rem;
+    bs->I = e;
+    if (retval) {    // If current symbol length < previous, short packet
+        bs->I = div_N.rem;
+        //bs->A_large = div_N.rem;
+        //bs->A_small = div_N.rem;
+    }
+
+    return retval;
 }

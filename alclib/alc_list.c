@@ -235,9 +235,9 @@ alc_rcv_container_t* pop_front(alc_list_t *a_list) {
     
     my_ret = my_node->data;
   }
-  
+  free(my_node); 
   unlock_list(a_list);
-  free(my_node);
+ 
   
   return my_ret;
 }
