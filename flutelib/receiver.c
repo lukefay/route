@@ -1823,7 +1823,7 @@ void* fdt_thread(void *s) {
        
       if(efdt_instance == NULL) {
 		free(buf);
-		FreeEFDT(efdt_instance);
+
 		continue;
       }
       
@@ -1847,7 +1847,7 @@ void* fdt_thread(void *s) {
       }
       
       if(receiver->verbosity > 0) {
-		printf("FDT Instance received (TOI=%llu)\n", efdt_instance->file_list->toi);
+		printf("FDT Instance received (TOI=%llu)\n", file->toi);
 		fflush(stdout);
       }
 
@@ -2149,7 +2149,6 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			}
 			else if (file->status == 2) {
 				any_files_received = TRUE;
-
 			}
 
 			next_file = file->next;
@@ -2224,43 +2223,43 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				printf("alc_recv3 returned %d\n", retcode);
 				fflush(stdout);
 
+				free(tmp_file_name);
 				//set_session_state(s->s_id, SExiting);
-				//return retcode;
-				break;
+				return retcode;
+				//break;
 			}
 			else {
 				if (s->verbosity == 4) {
 					printf("alc_recv3 recovered %s\n", tmp_file_name);
 					fflush(stdout);
 				}
-			}
 
-			memset(tmp_filename, 0, MAX_PATH_LENGTH);
-			memcpy(tmp_filename, tmp_file_name, strlen(tmp_file_name));
-			free(tmp_file_name);
+				memset(tmp_filename, 0, MAX_PATH_LENGTH);
+				memcpy(tmp_filename, tmp_file_name, strlen(tmp_file_name));
+				free(tmp_file_name);
 
-			next_file = s->ls->fdt->file_list;
+				next_file = s->ls->fdt->file_list;
 
-			// Find correct file structure, to get the file->location for file creation purpose
-			
-			while (next_file != NULL) {
-				file = next_file;
-				//printf("file %s status %d\n", file->location, file->status);
-				//fflush(stdout);
-				if (file->toi == toi) {
-					//file->status = 2;
-					break;
+				// Find correct file structure, to get the file->location for file creation purpose
+
+				while (next_file != NULL) {
+					file = next_file;
+					//printf("file %s status %d\n", file->location, file->status);
+					//fflush(stdout);
+					if (file->toi == toi) {
+						//file->status = 2;
+						break;
+					}
+
+					next_file = file->next;
 				}
 
-				next_file = file->next;
+				if (s->verbosity == 4) {
+					//printf("Session write file type: %s\n", file->type);
+					printf("Session write file: %s\t (TOI=%llu)\n", file->location, file->toi);
+					fflush(stdout);
+				}
 			}
-			
-			if (s->verbosity == 4) {
-				//printf("Session write file type: %s\n", file->type);
-				printf("Session write file: %s\t (TOI=%llu)\n", file->location, file->toi);
-				fflush(stdout);
-			}
-
 		}
 		else { // Memory_mode == 0, the highest
 
@@ -2292,7 +2291,7 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 				file = next_file;
 
 				if (file->toi == toi) {
-					file->status = 2;  // Received.
+					//file->status = 2;  // Received.
 					break;
 				}
 
@@ -2584,6 +2583,8 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			memcpy((fullpath + strlen(fullpath)), "/", 1);
 			memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 		}
+		free(tmp);
+		free_uri(uri);
 
 		// NRT FILE MODE PROCESSING
 		if (s->codepoint == NRT_FILE_MODE || s->ls->codePoint == NRT_FILE_MODE) {
@@ -2829,10 +2830,8 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			fflush(stdout);
 		}
 
-		//set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
+		set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
 
-		free_uri(uri);
-		free(tmp);
 		free(filepath);
 		//printf("Session memory free\n");
 		//fflush(stdout);
