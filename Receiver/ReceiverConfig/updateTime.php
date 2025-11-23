@@ -13,8 +13,8 @@ header('Cache-Control: no-cache');
 // Kill any previous LLS
 exec("taskkill /IM python.exe /F");
 
-$pyth="C:/Users/luke/AppData/Local/Programs/Python/Python38-32/python.exe";
-$Delay = -7.0;
+$pyth="C:/Users/1000049321/AppData/Local/Programs/Python/Python38-32/python.exe";
+$Delay = -4.0;
 $MPD = $_REQUEST['mpd'];
 
 chdir('./Receiver/SLT_signalling');
@@ -30,10 +30,16 @@ if (substr(php_uname(), 0, 7) == "Windows") {
   exec("$pyth time.py" . " > /dev/null &");
 }
 
+$AST_SEC = new DateTime( 'now',  new DateTimeZone( 'UTC' ) );	/* initializer for availability start time */
+$AST_SEC->setTimestamp($date_array[1]);    //Better use a single time than now above
+$AST_SEC_W3C = $AST_SEC->format(DATE_W3C);
 
 # Read PTP time from the PHY
 $PTP = floatval(file_get_contents("PTP_TIME.dat"));
-if (!$PTP) die("Failed loading PTP time");
+//if (!$PTP) die("Failed loading PTP time");
+if (!$PTP) {
+	$PTP = $AST_SEC_W3C;
+}
 
 # Read UTC offset from PTP time with LLS table 0x03 (SystemTime)
 $ST = simplexml_load_file("SystemTime.xml");
@@ -45,10 +51,6 @@ usleep(1000);
 
 
 $AST_BCST = $PTP - $ST_UTC - $Delay;
-
-$AST_SEC = new DateTime( 'now',  new DateTimeZone( 'UTC' ) );	/* initializer for availability start time */
-$AST_SEC->setTimestamp($date_array[1]);    //Better use a single time than now above
-$AST_SEC_W3C = $AST_SEC->format(DATE_W3C);
 
 preg_match('/\.\d*/',$date_array[0],$dateFracPart);
 $extension_pos = strrpos($AST_SEC_W3C, '+'); // find position of the last + in W3C date to slip frac seconds

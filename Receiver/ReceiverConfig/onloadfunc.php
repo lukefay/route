@@ -15,9 +15,9 @@ exec("taskkill /IM python.exe /F");
 exec("taskkill /IM python3 /F");
 
 if (substr(php_uname(), 0, 7) == "Windows") {
-  $pyth="C:/Users/luke/AppData/Local/Programs/Python/Python38-32/python.exe";
+  $pyth="C:/Users/1000049321/AppData/Local/Programs/Python/Python38-32/python.exe";
 } else {
-  $pyth="/usr/bin/python3";
+  $pyth="/usr/bin/python";
 }
 
 chdir('../SLT_signalling');
@@ -57,21 +57,32 @@ chdir('../ReceiverConfig');
 // Have to modify the file to get the IP from the SLT.xml file itself.
 //$contents = file_get_contents("../../bin/SDP1.sdp") ;
 // Until we look at the STL, use local IP address
-$contents=shell_exec("ipconfig");
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $contents=shell_exec("ipconfig");
+} else {
+  $contents=shell_exec("ifconfig");
+}
 
 $pos = 0;
 $index = 0;
 $ip = "127.0.0.1";
 
 while(true) {
-	//$findme="IP4";
-	$findme="  IPv4 Address";
+	if (substr(php_uname(), 0, 7) == "Windows") {
+	  $findme="  IPv4 Address";
+	} else {
+	  $findme="  inet ";	
+	}
 	//$pos = strpos($contents, $findme);
 	$pos = strpos($contents, $findme, $pos + strlen($findme));
 	if($pos === FALSE) break;
-	//$start=$pos+4;
-	$start=$pos+38;
-	$end=strpos($contents,"\n",$start);
+	if (substr(php_uname(), 0, 7) == "Windows") {
+	  $start=$pos+38;
+	  $end=strpos($contents,"\n",$start);
+	} else {
+	  $start=$pos+7;
+	  $end=strpos($contents,"  ",$start);	
+	}
 	$thisIP=substr($contents,$start,$end-$start);
 	if($thisIP !== "127.0.0.1") {
 		$ip=$thisIP;
