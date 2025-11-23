@@ -38,7 +38,7 @@ Start a channel before
 	</section>
 	<div id="streamWrapper">
 		<div id="thumbs">
-		  Channel Number: <select type="text" id="channel" onchange="start(channel.options[channel.selectedIndex].value)"/>  <input type="hidden" id="box4"style="width:4px;">
+		  Channel : <select type="text" id="channel" onchange="start(channel.options[channel.selectedIndex].index+1)"/>  <input type="hidden" id="box4"style="width:4px;">
 		</div>
 	</div>
 	<div>
@@ -279,9 +279,9 @@ window.onload = function() {
 		var cacheIP = alternateServerIP;
 //		if(cacheIP === "0.0.0.0")
 		if(e === "[]") cacheIP = "127.0.0.1"
-		alternateLocation1 = "http://" + cacheIP + alternateLocation1;
+		//alternateLocation1 = "http://" + cacheIP + alternateLocation1;
 		alternateLocation2 = "http://" + cacheIP + alternateLocation2;
-		alternateLocationK = "http://" + cacheIP + alternateLocationK;
+		//alternateLocationK = "http://" + cacheIP + alternateLocationK;
 	  
 		$.ajax({
 			type: 'POST',
@@ -293,24 +293,38 @@ window.onload = function() {
 		})
 	});
 	
+	
+	function replacer(key, value) {
+		if (typeof value === "string") {
+			return undefined;
+		}
+		return value;
+	}
+	//const foo = { foundation: "Mozilla", model: "box", week: 45, transport: "car", month: 7 };
+	//JSON.stringify(foo, replacer); // '{"week":45,"month":7}'
+
 	// Get Channel number
 	$.ajax({
 		type: 'POST',
 		url: "readSLT.php",
 		datatype: "json",
-		//data: {channels: JSON.stringify(result)},
+		//data: {channels: JSON.stringify(result)}
 	}).done( function(e) {
 		result = JSON.parse(e);
 		if( e === "[]" ) result[0] = "1"
-		console.log("**** Available Channels: " + result);
-		//console.log("**** Available Channels: " + JSON.stringify(result));
+		//console.log("**** Available Channels: " + result);
+		console.log("**** Available Channels: " + JSON.stringify(result));
+		//console.log("**** Available Channels: " + result[1]["0"]);		
 		var channel = document.getElementById('channel');
 		if(channel.options.length === 0) {
 			for(var index = 0; index < result.length ; index ++) {
-				channel.options[channel.options.length] = new Option(result[index], result[index]);
+				//channel.options[channel.options.length] = new Option(result[index], result[index]);
+				//channel.options[channel.options.length] = new Option(JSON.stringify(result[index]));
+				channel.options[channel.options.length] = new Option(result[index]["0"]);
 			}
 		}
-		chnum=channel.options[channel.selectedIndex].value;
+		//chnum=channel.options[channel.selectedIndex].value;
+		chnum=channel.options[channel.selectedIndex].index+1;
 		console.log("**** Channel: " + chnum);
 		//start(chnum);
 	});
@@ -497,14 +511,14 @@ function switchChannel()
 var alternateServerIP = "";
 //var alternateLocation1 = "/ATSC_ROUTE/Work/Route_Sender/bin/ToS_1_0";
 //var alternateLocation2 = "/ATSC_ROUTE/Work/Route_Sender/bin/Elysium_1_0";
-var alternateLocation1 = "C:/Users/luke/Documents/Work/Route_Receiver/Receiver/DASH_Content1";
-var alternateLocation2 = "C:/Users/luke/Documents/Work/Route_Receiver/Receiver/DASH_Content2";
+//var alternateLocation1 = "C:/Users/1000049321/Documents/Route_Receiver/Receiver/DASH_Content1";
+var alternateLocation2 = "C:/Users/1000049321/Documents/Route_Receiver/Receiver/DASH_Content2";
 //var alternateLocationK = "/ATSC_ROUTE/Work/Route_Sender/bin/Ita_ToS_1_0";
 var alternateLocationK = "C:/Users/luke/Documents/Work/Route_Receiver/Receiver/Ita_ToS_1_0";
 //var ffplay="C:/Users/luke/Documents/Work/ffmpeg-6.1.1-full_build/bin/ffplay.exe";
 var switchAudio = false;
 var monitoringInterval = 200;
-var monitoringWindowSize = 6;
+var monitoringWindowSize = 3;
 var monitoringTime = 0;
 var monitorProcess = null;
 var fragmentErrorRegistry = [];
@@ -570,8 +584,8 @@ function start(channel) {
 			var scriptFolder = scriptPath.substr(0, scriptPath.lastIndexOf( '/' )+1 );
 			var mpdURL = scriptFolder + DASHContentDir + "/" + patchedMPD;
 			// By this response, MPD is found, start playback
-			//console.log("Found MPD, start playback");
-			console.log(response);
+			console.log("Found MPD, start playback");
+			//console.log(response);
 			logger.clear();
 			logger.log("Tuned in, buffering ...");				
 			//console.log("The total-tune-in-duration is " + totalTuneinDuration);
@@ -620,11 +634,13 @@ function monitor404Errors(mpdURL) {
 	if(((monitoringTime/2000) - Math.floor(monitoringTime/2000))  < 0.1)
 		console.log("*** Time: " + (monitoringTime/1000) + ", Errors: " + fragmentErrorRegistry.reduce(function(pv, cv) { return pv + cv; }, 0) + ", TH: " + monitoringWindowSize*ErrorTH + ", Result: " + (fragmentErrorRegistry.reduce(function(pv, cv) { return pv + cv; }, 0) >= monitoringWindowSize*ErrorTH));
 	if(fragmentErrorRegistry.reduce(function(pv, cv) { return pv + cv; }, 0) >= monitoringWindowSize*ErrorTH) {
-		 //setTimeout(function () {start(udchannel)}, 0);
-		 setTimeout(function () {replay(mpdURL)}, 0);
-		 monitoringTime = 0;
-		 clearInterval(monitorProcess);
-		 console.log("*** Triggering Re-tunein");
+		var timeNow = new Date();
+		console.log("*********** Retry MPD: " + mpdURL + timeNow + timeNow.getMilliseconds());
+		//setTimeout(function () {start(udchannel)}, 0);
+		setTimeout(function () {replay(mpdURL)}, 0);
+		monitoringTime = 0;
+		clearInterval(monitorProcess);
+		console.log("*** Triggering Re-tunein");
 	}
 }
 function replay(mpdURL) {

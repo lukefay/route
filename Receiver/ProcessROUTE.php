@@ -30,18 +30,25 @@ $responseToSend[0] = $channel;
 #Define Paths
 $DASHContentBase="DASH_Content";
 $DASHContentDir=$DASHContentBase . (string)$channel;
-#$DASHContent=$currDir . "/" . $DASHContentDir;
-$DASHContent=$currDir . "\\" . $DASHContentDir;
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $DASHContent=$currDir . "\\" . $DASHContentDir;
+} else {
+  $DASHContent="/var/www/html/Route_Receiver/Receiver/" . $DASHContentDir;
+}
 
 # Define Variables
 #$OriginalMPD= "MultiRate_Dynamic.mpd";
 $OriginalMPD= "ManifestUpdate_Dynamic.mpd";
 $AdMPDName="Ad2/Ad2_MultiRate.mpd";
 
-$Delay=4.5;	#How much would the AST of the patched MPD be lagging the current system time, i.e. how far in future is the AST (in seconds)?
+$Delay=4.0;	#How much would the AST of the patched MPD be lagging the current system time, i.e. how far in future is the AST (in seconds)?
 $PatchedMPD="MultiRate_Dynamic_Patched.mpd";
-$FLUTEReceiver="C:/Users/luke/Documents/Work/Route_Receiver/Debug";
-#$FLUTEReceiver="C:/Users/luke/Documents/Work/Route_Receiver/Release";
+if (substr(php_uname(), 0, 7) == "Windows") {
+  #$FLUTEReceiver="C:/Users/1000049321/Documents/Route_Receiver/Debug";
+  $FLUTEReceiver="C:/Users/1000049321/Documents/Route_Receiver/Release";
+} else {
+  $FLUTEReceiver="/var/www/html/Route_Receiver/bin";
+}
 #HTMLLocalStorage="/home/nomor/.config/google-chrome-unstable/Default/Local Storage/"
 
 
@@ -57,19 +64,26 @@ $encodingSymbolsPerPacket=0;	#For Receiver, Only a value of zero makes a differe
 
 #Initialize DASHContent Folder
 exec("mkdir $DASHContent");
-#array_map('unlink', glob("$DASHContent/*"));
-array_map('unlink', glob("$DASHContent\\*"));
-
+if (substr(php_uname(), 0, 7) == "Windows") {
+  array_map('unlink', glob("$DASHContent\\*"));
+} else {
+  array_map('unlink', glob("$DASHContent/*"));
+}
 #In case previous instances are running, stop them
-#exec("sudo killall flute");
-exec("taskkill /F /IM flute.exe /T");
-exec("taskkill /F /IM a3route.exe /T");
+if (substr(php_uname(), 0, 7) == "Windows") {
+  exec("taskkill /F /IM flute.exe /T");
+} else {
+  exec("sudo killall flute -w" . " > /dev/null &");
+}
 usleep(5000);
 
 #Start ROUTE Protocol operation by reading LLS @ 224.0.23.60:4937
 chdir('../Receiver/SLT_signalling');
-$pyth="C:/Users/luke/AppData/Local/Programs/Python/Python38-32/python.exe";
-#$result = json_decode(exec('sudo python readFromSLT.py ' . $channel), true);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $pyth="C:/Users/1000049321/AppData/Local/Programs/Python/Python38-32/python.exe";
+} else {
+  $pyth="/usr/bin/python";
+}
 $result = json_decode(shell_exec("$pyth readFromSLT.py " . $channel), true);
 $destIP=$result[0];
 $sourceIP=$result[1];
@@ -103,26 +117,47 @@ $date = date("Y-m-d H:i:s",$date_array[1]);
 file_put_contents ( "timelog.txt" , "Launching ROUTE:" . $date . $date_array[0] . " \r\n" , FILE_APPEND );
 
 # Start ROUTE receiver
-$cmd="$FLUTEReceiver/flute.exe -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:1 -Y:$encodingSymbolsPerPacket -v:0 -J:$Log &";
-#$cmd="$FLUTEReceiver/flute.exe -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:0 -Y:$encodingSymbolsPerPacket -v:4 -J:$Log > logout0.txt &";  #Large memory 
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $cmd="$FLUTEReceiver/flute.exe -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:1 -Y:$encodingSymbolsPerPacket -v:0";
+  #$cmd="$FLUTEReceiver/flute.exe -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:1 -Y:$encodingSymbolsPerPacket -v:0 -J:$Log &";
+  #$cmd="$FLUTEReceiver/flute.exe -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:0 -Y:$encodingSymbolsPerPacket -v:4 -J:$Log > logout0.txt &";  #Large memory 
+} else {
+  $cmd="$FLUTEReceiver/flute -A -B:$DASHContent -m:$destIP -p:$port -t:0 -E -b:1 -Y:$encodingSymbolsPerPacket -v:0";
+}
 if (substr(php_uname(), 0, 7) == "Windows") {
   pclose(popen("start /B ". $cmd, "r"));
 } else {
   exec($cmd . " > /dev/null &");
+  #$ret=exec($cmd . " > /dev/null &", $out, $err);
+  #var_dump($ret);
+  #var_dump($out);
+  #var_dump($err);
 }
 
-sleep(6);
+# Allow processing time to capture SLS / Get files through virus checkers
+sleep($Delay);
 
 $micro_date = microtime();
 $date_array = explode(" ",$micro_date);
 $date = date("Y-m-d H:i:s",$date_array[1]);
 file_put_contents ( "timelog.txt" , "Start SLS:" . $date . $date_array[0] . " \r\n" , FILE_APPEND );
-#while (!glob($DASHContent."/sls")) usleep(5000);
-while (!glob($DASHContent."\\"."sls")) usleep(5000);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  while (!glob($DASHContent."\\"."sls")) usleep(5000);
+} else {
+  # while (!glob($DASHContent."/sls")) usleep(5000);
+}
 
 #Read the content from the envelope file to find contents of SLS
-file_put_contents ( "timelog.txt" , "Read Envelope:" . $DASHContent . "\\envelope.xml" . "\r\n" , FILE_APPEND );
-$metadataEnvelope = simplexml_load_file("$DASHContent" . "\\" . "envelope.xml");
+if (substr(php_uname(), 0, 7) == "Windows") {
+  file_put_contents ( "timelog.txt" , "Read Envelope:" . $DASHContent . "\\envelope.xml" . "\r\n" , FILE_APPEND );
+} else {
+  file_put_contents ( "timelog.txt" , "Read Envelope:" . $DASHContent . "/envelope.xml" . "\r\n" , FILE_APPEND );
+}
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $metadataEnvelope = simplexml_load_file("$DASHContent" . "\\" . "envelope.xml");
+} else {
+  $metadataEnvelope = simplexml_load_file("$DASHContent" . "/envelope.xml");
+}
 if (!$metadataEnvelope) die("Failed loading Envelope XML file");
 $items = count($metadataEnvelope->item);
 for ($i = 0; $i < $items; $i++) {
@@ -136,9 +171,16 @@ for ($i = 0; $i < $items; $i++) {
 file_put_contents ( "timelog.txt" , "USBD filename '" . $USBDUri . "' S-TSID filename '" . $sTSIDUri . "' MPD filename '" . $MPDUri . "' \r\n" , FILE_APPEND );
 
 # Read the contents of the USBD file
-#while (!glob($DASHContent."/".$USBDUri)) usleep(5000);
-while (!glob($DASHContent."\\".$USBDUri)) usleep(5000);
-$BundleDescriptionROUTE = simplexml_load_file("$DASHContent" . "\\" . $USBDUri);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  while (!glob($DASHContent."\\".$USBDUri)) usleep(5000);
+} else {
+  # while (!glob($DASHContent."/".$USBDUri)) usleep(5000);
+}
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $BundleDescriptionROUTE = simplexml_load_file("$DASHContent" . "\\" . $USBDUri);
+} else {
+  $BundleDescriptionROUTE = simplexml_load_file("$DASHContent" . "/" . $USBDUri);
+}
 if (!$BundleDescriptionROUTE) die("Failed loading USBD file");
 $bases = count($BundleDescriptionROUTE->UserServiceDescription[0]->DeliveryMethod->BroadcastAppService->BasePattern);
 for ($i = 0; $i < $bases; $i++) {
@@ -153,8 +195,11 @@ $micro_date = microtime();
 $date_array = explode(" ",$micro_date);
 $date = date("Y-m-d H:i:s",$date_array[1]);
 file_put_contents ( "timelog.txt" , "Start reading MPD:" . $date . $date_array[0] . " \r\n" , FILE_APPEND );
-#while (!glob($DASHContent."/".$MPDUri)) usleep(5000);
-while (!glob($DASHContent."\\".$MPDUri)) usleep(5000);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  while (!glob($DASHContent."\\".$MPDUri)) usleep(5000);
+} else {
+  # while (!glob($DASHContent."/".$MPDUri)) usleep(5000);
+}
 
 #For using with the canned trace file, re-write the AST to current system time when MPD is received
 #while (!glob($DASHContent."/".$initAudio)) usleep(5000);
@@ -172,21 +217,11 @@ file_put_contents ( "timelog.txt" , "Tuned in:" . $date . $date_array[0] . " \r\
 
 
 
-$AST_BCST = $PTP - $ST_UTC + $Delay;
-file_put_contents ( "timelog.txt" , "Setting AST: " . $AST_BCST . " \r\n" , FILE_APPEND );
-
-$AST_SEC = new DateTime( 'now',  new DateTimeZone( 'UTC' ) );	/* initializer for availability start time */
-$AST_SEC->setTimestamp($date_array[1]);    //Better use a single time than now above
-#$AST_SEC->add(new DateInterval('PT1S'));
-$AST_SEC_W3C = $AST_SEC->format(DATE_W3C);
-
-preg_match('/\.\d*/',$date_array[0],$dateFracPart);
-$extension_pos = strrpos($AST_SEC_W3C, '+'); // find position of the last + in W3C date to slip frac seconds
-$AST_W3C = substr($AST_SEC_W3C, 0, $extension_pos) . $dateFracPart[0] . "Z" ; //substr($AST_SEC_W3C, $extension_pos);
-file_put_contents ( "timelog.txt" , "Setting AST: " . $AST_W3C . " \r\n" , FILE_APPEND );
-
-#$MPD = simplexml_load_file("$DASHContent" . "/" . $MPDUri);
-$MPD = simplexml_load_file("$DASHContent" . "\\" . $MPDUri);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $MPD = simplexml_load_file("$DASHContent" . "\\" . $MPDUri);
+} else {
+  $MPD = simplexml_load_file("$DASHContent" . "/" . $MPDUri);
+}
 if (!$MPD) die("Failed loading XML file");
 
 $dom_sxe = dom_import_simplexml($MPD);
@@ -206,6 +241,20 @@ $tuneInPeriodStart = 0;
 
 $MPDNode = &$periods[0]['node']->parentNode;
 
+$AST_BCST = $PTP - $ST_UTC + $Delay;
+file_put_contents ( "timelog.txt" , "Setting AST: " . $AST_BCST . " \r\n" , FILE_APPEND );
+
+$AST_SEC = new DateTime( 'now',  new DateTimeZone( 'UTC' ) );	/* initializer for availability start time */
+$AST_SEC->setTimestamp($date_array[1]);    //Better use a single time than now above
+#$AST_SEC->add(new DateInterval('PT1S'));
+$AST_SEC_W3C = $AST_SEC->format(DATE_W3C);
+
+preg_match('/\.\d*/',$date_array[0],$dateFracPart);
+$extension_pos = strrpos($AST_SEC_W3C, '+'); // find position of the last + in W3C date to slip frac seconds
+$AST_W3C = substr($AST_SEC_W3C, 0, $extension_pos) . $dateFracPart[0] . "Z" ; //substr($AST_SEC_W3C, $extension_pos);
+file_put_contents ( "timelog.txt" , "Setting AST: " . $AST_W3C . " \r\n" , FILE_APPEND );
+
+
 $MPD_AST = $MPDNode->getAttribute("availabilityStartTime");
 #preg_match('/\.\d*/',$MPD_AST,$matches);
 #$fracAST = "0" . $matches[0];
@@ -223,8 +272,11 @@ $MPDNode->setAttribute("availabilityStartTime",str_replace(" ", "T", $ASTNew)); 
 
 $responseToSend[1] = count($periods) - 1;
 
-#$dom->save($DASHContent . "/" . $PatchedMPD);
-$dom->save($DASHContent . "\\" . $PatchedMPD);
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $dom->save($DASHContent . "\\" . $PatchedMPD);
+} else {
+  $dom->save($DASHContent . "/" . $PatchedMPD);
+}
 
 file_put_contents ( "timelog.txt" , "responseToSend Channel: " . $responseToSend[0] . " Period count: " . $responseToSend[1] . "\r\n", FILE_APPEND );
 

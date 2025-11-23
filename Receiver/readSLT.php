@@ -36,8 +36,9 @@ foreach ($docElement->childNodes as $node) {
 	if($node->nodeName === 'SLT') $sltNode = $node;
 	if($node->nodeName === 'Service') {
 		$Service[]['node'] = $node;
-		$channels[$serviceIndex++]=$serviceIndex; 
-		//$channels[$serviceIndex++]=$Service->shortServiceName;
+		//$channels[$serviceIndex++]=$serviceIndex; 
+		//$channels[$serviceIndex]=$SLT->Service[$serviceIndex++]['shortServiceName'];
+		$channels[]=$SLT->Service[$serviceIndex++]['shortServiceName'];
 		
 		$currentService = &$Service[count($Service) - 1];
 		foreach ($currentService['node']->childNodes as $node) {

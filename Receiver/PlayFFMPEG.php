@@ -4,8 +4,11 @@
 Main script for Video playback
  */
 
-
-$FFPLAY = "C:/Users/luke/Documents/Work/ffmpeg-6.1.1-full_build/bin/ffplay.exe";
+if (substr(php_uname(), 0, 7) == "Windows") {
+  $FFPLAY = "C:/Users/luke/Documents/Work/ffmpeg-6.1.1-full_build/bin/ffplay.exe";
+} else {
+  $FFPLAY = "/usr/bin/ffplay";
+}
 $mpd = $_REQUEST['mpdURL'];
 
 // Start FFMPEG Player
