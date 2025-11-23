@@ -2,12 +2,18 @@
 import socket
 import struct
 import binascii
-import time
+from datetime import datetime
 
 # Set multicast group address 
 mcast_addr = "224.0.1.129"
 mcast_port = 8000
 ptp = False
+
+ct = datetime.now()
+unix_timestamp = ct.timestamp() + 41
+with open("PTP_TIME.dat","w") as respfile:
+	respfile.write(str(unix_timestamp))
+respfile.close()
 
 with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
 	ptp = True
@@ -61,10 +67,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as soc
 	respfile.close()
 	sock.close()
 if not ptp:
-	ct = time.ctime(local/1000000)
-	parsed=time.strptime(ct)
-	day = time.strftime("%m-%d-%y", parsed)
-	sec = time.strftime("%T", parsed)
+	ct = datetime.now()
+	unix_timestamp = ct.timestamp() + 41
 	with open("PTP_TIME.dat","w") as respfile:
-		respfile.write(str(ct))
+		respfile.write(str(unix_timestamp))
 	respfile.close()
