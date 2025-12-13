@@ -4034,7 +4034,7 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 #ifdef _MSC_VER
 			lock_lct_header();
 			//Sleep(1);	// This sleep helps reduce CPU usage
-			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);
+			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
 			unlock_lct_header();
@@ -4127,7 +4127,7 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 #ifdef _MSC_VER
 		lock_lct_header();
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 		unlock_lct_header();
@@ -4284,7 +4284,7 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 #ifdef _MSC_VER
 		lock_lct_header();
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 		unlock_lct_header();

@@ -224,7 +224,7 @@ char *null_fec_decode_src_block(trans_block_t *tr_block, unsigned long long *blo
 
 	/* Allocate memory for buf */
 	//if (!(buf = (char*)calloc((unsigned int)(eslen + 1), sizeof(char)))) {	// length +1 for NULL character
-	if (!(buf = (char*)calloc((unsigned int)(len + 1), sizeof(char)))) {	// Length +1 for the NULL character
+	if (!(buf = (char*)calloc((unsigned int)len, sizeof(char)))) {	// Length +1 for the NULL character
         printf("NULL FEC Could not alloc memory for buf!\n");
 		fflush(stdout);
 
