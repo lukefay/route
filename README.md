@@ -44,7 +44,7 @@ OR without verbose logging:
 >> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:0 -J:"Rcv_Log_MPD.txt"
 
 
-CAUTION!!! OPTION OF MEDIA RENDERING SUCCESS DEPENDS ON STREAM PARAMETERS (e.g., segment lenghts and GOP of 2 seconds, etc.)
+CAUTION!!! OPTION OF MEDIA RENDERING SUCCESS DEPENDS ON STREAM PARAMETERS (e.g., segment lengths of 2 seconds, etc.)
 To render media, Apache2.4 server needs to be installed and use a Chrome Browser. Chrome browswer supports HEVC codec, a list of other browser support is located at www.caniuse.com/?search=hevc+video+format.  Entry URL pages are located in the /Receiver directory and can be symbolic linked from the Apache24/htdocs directory to /Receiver/index.php page.  Apache24 extensions for the latest php should be added.  Python3.x or newer should also be installed. 
 Absolute paths to executables need to be checked or corrected in the following files within the Receiver directory.
 1. ProcessROUTE.php
