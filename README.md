@@ -11,7 +11,7 @@ To compile on Windows OS
    - expat version 2.1.0.11
    - rmt_curl version 7.45.0.2
    - zlib_native version 1.2.11
-   OR: Install below libarary packages with vcpkg manager (https://vcpkg.io/en/) 
+OR: Install below libarary packages with vcpkg manager (https://vcpkg.io/en/) 
    - pthreads
    - expat
    - zlib
