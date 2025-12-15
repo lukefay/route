@@ -30,18 +30,18 @@ To compile on Linux OS
 4. Run Makefile in each sub-directory or from the top route directory
 
 EXAMPLE Command line runs in Windows command line are:
->> a3route.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
+>> flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:0 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
 
 OR without verbose logging:
 
->> a3route.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:0 -J:"Rcv_Log_MPD.txt"
+>> flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:0 -v:0 -J:"Rcv_Log_MPD.txt"
 
 EXAMPLE Command line runs in Linux:
->> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
+>> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:0 -v:4 -J:"Rcv_Log_MPD.txt" > logout1.txt
 
 OR without verbose logging:
 
->> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:1 -v:0 -J:"Rcv_Log_MPD.txt"
+>> ./bin/flute.exe -A -B:../DASH_Content50 -m:239.255.50.1 -p:50001 -t:0 -E -b:1 -Y:0 -v:0 -J:"Rcv_Log_MPD.txt"
 
 
 CAUTION!!! OPTION OF MEDIA RENDERING SUCCESS DEPENDS ON STREAM PARAMETERS (e.g., segment lengths of 2 seconds, etc.)
