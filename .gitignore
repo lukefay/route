@@ -1,0 +1,75 @@
+# Build directories
+Debug/
+Release/
+*/Debug/
+*/Release/
+
+# Visual Studio files
+*.vcxproj.user
+*.aps
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+UpgradeLog.htm
+
+# Build artifacts
+*.exe
+*.dll
+*.lib
+*.pdb
+*.exp
+*.map
+*.obj
+*.o
+*.a
+
+# NuGet Packages
+packages/
+# To restore: Use NuGet Package Manager in Visual Studio or run:
+# nuget restore mad_fcl.sln
+
+# Log files
+*.log
+compileLog.txt
+logout*.txt
+**/logout*.txt
+Rcv_Log*.txt
+timelog.txt
+ErrorDebugging.txt
+
+# Test/temporary files
+Testing.txt
+testsize.txt
+
+# IDE specific
+nbproject/
+.vs/
+.vscode/
+
+# Third-party libraries (should be managed via submodules or package managers)
+# nanorq-stable/ - Consider using git submodule or package manager
+
+# Generated images
+*.png
+!docs/*.png
+!assets/*.png
+
+# Test data files
+block0
+data.rq
+*.dat
+peace_and_war.txt
+war_and_peace.txt
+
+# nanorq-stable build artifacts
+nanorq-stable/*.exe
+nanorq-stable/*.a
+nanorq-stable/*.o
+nanorq-stable/block0
+nanorq-stable/data.rq
+nanorq-stable/*.png
+
+# Minified libraries (use package managers like npm/bower instead)
+*.min.js
+*.min.css
