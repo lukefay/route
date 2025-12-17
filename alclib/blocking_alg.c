@@ -96,7 +96,7 @@ blocking_struct_t* compute_blocking_structure(unsigned long long L,
   return bs;
 } 
 
-BOOL update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
+update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
     unsigned int B, unsigned int E) {
 
     unsigned int T;

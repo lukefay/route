@@ -83,7 +83,7 @@ blocking_struct_t *compute_blocking_structure(unsigned long long L, unsigned int
  *
  */
 
-BOOL update_blocking_structure(blocking_struct_t* bs, unsigned long long L, unsigned int B, unsigned int E);
+update_blocking_structure(blocking_struct_t* bs, unsigned long long L, unsigned int B, unsigned int E);
 
 
 #ifdef __cplusplus
