@@ -4,7 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef _MSC_VER
 #include "../include/mman-win32/trunk/mman.h"
+#else
+#endif
 
 struct ioctx {
   size_t (*read)(struct ioctx *, uint8_t *, size_t);
