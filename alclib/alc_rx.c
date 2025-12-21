@@ -3969,13 +3969,10 @@ void* rx_thread(void *s) {
 		//}
 		//unlock_lct_header();
 #else
-		usleep(1000);
-		//lock_lct_header();
-		//if (!packet_ready) {
-		//	pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
-		//}
-		//else packet_ready = FALSE;
-		//unlock_lct_header();
+		//usleep(1000);
+		lock_lct_header();
+		pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
+		unlock_lct_header();
 #endif
 
 	}
@@ -4030,17 +4027,17 @@ char* alc_recv(int s_id, unsigned long long toi, unsigned long long *data_len, i
 				to = to->next;
 			}
 
-
-#ifdef _MSC_VER
 			lock_lct_header();
+#ifdef _MSC_VER
 			//Sleep(1);	// This sleep helps reduce CPU usage
 			SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 			//printf("NO FDT LIST in session %d\n", s_id);
 			//fflush(stdout);
-			unlock_lct_header();
 #else
-			usleep(1000);
+			//usleep(1000);
+			pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
+			unlock_lct_header();
 		}
 
 		obj_completed = object_completed(to);
@@ -4124,16 +4121,17 @@ char* alc_recv2(int s_id, unsigned long long *toi, unsigned long long *data_len,
 		//printf("Number of received objects: %d\n", s->rx_objs);
 		//fflush(stdout);
 
-#ifdef _MSC_VER
 		lock_lct_header();
+#ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
 		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
-		unlock_lct_header();
 #else
-		usleep(1000);
+		//usleep(1000);
+		pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
+		unlock_lct_header();
 
 		to = s->obj_list;
 
@@ -4281,16 +4279,17 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 		}
 
-#ifdef _MSC_VER
 		lock_lct_header();
+#ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
 		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
-		unlock_lct_header();
 #else
-		usleep(1000);
+		//usleep(1000);
+		pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
+		unlock_lct_header();
 
 	}
 
@@ -4396,18 +4395,19 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 
 		} 
 
-#ifdef _MSC_VER
 		lock_lct_header();
-		//Sleep(1);	// This sleep helps reduce CPU usage
+#ifdef _MSC_VER
+		//Sleep(1);	// This sleep helps reduce CPU usage SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	
 		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
-		unlock_lct_header();
 #else
-		usleep(1000);
+		//usleep(1000);
 		//printf("Waiting for FDT in session %d\n", s_id);
 		//fflush(stdout);
+		pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
+		unlock_lct_header();
 
 	}
 
