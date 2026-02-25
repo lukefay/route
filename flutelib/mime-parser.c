@@ -1241,10 +1241,10 @@ parse_message(FILE* fp, char* session_basedir)
                 if (verbose) printf(" File: %s\n", sls_file);
 
                 FILE* fq = fopen(sls_file, "wb");
-                fputs(line, fq);
+                if (fq != NULL) fputs(line, fq);
                 //if (line[0] != '\n') fputs("\n", fq);
                 if (verbose) printf(" Data: %s\n", line);
-                fclose(fq);
+                if (fq != NULL) fclose(fq);
 
                 // Put parameters back where we found them.
                 //memcpy((sls_file + URLlength), "", strlen(info.file)+1);
@@ -1252,13 +1252,14 @@ parse_message(FILE* fp, char* session_basedir)
                 info.file = NULL;
             }
             else {
-                if(verbose) printf(" Data: %s\n", line);
+                //printf(" Data:%s\n", line);
+                //fflush(stdout);
 
                 FILE* fq = fopen(sls_file, "a");
-                fputs(line, fq);
+                if (fq != NULL) fputs(line, fq);
                 //if (line[0] != '\n') fputs("\n", fq);
                 if (verbose) printf(" Data: %s\n", line);
-                fclose(fq);
+                if (fq != NULL) fclose(fq);
 
             }
             fflush(stdout);

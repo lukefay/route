@@ -732,9 +732,9 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		  }
 
 #ifdef _MSC_VER
-		  Sleep(5);
+		  Sleep(1);
 #else
-		  usleep(5000);
+		  usleep(1000);
 #endif
 		  continue;
 		}
@@ -990,7 +990,8 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
       free_uri(uri);
       return -1;
     }
-    
+	free_uri(uri);
+
     memcpy(tmp, filepath, strlen(filepath));
     
     ptr = strchr(tmp, ch);
@@ -1038,6 +1039,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 	  memcpy((fullpath + strlen(fullpath)), "/", 1);
 	  memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 	}
+	free(filepath);
 
 	if(rename(tmp_filename, fullpath) != 0) {
 
@@ -1095,9 +1097,7 @@ int fdtbasedrecv(int rx_memory_mode, BOOL openfile, flute_receiver_t *receiver) 
 		memcpy((fullpath + strlen(fullpath) - 4), "", 1);
 
 	}
-	free_uri(uri);		
 	free(tmp);
-	free(filepath);
     
 	#ifdef _MSC_VER
 	if (openfile) {
@@ -1530,7 +1530,7 @@ void* fdt_thread(void *s) {
   file_t *file;
   file_t *next_file;
   int retval;
-  FILE *fabcd;
+  //FILE *fabcd;
   
   unsigned long long curr_time;
   
@@ -1758,13 +1758,13 @@ void* fdt_thread(void *s) {
 	  
 	}	
 	else { // Receive new FDT Instance when it comes
-      //updated = 0;
+      updated = 0;
 
 	  if (receiver->verbosity > 1) {
 		  printf("Wait for another SLS if Segment Timeline\n\n");
 		  fflush(stdout);
 	  }
-	  /*
+	  
 	  // If Segment Timeline, SLS TOI's increment...so catch the next one.
 	  if (receiver->rx_automatic) {
 
@@ -1785,7 +1785,7 @@ void* fdt_thread(void *s) {
 		  }
 	  }
 	  set_fdt_instance_parsed(receiver->s_id);
-	  */
+	  
 
 	  // FLUTE OPERATION BELOW, ROUTE Operation uses S-TSID above
       buf = fdt_recv(receiver->s_id, &buflen, &retval, &fdt_content_enc_algo, &fdt_instance_id);
@@ -1878,11 +1878,11 @@ void* fdt_thread(void *s) {
       //receiver->fdt = fdt_instance;
       //receiver->efdt= efdt_instance;
 // Luke Fay already declared      FILE *fabcd;
-	  fabcd=fopen("ErrorDebugging.txt", "w");	
+	  //fabcd=fopen("ErrorDebugging.txt", "w");	
 	  //  fprintf(fabcd, "%llu\n", tmp->toi);
 // Luke Fay	  fprintf(fabcd, fdt_instance->file_list);
-	  fprintf(fabcd, (char *)fdt_instance->file_list);
-	  fclose(fabcd);
+	  //fprintf(fabcd, (char *)fdt_instance->file_list);
+	  //fclose(fabcd);
 	  if (receiver->verbosity == 4) {
 		  printf("Receiver's 2nd SLS capture updated: %i\n", updated);
 		  fflush(stdout);
@@ -2790,6 +2790,10 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		// FILE MODE PROCESSING
 		//else if ((file->status == 1) && (rename(tmp_filename, fullpath) != 0)) {
 		else if (file->status == 1) {
+			if (s->verbosity == 4) {
+				printf("FILE file %s\n", tmp_filename); fflush(stdout);
+				printf("FILE Renaming %s\n", fullpath); fflush(stdout);
+			}
 
 			retval = rename(tmp_filename, fullpath);
 

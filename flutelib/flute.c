@@ -1145,16 +1145,17 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		memset(tmp_filename, 0, MAX_PATH_LENGTH);
 		sprintf(tmp_filename, "%s/%s", session_basedir, "envelope.xml");
 
-		if (stat(tmp_filename, &env_file_stats) == -1) { // Check if the file exists
-			printf("Error: %s is not valid file name\n", tmp_filename);
+		if (stat(tmp_filename, &env_file_stats) == -1) { // Check if the file exists, if so just use it.
+			//printf("FLUTE Error: %s is not valid file name\n", tmp_filename);
+			printf("FLUTE: %s is already available\n", tmp_filename);
 			fflush(stdout);
-			close_alc_session(*s_id);
+			//close_alc_session(*s_id);
 
-			if (receiver.fdt != NULL) {
-				FreeFDT(receiver.fdt);
-			}
+			//if (receiver.fdt != NULL) {
+			//	FreeFDT(receiver.fdt);
+			//}
 
-			return -1;
+			//return -1;
 		}
 
 		/* Allocate memory for buf */
@@ -1203,13 +1204,13 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		printf("Decoding MIME envelope\n"); fflush(stdout);
 
 		env = decode_env_payload(env_buf);
-		free(env_buf);
 
 		if (a->alc_a.verbosity == 4) {
 			printf("Envelope received with %d items\n", env->nb_of_items);
 			fflush(stdout);
 			Printenv(env);
 		}
+		free(env_buf);
 
 		/* open S-TSID file and read it to its structure */
 		item_t* next_item;
@@ -1232,16 +1233,17 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			fflush(stdout);
 		}
 
-		if (stat(tmp_filename, &stsid_file_stats) == -1) {
-			printf("Error: %s is not valid file name\n", tmp_filename);
+		if (stat(tmp_filename, &stsid_file_stats) == -1) {	// Check if the file exists, if so just use it.
+			//printf("Error: %s is not valid file name\n", tmp_filename);
+			printf("FLUTE: %s is already available\n", tmp_filename);
 			fflush(stdout);
-			close_alc_session(*s_id);
+			//close_alc_session(*s_id);
 
-			if (receiver.fdt != NULL) {
-				FreeFDT(receiver.fdt);
-			}
+			//if (receiver.fdt != NULL) {
+			//	FreeFDT(receiver.fdt);
+			//}
 
-			return -1;
+			//return -1;
 		}
 
 		/* Allocate memory for buf */
@@ -1284,13 +1286,11 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			return -1;
 		}
 
-		fclose(stsid_fp);
 		if (a->alc_a.verbosity == 4) {
 			printf("XML parse the STSID\n");
 			fflush(stdout);
 		}
 		stsid = decode_stsid_payload(stsid_buf);
-		free(stsid_buf);
 
 		if (a->alc_a.verbosity == 4) {
 			printf("S-TSID received with %d ROUTE Session(s)\n", stsid->nb_of_rs);
@@ -1299,7 +1299,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 		//free(session_basedir);
-
+		free(stsid_buf);
+		fclose(stsid_fp);
 	}
 	
 	// NOW LAUNCH LCT CHANNELS (ALC SESSIONS)
@@ -1503,7 +1504,7 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			// Create LCT Channel receiving threads
 	#ifdef _MSC_VER
 			s->handle_lct_thread =
-				(HANDLE)_beginthreadex(NULL, 0, (void*)channel_in_file_mode, ch, 0, &s->lct_thread_id);
+				(HANDLE)_beginthreadex(NULL, 0, (void*)channel_in_file_mode, ch, STACK_SIZE_PARAM_IS_A_RESERVATION, &s->lct_thread_id);
 			if (s->handle_lct_thread == NULL) {
 				printf("Error: flute_session: LCT Thread, _beginthread\n");
 				fflush(stdout);
@@ -1542,6 +1543,8 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			// Recover updated SLS
 			retval = receiver_in_fdt_based_mode(a, &receiver);
 
+			set_fdt_instance_parsed(receiver.s_id);	// Recevied updated FDT
+
 			//printf("SLS retval %d\n", retval);
 			//fflush(stdout);
 		}
@@ -1549,15 +1552,18 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 			// Exit S-TSID monitoring and write reports
 			printf("No more files in Receiver FDT\n");
 			fflush(stdout);
-			FreeFDT(receiver.fdt);
+
+			if (receiver.fdt != NULL) {
+				FreeFDT(receiver.fdt);
+			}
 
 			break;
 		}
 
 #ifdef _MSC_VER
-		Sleep(50);	// Sleep for 50msec to check next SLS
+		Sleep(5);	// Sleep for 5msec to check next SLS
 #else
-		usleep(50000);
+		usleep(5000);
 #endif
 		continue;
 	}
@@ -2140,6 +2146,7 @@ int start_up_flute(void) {
 	initialize_efdt_parser();
 	initialize_session_handler();
 	initialize_lct_header();
+	initialize_trans_obj();
 	initialize_fec();
 
 	return 0;
@@ -2155,6 +2162,7 @@ void shut_down_flute(arguments_t *anArguments) {
 	release_fdt_parser();
 	release_efdt_parser();
 	release_lct_header();
+	release_trans_obj();
 	release_fec();
 
 	if(anArguments == NULL) {
@@ -2182,6 +2190,7 @@ void shut_down_flute2(void) {
 	release_fdt_parser();
 	release_efdt_parser();
 	release_lct_header();
+	release_trans_obj();
 	release_fec();
 
 }
