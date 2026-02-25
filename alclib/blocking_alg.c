@@ -124,6 +124,8 @@ update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
     else {
         T = (unsigned int)div_T.quot + 1;
     }
+    //printf("div_T %d.%d\n", div_T.quot, div_T.rem);   // remainder is in units of E, i.e. # of E symbols.  
+    //fflush(stdout);
 
     /* (b) */
 
@@ -135,7 +137,7 @@ update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
     else {
         bs->N = div_N.quot;
     }
-    //printf("div_N %d.%d\n", div_N.quot, div_N.rem);
+    //printf("div_N %d.%d\n", div_N.quot, div_N.rem);   // remainder is in units of B, i.e. # of B symbols
     //fflush(stdout);
     /* (c) */
 
@@ -150,6 +152,8 @@ update_blocking_structure(blocking_struct_t* bs, unsigned long long L,
             bs->A_large = div_A.quot;
         }
     }
+    //printf("div_A %d.%d\n", div_A.quot, div_A.rem);   // remainder is in units of N, i.e. # of N blocks
+    //fflush(stdout);
 
     /* (d) */
 

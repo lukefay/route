@@ -142,6 +142,20 @@ typedef struct trans_obj {
   
 } trans_obj_t;
 
+/**
+* This function initializes transport object reading.
+*
+*/
+
+void initialize_trans_obj(void);
+
+/**
+* This function releases transport object reading.
+*
+*/
+
+void release_trans_obj(void);
+
 
 /**
  * This function creates new transport object structure.

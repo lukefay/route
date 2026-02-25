@@ -43,6 +43,31 @@
 
 #include "transport.h"
 
+ /**
+  * Transport Object variables semaphore
+  */
+
+#ifdef _MSC_VER
+RTL_CRITICAL_SECTION transport_variables_semaphore;
+#else
+static pthread_mutex_t transport_variables_semaphore = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+
+void initialize_trans_obj(void) {
+#ifdef _MSC_VER
+	InitializeCriticalSection(&transport_variables_semaphore);
+#else
+#endif
+}
+
+void release_trans_obj(void) {
+#ifdef _MSC_VER
+	DeleteCriticalSection(&transport_variables_semaphore);
+#else
+#endif
+}
+
 trans_obj_t* create_object(void) {
 	
 	trans_obj_t *obj = NULL;
