@@ -1,4 +1,4 @@
-all :	alclib sdplib flutelib nanorq-stable flute multis_flute #flute_unittest
+all :	alclib sdplib flutelib nanorq-stable flute #multis_flute #flute_unittest
 
 alclib ::
 	@echo "-------------------"
@@ -70,13 +70,13 @@ clean :
 	@echo "*** Cleaning FLUTE application ***"
 	@echo "----------------------------------"
 	cd flute; make clean
-	@echo "-------------------------------------------------------"
-	@echo "*** Cleaning example multisession FLUTE application ***"
-	@echo "-------------------------------------------------------"
-	cd multis_flute; make clean
-	@echo "--------------------------------"
-	@echo "*** Cleaning FLUTE unit test ***"
-	@echo "--------------------------------"
-	cd UnitTest; make clean
+	#@echo "-------------------------------------------------------"
+	#@echo "*** Cleaning example multisession FLUTE application ***"
+	#@echo "-------------------------------------------------------"
+	#cd multis_flute; make clean
+	#@echo "--------------------------------"
+	#@echo "*** Cleaning FLUTE unit test ***"
+	#@echo "--------------------------------"
+	#cd UnitTest; make clean
 	@echo "done"
 
