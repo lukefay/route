@@ -4046,17 +4046,17 @@ void* rx_thread(void *s) {
 
 		}
 
-		lock_lct_header();
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
 		//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
+		lock_lct_header();
 		//usleep(1000);
 		//pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
-#endif
 		unlock_lct_header();
+#endif
 
 	}
 	if (session->verbosity == 4) {
@@ -4483,7 +4483,7 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 		//lock_lct_header();
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);	
+		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
