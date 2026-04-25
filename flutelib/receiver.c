@@ -2526,6 +2526,7 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			fflush(stdout);
 
 			free(filepath);
+			free(tmp);
 			free_uri(uri);
 
 			//set_session_state(s->s_id, SExiting);
@@ -2583,8 +2584,6 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 			memcpy((fullpath + strlen(fullpath)), "/", 1);
 			memcpy((fullpath + strlen(fullpath)), filepath, strlen(filepath));
 		}
-		free(tmp);
-		free_uri(uri);
 
 		// NRT FILE MODE PROCESSING
 		if (s->codepoint == NRT_FILE_MODE || s->ls->codePoint == NRT_FILE_MODE) {
@@ -2837,6 +2836,8 @@ int filemodesession(int rx_memory_mode, BOOL openfile, alc_session_t* s) {
 		set_file_received(s->file_uri_table, file->location);  // NOT USED since receiver is in automatic mode
 
 		free(filepath);
+		free(tmp);
+		free_uri(uri);
 		//printf("Session memory free\n");
 		//fflush(stdout);
 

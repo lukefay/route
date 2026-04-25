@@ -1561,9 +1561,9 @@ int flute_receiver_report(arguments_t *a, int *s_id, flute_receiver_report_t **r
 		}
 
 #ifdef _MSC_VER
-		Sleep(1);	// Sleep for 1msec to check next SLS
+		Sleep(50);	// Sleep for 50msec to check next SLS
 #else
-		usleep(1000);
+		usleep(50000);
 #endif
 		continue;
 	}
