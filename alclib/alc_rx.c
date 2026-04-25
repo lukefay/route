@@ -3434,6 +3434,8 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 						/* set correct position */
 						//printf("set correct position: %llu\tvs. Startoffset: %u\t block len %llu\n", pos, start_offset, block_len);
 						//fflush(stdout);					
+
+						lock_trans_obj();
 #if defined(_MSC_VER)
 						if (_lseeki64(trans_obj->fd, pos, SEEK_SET) == -1) {
 #else
@@ -3458,7 +3460,6 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 							return MEM_ERROR;
 						}
 
-						lock_trans_obj();
 						trans_obj->nb_of_ready_blocks++;
 						unlock_trans_obj();
 
@@ -4046,17 +4047,17 @@ void* rx_thread(void *s) {
 
 		}
 
+		lock_trans_obj();
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
 		//SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, INFINITE);
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
-		lock_lct_header();
 		//usleep(1000);
 		//pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
-		unlock_lct_header();
 #endif
+		unlock_trans_obj();
 
 	}
 	if (session->verbosity == 4) {
@@ -4381,6 +4382,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		printf("alc_recv3 object recovered\n\n");
 		fflush(stdout);
 	}
+	//lock_trans_obj();
+	lock_lct_header();
 
 	if(!(tmp_filename = (char*)calloc((strlen(to->tmp_filename) + 1), sizeof(char)))) {
 		printf("Could not alloc memory for tmp_filename!\n");
@@ -4396,8 +4399,11 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 		printf("Free Objects\n");
 		fflush(stdout);
 	}
+
 	free_object(to, s, 1);
 	//*toi = tmp_toi;
+	//unlock_trans_obj();
+	unlock_lct_header();
 
 	//remove_wanted_object(s_id, tmp_toi);
 	remove_wanted_object(s_id, *toi);
@@ -4443,12 +4449,15 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 		while(to != NULL) {
 
 			if(object_completed(to)) {
+				//lock_lct_header();
 				lock_trans_obj();
+
 				set_received_instance(s, (unsigned int)to->toi);
 
 				*content_enc_algo = to->content_enc_algo;
 				*fdt_instance_id = (int)to->toi;
-				
+				//unlock_lct_header();
+
 				if(to->fec_enc_id == COM_NO_C_FEC_ENC_ID) {
 					buf = null_fec_decode_object(to, data_len, s);
 				}
@@ -4470,8 +4479,8 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 				}
 
 				free_object(to, s, 0);
-
 				unlock_trans_obj();
+
 				return buf;
 			}
 			else { 
@@ -4480,19 +4489,19 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 
 		} 
 
-		//lock_lct_header();
+		//lock_trans_obj();
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &lct_header_variables_semaphore, 1);	
+		SleepConditionVariableCS(&packet_ready, &transport_variables_semaphore, 1);
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
 		//usleep(1000);
+		pthread_cond_wait(&cond, &transport_variables_semaphore);	// Wait for packet being available
 		//printf("Waiting for FDT in session %d\n", s_id);
 		//fflush(stdout);
-		pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
-		//unlock_lct_header();
+		//unlock_trans_obj();
 
 	}
 
