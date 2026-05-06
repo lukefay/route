@@ -3468,12 +3468,10 @@ int analyze_packet(char *data, int len, unsigned long long *toir, alc_channel_t 
 
 #ifdef USE_RETRIEVE_UNIT
 						free_units2(trans_block);
-#ifdef _MSC_VER
+
 						if (trans_obj->nb_of_ready_blocks == trans_obj->bs->N) {
 							free_unit_container(ch->s);
 						}
-#else
-#endif
 #else
 						free_units(trans_block);
 #endif
@@ -4029,7 +4027,7 @@ void* rx_thread(void *s) {
 	alc_session_t *session;
 	int retval = 0;
 
-	//srand((unsigned)time(NULL));
+	srand((unsigned)time(NULL));
 
 	session = (alc_session_t *)s;
 
@@ -4054,7 +4052,7 @@ void* rx_thread(void *s) {
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
-		//usleep(1000);
+		//usleep(200);
 		//pthread_cond_wait(&cond, &lct_header_variables_semaphore);	// Wait for packet being available
 #endif
 		unlock_trans_obj();
@@ -4413,6 +4411,8 @@ char* alc_recv3(int s_id, unsigned long long *toi, int *retval) {
 
 char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 	unsigned char *content_enc_algo, int* fdt_instance_id) {
+	struct timespec timeToWait;
+	struct timeval now;
 
 	alc_session_t *s;                                                                                                                                          
 	char *buf = NULL; /* Buffer where to construct the object from data units */                                                                                                                                     
@@ -4489,19 +4489,25 @@ char* fdt_recv(int s_id, unsigned long long *data_len, int *retval,
 
 		} 
 
-		//lock_trans_obj();
+		lock_trans_obj();
 #ifdef _MSC_VER
 		//Sleep(1);	// This sleep helps reduce CPU usage
-		SleepConditionVariableCS(&packet_ready, &transport_variables_semaphore, 1);
+		SleepConditionVariableCS(&packet_ready, &transport_variables_semaphore, 1);	// Wait for packet being available with 1msec timeout
 		//printf("NO FDT LIST in session %d\n", s_id);
 		//fflush(stdout);
 #else
+		gettimeofday(&now, NULL);
+
+		timeToWait.tv_sec = now.tv_sec;
+		timeToWait.tv_nsec = (now.tv_usec + 1000UL * 1) * 1000UL;	// Timeout of 1 msec
+		
 		//usleep(1000);
-		pthread_cond_wait(&cond, &transport_variables_semaphore);	// Wait for packet being available
+		//pthread_cond_wait(&cond, &transport_variables_semaphore);	// Wait for packet being available
+		pthread_cond_timedwait(&cond, &transport_variables_semaphore, &timeToWait);	// Wait for packet being available with timeout
 		//printf("Waiting for FDT in session %d\n", s_id);
 		//fflush(stdout);
 #endif
-		//unlock_trans_obj();
+		unlock_trans_obj();
 
 	}
 
