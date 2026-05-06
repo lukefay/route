@@ -1607,7 +1607,7 @@ void* fdt_thread(void *s) {
 		  FreeEFDT(efdt_instance);
 		  free(buf);
 
-		  //continue;
+		  continue;
 		}
 		else {
 		  if(receiver->verbosity == 4) {
